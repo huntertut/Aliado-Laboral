@@ -1,0 +1,51 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import authRoutes from './routes/authRoutes';
+import lawyerRoutes from './routes/lawyerRoutes';
+import caseRoutes from './routes/caseRoutes';
+import aiRoutes from './routes/aiRoutes';
+import contactRoutes from './routes/contactRoutes';
+import subscriptionRoutes from './routes/subscriptionRoutes';
+import lawyerProfileRoutes from './routes/lawyerProfileRoutes';
+import workerSubscriptionRoutes from './routes/workerSubscriptionRoutes';
+import workerProfileRoutes from './routes/workerProfileRoutes';
+import adminRoutes from './routes/adminRoutes';
+import supervisorRoutes from './routes/supervisorRoutes';
+import accountantRoutes from './routes/accountantRoutes';
+import chatRoutes from './routes/chatRoutes';
+import vaultRoutes from './routes/vaultRoutes';
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+app.use('/auth', authRoutes);
+app.use('/lawyers', lawyerRoutes);
+app.use('/cases', caseRoutes);
+app.use('/ai', aiRoutes);
+// NUEVAS RUTAS - Sistema de Contacto
+app.use('/contact', contactRoutes);
+app.use('/subscription', subscriptionRoutes);
+app.use('/lawyer-profile', lawyerProfileRoutes);
+app.use('/worker-subscription', workerSubscriptionRoutes);
+app.use('/worker-profile', workerProfileRoutes);
+app.use('/admin', adminRoutes);
+app.use('/supervisor', supervisorRoutes);
+app.use('/accountant', accountantRoutes);
+app.use('/chat', chatRoutes);
+app.use('/vault', vaultRoutes);
+
+// TEMPORARY DEV ENDPOINT - Remove in production
+const devController = require('./controllers/devController');
+app.post('/dev/update-plan', devController.updateUserPlan);
+
+app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT} and listening on all interfaces (0.0.0.0)`);
+});

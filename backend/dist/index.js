@@ -1,0 +1,50 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const lawyerRoutes_1 = __importDefault(require("./routes/lawyerRoutes"));
+const caseRoutes_1 = __importDefault(require("./routes/caseRoutes"));
+const aiRoutes_1 = __importDefault(require("./routes/aiRoutes"));
+const contactRoutes_1 = __importDefault(require("./routes/contactRoutes"));
+const subscriptionRoutes_1 = __importDefault(require("./routes/subscriptionRoutes"));
+const lawyerProfileRoutes_1 = __importDefault(require("./routes/lawyerProfileRoutes"));
+const workerSubscriptionRoutes_1 = __importDefault(require("./routes/workerSubscriptionRoutes"));
+const workerProfileRoutes_1 = __importDefault(require("./routes/workerProfileRoutes"));
+const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
+const supervisorRoutes_1 = __importDefault(require("./routes/supervisorRoutes"));
+const accountantRoutes_1 = __importDefault(require("./routes/accountantRoutes"));
+const chatRoutes_1 = __importDefault(require("./routes/chatRoutes"));
+const vaultRoutes_1 = __importDefault(require("./routes/vaultRoutes"));
+const app = (0, express_1.default)();
+const PORT = process.env.PORT || 3000;
+app.use((0, helmet_1.default)());
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
+app.use('/auth', authRoutes_1.default);
+app.use('/lawyers', lawyerRoutes_1.default);
+app.use('/cases', caseRoutes_1.default);
+app.use('/ai', aiRoutes_1.default);
+// NUEVAS RUTAS - Sistema de Contacto
+app.use('/contact', contactRoutes_1.default);
+app.use('/subscription', subscriptionRoutes_1.default);
+app.use('/lawyer-profile', lawyerProfileRoutes_1.default);
+app.use('/worker-subscription', workerSubscriptionRoutes_1.default);
+app.use('/worker-profile', workerProfileRoutes_1.default);
+app.use('/admin', adminRoutes_1.default);
+app.use('/supervisor', supervisorRoutes_1.default);
+app.use('/accountant', accountantRoutes_1.default);
+app.use('/chat', chatRoutes_1.default);
+app.use('/vault', vaultRoutes_1.default);
+// TEMPORARY DEV ENDPOINT - Remove in production
+const devController = require('./controllers/devController');
+app.post('/dev/update-plan', devController.updateUserPlan);
+app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT} and listening on all interfaces (0.0.0.0)`);
+});
