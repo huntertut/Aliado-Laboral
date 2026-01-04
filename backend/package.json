@@ -1,6 +1,6 @@
 {
   "name": "derechos-laborales-mx-backend",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Backend API for Derechos Laborales MX",
   "main": "dist/index.js",
   "scripts": {
