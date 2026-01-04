@@ -1,5 +1,19 @@
 # Changelog - Derechos Laborales MX
 
+## Version 1.5.0 (2026-01-04)
+
+### 🛡️ Estabilidad y Recuperación
+- **Recuperación de Proyecto**: Restauración exitosa tras upgrade a Expo SDK 54.
+- **Backend Port Fix**: Migración automática a puerto 3001/3000 según disponibilidad.
+- **Metro Config Fix**: Ajuste de compatibilidad para Windows/Node 22 (Standard Mode).
+
+### 🐛 Correcciones Críticas
+- **Persistencia de Perfil Abogado**: Solucionado bug donde "Días de Atención" y "Horario" no se guardaban al recargar.
+- **UI Perfil Trabajador**: Ajuste en botón "Contactar Abogado" para evitar desbordamiento de texto.
+- **Dependencias**: Actualización masiva de librerías (`@types/react`, `expo-updates`) para alineación con SDK 54.
+
+---
+
 ## Version 1.4.0 (2025-12-10)
 
 ### 🎯 Nuevas Funcionalidades
