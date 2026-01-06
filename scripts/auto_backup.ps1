@@ -13,26 +13,28 @@ function Write-Log {
 Write-Log "Iniciando proceso de auto-respaldo..."
 
 # 1. Respaldo Raíz (Backend y principal)
-cd "c:\Users\SAVE Company\.gemini\antigravity\playground\primal-expanse\derechos-laborales-mx"
+Set-Location "c:\Users\SAVE Company\.gemini\antigravity\playground\primal-expanse\derechos-laborales-mx"
 Write-Log "Procesando Raíz..."
 git add .
 $status = git status --porcelain
 if ($status) {
     git commit -m "AUTO-BACKUP: Respaldo automático programado ($timestamp)"
     Write-Log "Commmit realizado en Raíz."
-} else {
+}
+else {
     Write-Log "No hay cambios en Raíz."
 }
 
 # 2. Respaldo Frontend
-cd "frontend"
+Set-Location "frontend"
 Write-Log "Procesando Frontend..."
 git add .
 $statusFront = git status --porcelain
 if ($statusFront) {
     git commit -m "AUTO-BACKUP: Respaldo automático programado frontend ($timestamp)"
     Write-Log "Commmit realizado en Frontend."
-} else {
+}
+else {
     Write-Log "No hay cambios en Frontend."
 }
 
