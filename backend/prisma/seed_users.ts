@@ -54,6 +54,53 @@ async function main() {
             subscriptionStatus: 'active',
             licenseNumber: 'LPRO001',
             specialty: 'Defensa Patronal y Laboral'
+        },
+        // 5. Admin
+        {
+            id: 'TjPDy7Lyf9MVLIu7e30DOzMysSf1',
+            email: 'admin@test.com',
+            passwordHash: hashedPassword,
+            fullName: 'Admin General',
+            role: 'admin',
+            plan: 'free',
+        },
+        // 6. Supervisor
+        {
+            id: 'owa4rNOIESdMmJIucA06OSXKbh72',
+            email: 'supervisor@test.com',
+            passwordHash: hashedPassword,
+            fullName: 'Supervisor Legal',
+            role: 'supervisor',
+            plan: 'free',
+        },
+        // 7. Contador
+        {
+            id: 'pubVX53drUgWZD6WUfB6TQ0el1y2',
+            email: 'contador@test.com',
+            passwordHash: hashedPassword,
+            fullName: 'Contador App',
+            role: 'accountant',
+            plan: 'free',
+        },
+        // 8. Pyme Basic
+        {
+            id: 'M9KI2uXemYWElMmmDUxuMsM5jG62',
+            email: 'pyme_basic@test.com',
+            passwordHash: hashedPassword,
+            fullName: 'Pyme Básica SA',
+            role: 'pyme',
+            plan: 'basic',
+            subscriptionStatus: 'active'
+        },
+        // 9. Pyme Premium
+        {
+            id: 'J5axjxXFuwW2H10fayGZKq0IRTs1',
+            email: 'pyme_premium@test.com',
+            passwordHash: hashedPassword,
+            fullName: 'Pyme Premium SC',
+            role: 'pyme',
+            plan: 'premium',
+            subscriptionStatus: 'active'
         }
     ];
 
@@ -64,14 +111,59 @@ async function main() {
         });
 
         if (existingUser) {
-            console.log(`User ${userData.email} already exists. Updating plan...`);
-            await prisma.user.update({
-                where: { email: userData.email },
-                data: {
-                    plan: userData.role === 'worker' ? userData.plan : undefined
+            console.log(`User ${userData.email} found.`);
+
+            // CRITICAL: Ensure database ID matches Firebase/Seed ID
+            if (existingUser.id !== userData.id) {
+                console.log(`⚠️ Mismatch! DB ID: ${existingUser.id} vs Required: ${userData.id}. Recreating...`);
+
+                // Delete dependencies first (manual cascade)
+                await prisma.userRole.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.workerSubscription.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.pymeProfile.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.legalCase.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.calculationRecord.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.activityLog.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.contactRequest.deleteMany({ where: { workerId: existingUser.id } });
+                await prisma.workerProfile.deleteMany({ where: { userId: existingUser.id } });
+                await prisma.adminAlert.deleteMany({ where: { relatedUserId: existingUser.id } });
+
+                // Handle Lawyer Cascade (Complex relation)
+                const existingLawyer = await prisma.lawyer.findUnique({ where: { userId: existingUser.id } });
+                if (existingLawyer) {
+                    await prisma.lawyerProfile.deleteMany({ where: { lawyerId: existingLawyer.id } });
+                    await prisma.lawyerSubscription.deleteMany({ where: { lawyerId: existingLawyer.id } });
+                    // Delete assigned pymes relation if needed
+                    await prisma.pymeProfile.updateMany({
+                        where: { assignedLawyerId: existingLawyer.id },
+                        data: { assignedLawyerId: null }
+                    });
+                    await prisma.lawyer.delete({ where: { id: existingLawyer.id } });
                 }
-            });
-            // We verify/create aux data even if user exists
+
+                await prisma.user.delete({ where: { email: userData.email } });
+
+                // Create with correct ID
+                await prisma.user.create({
+                    data: {
+                        id: userData.id,
+                        email: userData.email,
+                        passwordHash: userData.passwordHash,
+                        fullName: userData.fullName,
+                        role: userData.role,
+                        plan: userData.plan || 'free',
+                    },
+                });
+                console.log(`✨ Re-created user: ${userData.email} with correct ID.`);
+            } else {
+                console.log(`✅ ID matches. Updating plan...`);
+                await prisma.user.update({
+                    where: { email: userData.email },
+                    data: {
+                        plan: userData.role === 'worker' ? userData.plan : undefined
+                    }
+                });
+            }
         } else {
             // Create User with specific ID
             await prisma.user.create({
@@ -169,6 +261,23 @@ async function main() {
                     });
                     console.log(` -> Lawyer ${userData.plan} profile set.`);
                 }
+            }
+        }
+
+        // Handle Pyme Profile
+        if (userData.role === 'pyme') {
+            const existingPyme = await prisma.pymeProfile.findUnique({ where: { userId: user.id } });
+            if (!existingPyme) {
+                await prisma.pymeProfile.create({
+                    data: {
+                        userId: user.id,
+                        razonSocial: userData.fullName,
+                        rfc: 'XAXX010101000',
+                        industry: 'Servicios',
+                        riskScore: 20
+                    }
+                });
+                console.log(` -> Pyme Profile created for ${userData.email}`);
             }
         }
 

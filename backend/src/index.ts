@@ -28,6 +28,11 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// Health Check Endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', message: 'Backend is reachable', ip: req.ip });
+});
+
 app.use('/auth', authRoutes);
 app.use('/lawyers', lawyerRoutes);
 app.use('/cases', caseRoutes);
