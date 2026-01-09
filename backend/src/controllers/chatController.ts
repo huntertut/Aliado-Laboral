@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import moment from 'moment';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +14,10 @@ export const sendMessage = async (req: any, res: Response) => {
         // 1. Validate Access
         const request = await prisma.contactRequest.findUnique({
             where: { id: requestId },
-            include: { lawyerProfile: { include: { lawyer: true } } }
+            include: {
+                lawyerProfile: { include: { lawyer: true } },
+                worker: true
+            }
         });
 
         if (!request) {
@@ -23,12 +27,38 @@ export const sendMessage = async (req: any, res: Response) => {
         // Check if user is participant
         const isWorker = request.workerId === senderId;
         const isLawyer = request.lawyerProfile.lawyer.userId === senderId;
+        const isPyme = request.worker.role === 'pyme';
 
         if (!isWorker && !isLawyer) {
             return res.status(403).json({ error: 'No tienes permiso para participar en este chat' });
         }
 
-        // 2. Transaction: Create Message + Update Parent Request
+        // 2. Schedule Validation for Pymes
+        let messageStatus = 'delivered';
+        let skipNotification = false;
+        let scheduleMessage = '';
+
+        if (isPyme && isWorker) {
+            const scheduleStr = request.lawyerProfile.schedule;
+            if (scheduleStr) {
+                try {
+                    const schedule = JSON.parse(scheduleStr); // { start: "09:00", end: "18:00" }
+                    const now = moment();
+                    const startTime = moment(schedule.start, "HH:mm");
+                    const endTime = moment(schedule.end, "HH:mm");
+
+                    if (!now.isBetween(startTime, endTime)) {
+                        messageStatus = 'queued';
+                        skipNotification = true;
+                        scheduleMessage = `Tu abogado responderá a partir de las ${schedule.start} del siguiente día hábil.`;
+                    }
+                } catch (e) {
+                    console.warn('Invalid schedule format:', scheduleStr);
+                }
+            }
+        }
+
+        // 3. Transaction: Create Message + Update Parent Request
         const result = await prisma.$transaction(async (tx) => {
             // Create Message
             const message = await tx.chatMessage.create({
@@ -37,13 +67,12 @@ export const sendMessage = async (req: any, res: Response) => {
                     senderId,
                     content,
                     type: type || 'text',
+                    status: messageStatus as any,
                     seenAt: null
                 }
             });
 
             // Update Parent Request (Denormalization)
-            // If sender is Worker -> Lawyer has unread.
-            // If sender is Lawyer -> Worker has unread.
             const updateData: any = {
                 lastMessageContent: content,
                 lastMessageSenderId: senderId,
@@ -53,11 +82,9 @@ export const sendMessage = async (req: any, res: Response) => {
 
             if (isWorker) {
                 updateData.unreadCountLawyer = { increment: 1 };
-                // Also update SLA timestamp
                 updateData.lastWorkerActivityAt = new Date();
             } else {
                 updateData.unreadCountWorker = { increment: 1 };
-                // Also update SLA timestamp
                 updateData.lastLawyerActivityAt = new Date();
             }
 
@@ -69,9 +96,16 @@ export const sendMessage = async (req: any, res: Response) => {
             return message;
         });
 
-        // TODO: Trigger Push Notification here
+        // 4. Trigger Push Notification (Only if not queued)
+        if (!skipNotification) {
+            // TODO: Trigger actual push notification service
+            console.log(`Push notification sent to ${isWorker ? 'Lawyer' : 'Worker'}`);
+        }
 
-        res.json(result);
+        res.json({
+            ...result,
+            info: scheduleMessage || undefined
+        });
 
     } catch (error) {
         console.error('Error sending message:', error);

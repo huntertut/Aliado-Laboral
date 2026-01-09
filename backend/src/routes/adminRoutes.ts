@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { getDashboardStats, getLawyers, verifyLawyer, getWorkers, getFinancialStats, getPaymentLogs, getAllCases, getSecurityLogs, getAdminAlerts, resolveAlert } from '../controllers/adminController';
+import { getDashboardStats, getLawyers, verifyLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData } from '../controllers/adminController';
 
 const router = express.Router();
 
@@ -15,6 +15,7 @@ router.get('/dashboard', getDashboardStats);
 router.get('/lawyers', getLawyers);
 router.put('/lawyers/:lawyerId/verify', verifyLawyer);
 router.get('/workers', getWorkers);
+router.get('/pymes', getPymes);
 
 // Financials
 router.get('/financials/stats', getFinancialStats);
@@ -22,6 +23,7 @@ router.get('/financials/logs', getPaymentLogs);
 
 // Cases
 router.get('/cases', getAllCases);
+router.post('/cases/:requestId/purge', purgeCaseData);
 
 // Security
 router.get('/security/logs', getSecurityLogs);

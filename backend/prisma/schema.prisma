@@ -22,16 +22,19 @@ model User {
   
   // Business Model Enums (stored as String for SQLite compatibility)
   plan                  String    @default("free") // 'free', 'premium' (workers) | 'basic', 'pro' (lawyers)
+  subscriptionLevel     String    @default("basic") // 'basic', 'premium' (pymes)
+  profileStatus         String    @default("active") // 'incomplete', 'pending', 'active', 'suspended'
   planExpiresAt         DateTime?
   
   legalCases           LegalCase[]
   calculations         CalculationRecord[]
-  lawyerProfile        Lawyer?
+  lawyerProfile        Lawyer?   @relation("UserAsLawyer")
   workerSubscription   WorkerSubscription? // NUEVO: suscripción del trabajador
   contactRequestsSent  ContactRequest[] // NUEVO: solicitudes enviadas por trabajadores
   activityLogs         ActivityLog[]
   workerProfile        WorkerProfile? // NUEVO: perfil laboral del trabajador
   userRole             UserRole? // Mapeo a Firebase UID
+  pymeProfile          PymeProfile?
 }
 
 // Mapeo de Firebase UID a roles de usuario
@@ -121,14 +124,16 @@ model CalculationRecord {
 model Lawyer {
   id            String  @id @default(uuid())
   userId        String  @unique
-  user          User    @relation(fields: [userId], references: [id])
+  user          User    @relation("UserAsLawyer", fields: [userId], references: [id])
   licenseNumber     String  @unique
   specialty         String?
   professionalName  String? // Nombre profesional capturado en registro
   isVerified        Boolean @default(false)
+  acceptsPymeClients Boolean @default(false)
   
   profile       LawyerProfile? // NUEVO: perfil extendido
   subscription  LawyerSubscription? // NUEVO: suscripción bimestral
+  assignedPymes PymeProfile[]
 
   // Stripe-Specific Fields (LAWYERS ALWAYS USE STRIPE)
   stripeCustomerId        String?   // Stripe customer ID
@@ -171,6 +176,7 @@ model LawyerProfile {
   phone             String?
   whatsapp          String?
   attentionHours    String?  // Horario de atención ej: "Lun-Vie 9-18h"
+  schedule          String?  // JSON: { start: "09:00", end: "18:00" }
   email             String?  // Email de contacto público
   
   // Métricas
@@ -351,6 +357,7 @@ model ChatMessage {
   senderId    String         // UserId del remitente (Worker o Lawyer)
   content     String
   type        String         @default("text") // 'text', 'image', 'document', 'system'
+  status      String         @default("delivered") // 'delivered', 'queued'
   
   seenAt      DateTime?      // Cuándo fue visto por el destinatario
   createdAt   DateTime       @default(now())
@@ -415,4 +422,80 @@ model AdminAlert {
   
   createdAt   DateTime @default(now())
   resolvedAt  DateTime?
+}
+
+// ==========================================
+// SECCIÓN DE NOTICIAS (IA GENERATED)
+// ==========================================
+
+model LegalNews {
+  id              String   @id @default(uuid())
+  originalText    String
+  imageUrl        String?
+  
+  // Generado por IA
+  titleClickable  String
+  summaryWorker   String
+  summarySme      String
+  summaryLawyer   String
+  quizQuestion    String
+  
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==========================================
+// SECCIÓN DE PYMES (SMES)
+// ==========================================
+
+model PymeProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id])
+  
+  rfc                 String?
+  razonSocial         String?
+  industry            String?
+  internalRegsStatus  String   @default("pending") // 'pending', 'uploaded', 'generated'
+  
+  assignedLawyerId    String?
+  assignedLawyer      Lawyer?  @relation(fields: [assignedLawyerId], references: [id])
+  
+  riskScore           Int      @default(50) // 0-100 (0=Low Risk, 100=Critical)
+
+  employees           PymeEmployee[]
+  documents           PymeDocument[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model PymeEmployee {
+  id                  String   @id @default(uuid())
+  pymeProfileId       String
+  pymeProfile         PymeProfile @relation(fields: [pymeProfileId], references: [id])
+  
+  fullName            String
+  rfc                 String?
+  joinDate            DateTime
+  contractType        String   @default("permanent") // 'trial', 'permanent'
+  contractEndDate     DateTime?
+  isRenewed           Boolean  @default(false)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model PymeDocument {
+  id            String      @id @default(uuid())
+  pymeProfileId String
+  pymeProfile   PymeProfile @relation(fields: [pymeProfileId], references: [id])
+  
+  type          String      // 'contract', 'policy', 'receipt', 'other'
+  name          String
+  url           String
+  fileSize      Int         // bytes
+  
+  createdAt     DateTime    @default(now())
 }

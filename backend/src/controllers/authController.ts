@@ -49,6 +49,7 @@ export const register = async (req: Request, res: Response) => {
                     role: role || 'worker',
                     // Business Model: Default Plan
                     plan: role === 'lawyer' ? 'basic' : 'free',
+                    subscriptionLevel: role === 'pyme' ? 'basic' : 'none',
                 },
             });
 
@@ -96,6 +97,21 @@ export const register = async (req: Request, res: Response) => {
                         status: 'inactive',
                         amount: 99.00,
                         autoRenew: true
+                    }
+                });
+            }
+
+            if (role === 'pyme') {
+                // Create PymeProfile record
+                // @ts-ignore: Field added in schema but client pending update
+                await tx.pymeProfile.create({
+                    data: {
+                        userId: user.id,
+                        razonSocial: req.body.companyName,
+                        rfc: req.body.rfc,
+                        industry: req.body.industry,
+                        assignedLawyerId: req.body.assignedLawyerId,
+                        riskScore: 50
                     }
                 });
             }
@@ -160,5 +176,108 @@ export const login = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const socialLogin = async (req: Request, res: Response) => {
+    try {
+        const { email, uid, role, name } = req.body;
+
+        if (!email || !uid) {
+            return res.status(400).json({ error: 'Email and UID are required' });
+        }
+
+        let user = await prisma.user.findUnique({
+            where: { email },
+            include: { lawyerProfile: true, pymeProfile: true }
+        });
+
+        if (!user) {
+            // New User: Create with INCOMPLETE status if Lawyer/Pyme
+            const initialStatus = (role === 'lawyer' || role === 'pyme') ? 'incomplete' : 'active';
+
+            // Default plan logic
+            const plan = role === 'lawyer' ? 'basic' : 'free';
+            const subLevel = role === 'pyme' ? 'basic' : 'none';
+
+            // Create User Transaction
+            user = await prisma.$transaction(async (tx) => {
+                // Create Firebase Mapping
+                /* Note: Ideally we should link to UserRole table, but given current constraints we focus on User table first */
+
+                const newUser = await tx.user.create({
+                    data: {
+                        email,
+                        passwordHash: 'SOCIAL_LOGIN_' + uid, // Placeholder
+                        fullName: name || 'Usuario',
+                        role: role || 'worker',
+                        plan,
+                        subscriptionLevel: subLevel,
+                        // @ts-ignore: Schema updated but client pending generation
+                        profileStatus: initialStatus
+                    }
+                });
+
+                // Initialize role-specific records (Empty placeholders)
+                if (role === 'lawyer') {
+                    const lawyer = await tx.lawyer.create({
+                        data: {
+                            userId: newUser.id,
+                            licenseNumber: 'PENDING_' + newUser.id, // Placeholder to satisfy unique constraint
+                            isVerified: false,
+                            specialty: 'General'
+                        }
+                    });
+
+                    await tx.lawyerProfile.create({ data: { lawyerId: lawyer.id } });
+                    await tx.lawyerSubscription.create({
+                        data: { lawyerId: lawyer.id, plan: 'basic', status: 'inactive' }
+                    });
+                }
+
+                if (role === 'pyme') {
+                    // @ts-ignore: Schema updated but client pending generation
+                    await tx.pymeProfile.create({
+                        data: {
+                            userId: newUser.id,
+                            razonSocial: 'Pendiente',
+                            industry: 'General',
+                            riskScore: 50
+                        }
+                    });
+                }
+
+                if (role === 'worker') {
+                    await tx.workerSubscription.create({
+                        data: { userId: newUser.id, status: 'inactive', autoRenew: false }
+                    });
+                }
+
+                return newUser;
+            });
+        }
+
+        // Existing User: Return token and status
+        const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
+            expiresIn: '24h',
+        });
+
+        // Safe access to profileStatus (cast if generation failed momentarily, though it should be fixed)
+        const safeUser = user as any;
+
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                plan: user.plan,
+                profileStatus: safeUser.profileStatus || 'active'
+            }
+        });
+
+    } catch (error) {
+        console.error('Social Login Error:', error);
+        res.status(500).json({ error: 'Internal server error during social login' });
     }
 };

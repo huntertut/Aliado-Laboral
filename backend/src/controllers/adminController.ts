@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import * as storageService from '../services/storageService';
 
 const prisma = new PrismaClient();
 
@@ -66,6 +67,18 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             where: { isResolved: false, severity: 'high' }
         });
 
+        // 5. Recent Activity (Last 24h)
+        const oneDayAgo = new Date();
+        oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+        const recentPayments = await prisma.contactRequest.count({
+            where: {
+                status: 'accepted',
+                bothPaymentsSucceeded: true,
+                updatedAt: { gte: oneDayAgo }
+            }
+        });
+
         res.json({
             kpis: {
                 totalIncome,
@@ -84,7 +97,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             actionItems: {
                 pendingLawyers,
                 failedPayments,
-                suspiciousActivity
+                suspiciousActivity,
+                recentPayments // New field
             }
         });
 
@@ -178,6 +192,34 @@ export const getWorkers = async (req: Request, res: Response) => {
         res.json(formattedWorkers);
     } catch (error) {
         console.error('Get workers error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const getPymes = async (req: Request, res: Response) => {
+    try {
+        const pymes = await prisma.user.findMany({
+            where: { role: 'pyme' },
+            include: {
+                pymeProfile: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const formattedPymes = pymes.map(pyme => ({
+            id: pyme.id,
+            fullName: pyme.fullName, // Often acts as Contact Name
+            companyName: pyme.pymeProfile?.razonSocial || 'Sin Razón Social',
+            email: pyme.email,
+            plan: pyme.plan || 'basic',
+            subscriptionLevel: pyme.subscriptionLevel || 'basic',
+            industry: pyme.pymeProfile?.industry || 'N/A',
+            createdAt: pyme.createdAt
+        }));
+
+        res.json(formattedPymes);
+    } catch (error) {
+        console.error('Get pymes error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -298,7 +340,8 @@ export const getAllCases = async (req: Request, res: Response) => {
             status: c.status,
             caseType: c.caseType || 'Laboral',
             urgency: c.urgency || 'Media',
-            createdAt: c.createdAt
+            createdAt: c.createdAt,
+            bothPaymentsSucceeded: (c as any).bothPaymentsSucceeded
         }));
 
         res.json(formattedCases);
@@ -349,5 +392,43 @@ export const resolveAlert = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Resolve alert error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const purgeCaseData = async (req: Request, res: Response) => {
+    try {
+        const { requestId } = req.params;
+
+        // Verify if case is "ready" for purge (accepted and both payments succeeded)
+        const request = await prisma.contactRequest.findUnique({
+            where: { id: requestId }
+        });
+
+        if (!request) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        if (request.status !== 'accepted' || !request.bothPaymentsSucceeded) {
+            return res.status(400).json({
+                error: 'La solicitud no cumple con los requisitos para ser purgada (debe estar aceptada y pagada)'
+            });
+        }
+
+        await storageService.purgeContactRequestData(requestId);
+
+        // Log admin activity
+        await prisma.activityLog.create({
+            data: {
+                userId: (req as any).user?.id,
+                action: 'purge_case_data',
+                details: `Purged data for Request ID: ${requestId}`,
+                createdAt: new Date()
+            }
+        });
+
+        res.json({ success: true, message: 'Datos purgados correctamente por políticas de privacidad' });
+    } catch (error) {
+        console.error('Purge case data error:', error);
+        res.status(500).json({ error: 'Error al purgar los datos' });
     }
 };

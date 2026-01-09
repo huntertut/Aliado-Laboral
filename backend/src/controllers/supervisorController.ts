@@ -47,4 +47,37 @@ export const verifyLawyer = async (req: Request, res: Response) => {
         console.error('Error verifying lawyer:', error);
         res.status(500).json({ error: 'No se pudo verificar al abogado' });
     }
+} catch (error) {
+    console.error('Error verifying lawyer:', error);
+    res.status(500).json({ error: 'No se pudo verificar al abogado' });
+}
+};
+
+export const getSupervisorStats = async (req: Request, res: Response) => {
+    try {
+        // 1. Pending Lawyers
+        const pendingLawyersCount = await prisma.lawyer.count({
+            where: { isVerified: false }
+        });
+
+        // 2. Recent Payment Activity (Last 24h)
+        const oneDayAgo = new Date();
+        oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+        const recentPaymentsCount = await prisma.contactRequest.count({
+            where: {
+                status: 'accepted',
+                bothPaymentsSucceeded: true,
+                updatedAt: { gte: oneDayAgo }
+            }
+        });
+
+        res.json({
+            pendingLawyersCount,
+            recentPaymentsCount
+        });
+    } catch (error) {
+        console.error('Error fetching supervisor stats:', error);
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
 };

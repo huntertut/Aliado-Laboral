@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import * as stripeService from '../services/stripeService';
 import * as mercadopagoService from '../services/mercadopagoService';
+import * as storageService from '../services/storageService';
 import { checkBothPaymentsSuccess } from '../services/webhookHandlerService';
 
 const prisma = new PrismaClient();
@@ -12,7 +13,7 @@ const prisma = new PrismaClient();
  */
 export const createContactRequestWithPayment = async (req: Request, res: Response) => {
     try {
-        const { lawyerProfileId, caseSummary, caseType, urgency, paymentGateway, estimatedSeverance, yearsOfService } = req.body;
+        const { lawyerProfileId, caseSummary, caseType, urgency, paymentGateway, estimatedSeverance, yearsOfService, documents } = req.body;
         const workerId = (req as any).user?.id;
 
         if (!workerId) {
@@ -86,6 +87,33 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
                 worker: { select: { id: true, fullName: true, email: true } }
             }
         });
+
+        // 2. PROCESS DOCUMENTS (if provided)
+        if (documents && Array.isArray(documents)) {
+            console.log(`📂 [createContactRequest] Procesando ${documents.length} documentos...`);
+            for (const doc of documents) {
+                try {
+                    const buffer = Buffer.from(doc.base64, 'base64');
+                    const extension = doc.type.split('/')[1] || 'bin';
+                    const destination = `requests/${contactRequest.id}/doc_${Date.now()}_${doc.name.replace(/\s+/g, '_')}`;
+
+                    const fileUrl = await storageService.uploadBuffer(buffer, destination, doc.type);
+
+                    await prisma.requestDocument.create({
+                        data: {
+                            requestId: contactRequest.id,
+                            fileName: doc.name,
+                            fileUrl,
+                            fileType: extension,
+                            fileSize: doc.size || buffer.length
+                        }
+                    });
+                } catch (docError) {
+                    console.error('❌ Error subiendo documento:', docError);
+                    // Continue with other documents
+                }
+            }
+        }
 
         // Process payment based on gateway choice
         let paymentResult: any;

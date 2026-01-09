@@ -20,16 +20,64 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
         const firebaseUid = decodedToken.uid;
         const email = decodedToken.email;
 
+        if (!email) {
+            return res.status(400).json({ error: 'Email not found in token' });
+        }
+
         // Look up user role in database
-        const userRole = await prisma.userRole.findUnique({
+        let userRole = await prisma.userRole.findUnique({
             where: { firebaseUid }
         });
 
         if (!userRole) {
-            console.error(`[verifyFirebaseToken] UserRole not found for UID: ${firebaseUid}`);
-            return res.status(404).json({
-                error: 'Usuario no encontrado en el sistema. Contacta al administrador.'
+            console.warn(`[verifyFirebaseToken] UserRole not found for UID: ${firebaseUid}. Attempting auto-recovery.`);
+
+            // 1. Check if User exists by email
+            let existingUser = await prisma.user.findUnique({
+                where: { email }
             });
+
+            // 2. Infer Role & Plan from email (for Test Users)
+            let derivedRole = 'worker';
+            let derivedPlan = 'free';
+
+            if (email.includes('pyme')) {
+                derivedRole = 'pyme';
+                derivedPlan = email.includes('premium') ? 'premium' : 'free'; // Default to free if basic
+            } else if (email.includes('abogado') || email.includes('lawyer')) {
+                derivedRole = 'lawyer';
+                derivedPlan = 'basic';
+            } else if (email.includes('admin')) {
+                derivedRole = 'admin';
+            }
+
+            // 3. Create User if missing
+            if (!existingUser) {
+                console.log(`[verifyFirebaseToken] Creating new User for ${email}`);
+                existingUser = await prisma.user.create({
+                    data: {
+                        email,
+                        passwordHash: 'firebase_managed', // Placeholder
+                        fullName: decodedToken.name || email.split('@')[0],
+                        role: derivedRole,
+                        plan: derivedPlan
+                    }
+                });
+            }
+
+            // 4. Create UserRole linking to User
+            console.log(`[verifyFirebaseToken] Creating UserRole for ${email}`);
+            userRole = await prisma.userRole.create({
+                data: {
+                    firebaseUid,
+                    role: existingUser.role,
+                    email: existingUser.email,
+                    fullName: existingUser.fullName,
+                    userId: existingUser.id
+                }
+            });
+
+            // Continue to fetching logic...
         }
 
         // Fetch full User record matching the email to be safe
@@ -38,7 +86,8 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
             include: {
                 lawyerProfile: {
                     include: { subscription: true }
-                }
+                },
+                pymeProfile: true
             }
         });
 
@@ -55,9 +104,8 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 console.log(`[verifyFirebaseToken] Lawyer Profile NOT FOUND`);
             }
 
-            // Update UserRole to stay in sync with User
             if (userRole.userId !== user.id || userRole.fullName !== user.fullName) {
-                console.log(`[verifyFirebaseToken] Syncing UserRole data for ${user.email}`);
+                console.log(`[verifyFirebaseToken] Syncing UserRole data for ${user.email}. DB Name: "${user.fullName}", Role Name: "${userRole.fullName}"`);
                 await prisma.userRole.update({
                     where: { id: userRole.id },
                     data: {
@@ -67,8 +115,15 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 });
             }
         } else {
-            console.warn(`[verifyFirebaseToken] User NOT FOUND for email: ${userRole.email}`);
+            console.warn(`[verifyFirebaseToken] User NOT FOUND in DB for email: ${userRole.email}`);
         }
+
+        console.log('🔍 [verifyFirebaseToken] Diagnostic:', {
+            firebaseName: decodedToken.name,
+            dbName: user?.fullName,
+            userRoleName: userRole.fullName,
+            match: decodedToken.name === user?.fullName
+        });
 
         // Determine final plan
         let finalPlan = user?.plan || 'free';
@@ -87,6 +142,8 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 fullName: user?.fullName || userRole.fullName,
                 role: userRole.role,
                 plan: finalPlan,
+                subscriptionLevel: user?.subscriptionLevel || 'basic',
+                assignedLawyerId: user?.pymeProfile?.assignedLawyerId,
                 _debug: {
                     source: 'UserTable',
                     sync: !!user,

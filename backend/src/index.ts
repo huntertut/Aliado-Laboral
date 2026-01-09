@@ -18,6 +18,8 @@ import supervisorRoutes from './routes/supervisorRoutes';
 import accountantRoutes from './routes/accountantRoutes';
 import chatRoutes from './routes/chatRoutes';
 import vaultRoutes from './routes/vaultRoutes';
+import newsRoutes from './routes/newsRoutes';
+import pymeRoutes from './routes/pymeRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +43,8 @@ app.use('/supervisor', supervisorRoutes);
 app.use('/accountant', accountantRoutes);
 app.use('/chat', chatRoutes);
 app.use('/vault', vaultRoutes);
+app.use('/news', newsRoutes);
+app.use('/pyme-profile', pymeRoutes);
 
 // TEMPORARY DEV ENDPOINT - Remove in production
 const devController = require('./controllers/devController');

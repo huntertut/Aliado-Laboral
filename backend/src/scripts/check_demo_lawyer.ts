@@ -7,7 +7,7 @@ async function checkDemoLawyer() {
     const user = await prisma.user.findUnique({
         where: { email },
         include: {
-            lawyer: {
+            lawyerProfile: {
                 include: {
                     subscription: true,
                     profile: true
@@ -22,15 +22,15 @@ async function checkDemoLawyer() {
     console.log('Plan in User table:', user?.plan);
     console.log('Role:', user?.role);
 
-    if (user?.lawyer) {
+    if (user?.lawyerProfile) {
         console.log('\n--- Lawyer Info ---');
-        console.log('Lawyer ID:', user.lawyer.id);
+        console.log('Lawyer ID:', user.lawyerProfile.id);
 
         console.log('\n--- Subscription Info ---');
-        console.log(JSON.stringify(user.lawyer.subscription, null, 2));
+        console.log(JSON.stringify(user.lawyerProfile.subscription, null, 2));
 
         console.log('\n--- Profile Info ---');
-        console.log('Attention Hours:', user.lawyer.profile?.attentionHours);
+        console.log('Attention Hours:', user.lawyerProfile.profile?.attentionHours);
     } else {
         console.log('\n❌ No Lawyer record found for this user.');
     }

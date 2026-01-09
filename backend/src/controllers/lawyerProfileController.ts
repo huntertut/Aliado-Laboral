@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import * as storageService from '../services/storageService';
 
 const prisma = new PrismaClient();
 
@@ -207,41 +208,88 @@ export const updateMyProfile = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.findUnique({
             where: { userId },
-            include: { profile: true }
+            include: { profile: true, user: true }
         });
 
+        console.log('🔍 [updateMyProfile] Info Usuario:', { userId, role: (req as any).user?.role });
+        console.log('🔍 [updateMyProfile] Lawyer Record found:', !!lawyer, lawyer?.id);
+        console.log('🔍 [updateMyProfile] Profile Record found:', !!lawyer?.profile, lawyer?.profile?.id);
+
         if (!lawyer) {
+            console.error('❌ [updateMyProfile] No se encontró el abogado para el usuario:', userId);
             return res.status(404).json({ error: 'Perfil de abogado no encontrado' });
         }
 
+        console.log('🔍 [updateMyProfile] Abogado encontrado:', lawyer.id);
+
+        // Extraer campos de contacto del objeto contactInfo si el frontend los envió ahí (legacy/compat)
+        const finalPhone = phone || req.body.contactInfo?.phone;
+        const finalEmail = email || req.body.contactInfo?.email;
+
         // Actualizar datos base del abogado
-        // NOTE: Only updating fields that exist in schema
-        // professionalName, nationalScope, etc. don't exist yet - would need migration
-        await prisma.lawyer.update({
+        const lawyerUpdateResult = await prisma.lawyer.update({
             where: { id: lawyer.id },
             data: {
-                specialty // Only field that exists in Lawyer table
+                specialty: specialty || undefined,
+                professionalName: professionalName || undefined
             }
         });
+        console.log('✅ [updateMyProfile] Lawyer Update Result:', {
+            specialty: lawyerUpdateResult.specialty,
+            professionalName: lawyerUpdateResult.professionalName
+        });
+
+        // Sincronizar con el nombre real del usuario si es necesario
+        if (professionalName && userId) {
+            console.log('👤 [updateMyProfile] Sincronizando nombre de usuario:', professionalName);
+            const userUpdateResult = await prisma.user.update({
+                where: { id: userId },
+                data: { fullName: professionalName }
+            });
+            console.log('✅ [updateMyProfile] User Name Update Result:', userUpdateResult.fullName);
+        }
+
+        console.log('DEBUG: Updating bio to:', bio);
+        console.log('DEBUG: Updating attentionHours to:', attentionHours);
+
+        let finalPhotoUrl = photoUrl;
+
+        // Si photoUrl es un Base64, subirlo a Firebase Storage
+        if (photoUrl && photoUrl.startsWith('data:image')) {
+            console.log('🖼️ [updateMyProfile] Detectado Base64, subiendo a Firebase...');
+            try {
+                const base64Data = photoUrl.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                const extension = photoUrl.split(';')[0].split('/')[1];
+                const destination = `profiles/lawyer_${lawyer.id}/avatar_${Date.now()}.${extension}`;
+
+                finalPhotoUrl = await storageService.uploadBuffer(buffer, destination, `image/${extension}`);
+                console.log('✅ [updateMyProfile] Imagen subida:', finalPhotoUrl);
+            } catch (uploadError) {
+                console.error('❌ [updateMyProfile] Error subiendo imagen:', uploadError);
+                // Keep the old one or continue without updating photo
+            }
+        }
 
         if (lawyer.profile) {
             // Actualizar perfil existente
-            // NOTE: attentionHours and email don't exist in schema yet
             const updatedProfile = await prisma.lawyerProfile.update({
                 where: { id: lawyer.profile.id },
                 data: {
-                    photoUrl,
-                    yearsOfExperience: finalYearsOfExperience,
-                    bio,
+                    photoUrl: finalPhotoUrl !== undefined ? finalPhotoUrl : undefined,
+                    yearsOfExperience: finalYearsOfExperience !== undefined ? Number(finalYearsOfExperience) : undefined,
+                    bio: bio !== undefined ? bio : undefined,
                     wonCase1Summary,
                     wonCase2Summary,
                     wonCase3Summary,
-                    phone,
+                    phone: finalPhone || undefined,
                     whatsapp,
-                    attentionHours,
-                    email
+                    attentionHours: attentionHours || undefined,
+                    email: finalEmail || undefined
                 }
             });
+
+            console.log('✅ [updateMyProfile] Perfil actualizado con éxito. New attentionHours:', updatedProfile.attentionHours);
 
             res.json({
                 message: 'Perfil actualizado',
@@ -252,18 +300,20 @@ export const updateMyProfile = async (req: Request, res: Response) => {
             const newProfile = await prisma.lawyerProfile.create({
                 data: {
                     lawyerId: lawyer.id,
-                    photoUrl,
-                    yearsOfExperience: finalYearsOfExperience || 0,
+                    photoUrl: finalPhotoUrl,
+                    yearsOfExperience: finalYearsOfExperience !== undefined ? Number(finalYearsOfExperience) : 0,
                     bio,
                     wonCase1Summary,
                     wonCase2Summary,
                     wonCase3Summary,
-                    phone,
+                    phone: finalPhone,
                     whatsapp,
                     attentionHours,
-                    email
+                    email: finalEmail
                 }
             });
+
+            console.log('✅ [updateMyProfile] Perfil creado con éxito');
 
             res.json({
                 message: 'Perfil creado',
