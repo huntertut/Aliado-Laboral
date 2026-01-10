@@ -47,10 +47,7 @@ export const verifyLawyer = async (req: Request, res: Response) => {
         console.error('Error verifying lawyer:', error);
         res.status(500).json({ error: 'No se pudo verificar al abogado' });
     }
-} catch (error) {
-    console.error('Error verifying lawyer:', error);
-    res.status(500).json({ error: 'No se pudo verificar al abogado' });
-}
+
 };
 
 export const getSupervisorStats = async (req: Request, res: Response) => {
@@ -68,7 +65,7 @@ export const getSupervisorStats = async (req: Request, res: Response) => {
             where: {
                 status: 'accepted',
                 bothPaymentsSucceeded: true,
-                updatedAt: { gte: oneDayAgo }
+                acceptedAt: { gte: oneDayAgo }
             }
         });
 

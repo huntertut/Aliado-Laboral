@@ -281,3 +281,23 @@ export const socialLogin = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error during social login' });
     }
 };
+
+export const updateProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id; // From middleware
+        const { fullName, phone, address, website, companyName, rfc, industry } = req.body;
+
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                fullName,
+                // Update related Pyme/Worker/Lawyer profiles if needed (simplified for now)
+            }
+        });
+
+        res.json({ message: 'Profile updated', user: updatedUser });
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+};

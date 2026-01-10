@@ -24,9 +24,17 @@ import pymeRoutes from './routes/pymeRoutes';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// DEBUG LOGGER (Moved to Top)
+app.use((req, res, next) => {
+    console.log(`[INCOMING] ${req.method} ${req.url} from ${req.ip}`);
+    next();
+});
+
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

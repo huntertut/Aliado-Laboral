@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { register, login, socialLogin, updateProfile } from '../controllers/authController';
 import { verifyFirebaseToken } from '../controllers/firebaseAuthController';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
