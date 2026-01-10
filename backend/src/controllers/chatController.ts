@@ -98,8 +98,19 @@ export const sendMessage = async (req: any, res: Response) => {
 
         // 4. Trigger Push Notification (Only if not queued)
         if (!skipNotification) {
-            // TODO: Trigger actual push notification service
-            console.log(`Push notification sent to ${isWorker ? 'Lawyer' : 'Worker'}`);
+            const recipientId = isWorker ? request.lawyerProfile.lawyer.userId : request.workerId;
+            const senderName = isWorker ? request.worker.fullName || 'Usuario' : request.lawyerProfile.professionalName || 'Abogado';
+
+            // Send async - don't block response
+            import('../services/notificationService').then(({ sendPushNotification }) => {
+                sendPushNotification(
+                    recipientId,
+                    'Nuevo Mensaje',
+                    `${senderName}: ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+                    { requestId, type: 'chat_message' }
+                );
+            });
+            console.log(`Push notification triggered to ${isWorker ? 'Lawyer' : 'Worker'} (${recipientId})`);
         }
 
         res.json({

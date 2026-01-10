@@ -14,6 +14,7 @@ model User {
   fullName      String?
   role          String    @default("worker") // 'worker', 'lawyer', 'admin', 'supervisor', 'accountant'
   createdAt     DateTime  @default(now())
+  pushToken     String?  // Expo Push Token for Notifications
   
   // Payment Gateway Preferences (Dual-Gateway System)
   preferredGateway      String?  // 'stripe' | 'mercadopago'

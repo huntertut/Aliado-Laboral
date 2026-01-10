@@ -20,6 +20,7 @@ import chatRoutes from './routes/chatRoutes';
 import vaultRoutes from './routes/vaultRoutes';
 import newsRoutes from './routes/newsRoutes';
 import pymeRoutes from './routes/pymeRoutes';
+import devRoutes from './routes/devRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
