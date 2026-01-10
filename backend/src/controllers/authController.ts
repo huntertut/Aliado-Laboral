@@ -201,7 +201,7 @@ export const socialLogin = async (req: Request, res: Response) => {
             const subLevel = role === 'pyme' ? 'basic' : 'none';
 
             // Create User Transaction
-            user = await prisma.$transaction(async (tx) => {
+            user = (await prisma.$transaction(async (tx) => {
                 // Create Firebase Mapping
                 /* Note: Ideally we should link to UserRole table, but given current constraints we focus on User table first */
 
@@ -254,7 +254,11 @@ export const socialLogin = async (req: Request, res: Response) => {
                 }
 
                 return newUser;
-            });
+            })) as any; // Cast to any to avoid type mismatch with 'include' definition
+        }
+
+        if (!user) {
+            return res.status(500).json({ error: 'Failed to process user' });
         }
 
         // Existing User: Return token and status
