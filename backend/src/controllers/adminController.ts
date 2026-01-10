@@ -75,7 +75,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             where: {
                 status: 'accepted',
                 bothPaymentsSucceeded: true,
-                updatedAt: { gte: oneDayAgo }
+                acceptedAt: { gte: oneDayAgo }
             }
         });
 
