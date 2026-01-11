@@ -305,3 +305,24 @@ export const updateProfile = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to update profile' });
     }
 };
+
+export const updatePushToken = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.id;
+        const { pushToken } = req.body;
+
+        if (!pushToken) {
+            return res.status(400).json({ error: 'Push token is required' });
+        }
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { pushToken }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Update Push Token Error:', error);
+        res.status(500).json({ error: 'Failed to update push token' });
+    }
+};

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
+import { admin } from '../config/firebase';
+
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
@@ -24,9 +26,25 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
         const results = [];
 
         for (const u of USERS) {
+            // 1. Ensure Firebase User Exists
+            try {
+                await admin.auth().getUserByEmail(u.email);
+                // If no error, user exists
+            } catch (e: any) {
+                if (e.code === 'auth/user-not-found') {
+                    await admin.auth().createUser({
+                        email: u.email,
+                        password: u.password,
+                        displayName: u.name,
+                        emailVerified: true
+                    });
+                    results.push(`Firebase Created: ${u.email}`);
+                }
+            }
+
             const exists = await prisma.user.findUnique({ where: { email: u.email } });
             if (exists) {
-                results.push(`Skipped: ${u.email} (Exists)`);
+                results.push(`DB Skipped: ${u.email} (Exists)`);
                 continue;
             }
 
