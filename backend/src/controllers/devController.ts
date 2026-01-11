@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
-import { admin } from '../config/firebase';
+import admin from '../config/firebase';
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
