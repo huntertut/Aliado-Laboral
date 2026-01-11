@@ -60,9 +60,7 @@ app.use('/vault', vaultRoutes);
 app.use('/news', newsRoutes);
 app.use('/pyme-profile', pymeRoutes);
 
-// TEMPORARY DEV ENDPOINT - Remove in production
-const devController = require('./controllers/devController');
-app.post('/dev/update-plan', devController.updateUserPlan);
+app.use('/api/dev', devRoutes);
 
 app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`Server running on port ${PORT} and listening on all interfaces (0.0.0.0)`);
