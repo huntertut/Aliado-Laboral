@@ -109,6 +109,18 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                         }
                     });
                 }
+
+                // IMPORTANT: Create UserRole mapping for Auth Middleware
+                const fbUser = await admin.auth().getUserByEmail(u.email);
+                await tx.userRole.create({
+                    data: {
+                        firebaseUid: fbUser.uid,
+                        role: u.role,
+                        email: u.email,
+                        fullName: u.name,
+                        userId: user.id
+                    }
+                });
             });
             results.push(`Created: ${u.email}`);
         }
