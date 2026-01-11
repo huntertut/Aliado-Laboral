@@ -42,87 +42,98 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                 }
             }
 
-            const exists = await prisma.user.findUnique({ where: { email: u.email } });
-            if (exists) {
-                results.push(`DB Skipped: ${u.email} (Exists)`);
-                continue;
+            let userId = '';
+
+            const existingUser = await prisma.user.findUnique({ where: { email: u.email } });
+
+            if (existingUser) {
+                userId = existingUser.id;
+                results.push(`DB User Exists: ${u.email}`);
+            } else {
+                // User doesn't exist, Create everything
+                const passwordHash = await bcrypt.hash(u.password, SALT_ROUNDS);
+
+                await prisma.$transaction(async (tx) => {
+                    const user = await tx.user.create({
+                        data: {
+                            email: u.email,
+                            passwordHash,
+                            fullName: u.name,
+                            role: u.role,
+                            plan: u.plan,
+                            subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic',
+                            profileStatus: 'active'
+                        }
+                    });
+                    userId = user.id;
+
+                    if (u.role === 'lawyer') {
+                        const lawyer = await tx.lawyer.create({
+                            data: {
+                                userId: user.id,
+                                licenseNumber: 'DEMO_' + Math.floor(Math.random() * 10000),
+                                isVerified: true,
+                                specialty: 'Laboral',
+                                professionalName: u.name,
+                                acceptsPymeClients: u.plan === 'pro'
+                            }
+                        });
+                        await tx.lawyerProfile.create({ data: { lawyerId: lawyer.id } });
+                        await tx.lawyerSubscription.create({
+                            data: {
+                                lawyerId: lawyer.id,
+                                plan: u.plan,
+                                status: 'active',
+                                amount: u.plan === 'pro' ? 299 : 99,
+                                autoRenew: true
+                            }
+                        });
+                    }
+
+                    if (u.role === 'pyme') {
+                        // @ts-ignore
+                        await tx.pymeProfile.create({
+                            data: {
+                                userId: user.id,
+                                razonSocial: u.name,
+                                industry: 'Comercio',
+                                riskScore: 85
+                            }
+                        });
+                    }
+
+                    if (u.role === 'worker') {
+                        await tx.workerSubscription.create({
+                            data: {
+                                userId: user.id,
+                                status: u.plan === 'pro' ? 'active' : 'inactive',
+                                amount: 29.00,
+                                autoRenew: false
+                            }
+                        });
+                    }
+                });
+                results.push(`Created DB User: ${u.email}`);
             }
 
-            const passwordHash = await bcrypt.hash(u.password, SALT_ROUNDS);
-
-            await prisma.$transaction(async (tx) => {
-                const user = await tx.user.create({
-                    data: {
-                        email: u.email,
-                        passwordHash,
-                        fullName: u.name,
-                        role: u.role,
-                        plan: u.plan,
-                        subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic',
-                        // @ts-ignore
-                        profileStatus: 'active'
-                    }
-                });
-
-                if (u.role === 'lawyer') {
-                    const lawyer = await tx.lawyer.create({
-                        data: {
-                            userId: user.id,
-                            licenseNumber: 'DEMO_' + Math.floor(Math.random() * 10000),
-                            isVerified: true,
-                            specialty: 'Laboral',
-                            professionalName: u.name,
-                            acceptsPymeClients: u.plan === 'pro'
-                        }
-                    });
-                    await tx.lawyerProfile.create({ data: { lawyerId: lawyer.id } });
-                    await tx.lawyerSubscription.create({
-                        data: {
-                            lawyerId: lawyer.id,
-                            plan: u.plan,
-                            status: 'active',
-                            amount: u.plan === 'pro' ? 299 : 99,
-                            autoRenew: true
-                        }
-                    });
-                }
-
-                if (u.role === 'pyme') {
-                    // @ts-ignore
-                    await tx.pymeProfile.create({
-                        data: {
-                            userId: user.id,
-                            razonSocial: u.name,
-                            industry: 'Comercio',
-                            riskScore: 85
-                        }
-                    });
-                }
-
-                if (u.role === 'worker') {
-                    await tx.workerSubscription.create({
-                        data: {
-                            userId: user.id,
-                            status: u.plan === 'pro' ? 'active' : 'inactive',
-                            amount: 29.00,
-                            autoRenew: false
-                        }
-                    });
-                }
-
-                // IMPORTANT: Create UserRole mapping for Auth Middleware
+            // ALWAYS Ensure UserRole Exists (Repair Logic)
+            if (userId) {
                 const fbUser = await admin.auth().getUserByEmail(u.email);
-                await tx.userRole.create({
-                    data: {
-                        firebaseUid: fbUser.uid,
-                        role: u.role,
-                        email: u.email,
-                        fullName: u.name,
-                        userId: user.id
-                    }
-                });
-            });
-            results.push(`Created: ${u.email}`);
+                const roleExists = await prisma.userRole.findUnique({ where: { firebaseUid: fbUser.uid } });
+
+                if (!roleExists) {
+                    await prisma.userRole.create({
+                        data: {
+                            firebaseUid: fbUser.uid,
+                            role: u.role,
+                            email: u.email,
+                            fullName: u.name,
+                            userId: userId
+                        }
+                    });
+                    results.push(`Repaired UserRole for: ${u.email}`);
+                }
+            }
         }
 
         res.json({ message: 'Seeding completed', results });
