@@ -129,16 +129,29 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
                 });
             }
 
-            // 2. Create the missing UserRole
-            await prisma.userRole.create({
-                data: {
-                    firebaseUid: firebaseUid,
-                    userId: finalUserId,
-                    role: finalRole,
-                    email: email,
-                    fullName: decodedToken.name || 'Usuario'
-                }
+            // 2. Check for existing UserRole by UserId to avoid Unique Constraint violation
+            const existingRole = await prisma.userRole.findUnique({
+                where: { userId: finalUserId }
             });
+
+            if (existingRole) {
+                console.log(`[Auth] Existing UserRole found for User ${finalUserId}. Updating with new Firebase UID...`);
+                await prisma.userRole.update({
+                    where: { id: existingRole.id },
+                    data: { firebaseUid: firebaseUid }
+                });
+            } else {
+                console.log(`[Auth] No UserRole found. Creating new mapping...`);
+                await prisma.userRole.create({
+                    data: {
+                        firebaseUid: firebaseUid,
+                        userId: finalUserId,
+                        role: finalRole,
+                        email: email,
+                        fullName: decodedToken.name || 'Usuario'
+                    }
+                });
+            }
 
             console.log(`[Auth] Self-Healing Successful for ${email}`);
 
