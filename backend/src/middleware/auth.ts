@@ -84,10 +84,72 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             };
             return next();
         } else {
-            // User exists in Firebase but not in our SQL DB? 
-            // This shouldn't happen if flow is correct, but returning 403 is safe.
-            console.warn(`User with valid Firebase Token (${firebaseUid}) not found in DB.`);
-            return res.sendStatus(403);
+            // Self-Healing Logic: User exists in Firebase but not in DB mapping (UserRole).
+            // Instead of blocking (403), we automatically repair the relationship.
+            console.log(`[Auth] Self-Healing: Missing UserRole for uid ${firebaseUid}. Attempting repair...`);
+
+            const email = decodedToken.email;
+            if (!email) {
+                console.error('[Auth] Token missing email, cannot repair.');
+                return res.sendStatus(403);
+            }
+
+            let finalUserId, finalRole = 'worker'; // Default to worker if unknown
+
+            // 1. Check if User exists by email
+            const existingUser = await prisma.user.findUnique({ where: { email } });
+
+            if (existingUser) {
+                console.log(`[Auth] Found existing User ${existingUser.id}, linking...`);
+                finalUserId = existingUser.id;
+                finalRole = existingUser.role;
+            } else {
+                console.log(`[Auth] User not found. Creating new Worker account for ${email}...`);
+                // Create minimal User record
+                const newUser = await prisma.user.create({
+                    data: {
+                        email,
+                        fullName: decodedToken.name || 'Usuario Nuevo',
+                        role: 'worker', // Default role for auto-created users
+                        plan: 'free',
+                        passwordHash: 'firebase_managed',
+                        profileStatus: 'active'
+                    }
+                });
+                finalUserId = newUser.id;
+
+                // Create Worker subscription
+                await prisma.workerSubscription.create({
+                    data: {
+                        userId: newUser.id,
+                        status: 'inactive',
+                        amount: 0.0,
+                        autoRenew: false
+                    }
+                });
+            }
+
+            // 2. Create the missing UserRole
+            await prisma.userRole.create({
+                data: {
+                    firebaseUid: firebaseUid,
+                    userId: finalUserId,
+                    role: finalRole,
+                    email: email,
+                    fullName: decodedToken.name || 'Usuario'
+                }
+            });
+
+            console.log(`[Auth] Self-Healing Successful for ${email}`);
+
+            // 3. Set req.user and proceed
+            req.user = {
+                id: finalUserId,
+                email: email,
+                role: finalRole,
+                firebaseUid: firebaseUid
+            };
+            return next();
         }
 
     } catch (error) {
