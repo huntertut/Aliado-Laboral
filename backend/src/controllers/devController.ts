@@ -118,20 +118,46 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
 
             // ALWAYS Ensure UserRole Exists (Repair Logic)
             if (userId) {
-                const fbUser = await admin.auth().getUserByEmail(u.email);
-                const roleExists = await prisma.userRole.findUnique({ where: { firebaseUid: fbUser.uid } });
+                try {
+                    const fbUser = await admin.auth().getUserByEmail(u.email);
 
-                if (!roleExists) {
-                    await prisma.userRole.create({
-                        data: {
-                            firebaseUid: fbUser.uid,
-                            role: u.role,
-                            email: u.email,
-                            fullName: u.name,
-                            userId: userId
+                    // 1. Check if UserRole exists by Firebase UID
+                    const roleByUid = await prisma.userRole.findUnique({ where: { firebaseUid: fbUser.uid } });
+
+                    // 2. Check if UserRole exists by DB User ID
+                    const roleByUserId = await prisma.userRole.findUnique({ where: { userId: userId } });
+
+                    if (roleByUid) {
+                        // Role exists for this UID. Ensure it points to correct User ID.
+                        if (roleByUid.userId !== userId) {
+                            await prisma.userRole.update({
+                                where: { id: roleByUid.id },
+                                data: { userId: userId }
+                            });
+                            results.push(`Repaired UserRole (Link Updated) for: ${u.email}`);
                         }
-                    });
-                    results.push(`Repaired UserRole for: ${u.email}`);
+                    } else if (roleByUserId) {
+                        // Role exists for this User ID (but different UID). Update UID.
+                        await prisma.userRole.update({
+                            where: { id: roleByUserId.id },
+                            data: { firebaseUid: fbUser.uid }
+                        });
+                        results.push(`Repaired UserRole (UID Updated) for: ${u.email}`);
+                    } else {
+                        // Neither exists. Safe to create.
+                        await prisma.userRole.create({
+                            data: {
+                                firebaseUid: fbUser.uid,
+                                role: u.role,
+                                email: u.email,
+                                fullName: u.name,
+                                userId: userId
+                            }
+                        });
+                        results.push(`Created UserRole for: ${u.email}`);
+                    }
+                } catch (e: any) {
+                    results.push(`Error checking UserRole for ${u.email}: ${e.message}`);
                 }
             }
         }
