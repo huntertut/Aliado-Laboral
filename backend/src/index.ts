@@ -65,6 +65,6 @@ app.use('/pyme-profile', pymeRoutes);
 
 app.use('/api/dev', devRoutes);
 
-app.listen(port, '0.0.0.0', () => {
+app.listen(Number(port), '0.0.0.0', () => {
     console.log(`Server running on port ${port} and listening on all interfaces (0.0.0.0)`);
 });
