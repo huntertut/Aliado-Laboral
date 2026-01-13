@@ -23,7 +23,10 @@ import pymeRoutes from './routes/pymeRoutes';
 import devRoutes from './routes/devRoutes';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
+
+// Force Redeploy: Triggering new build to load DATABASE_URL
+console.log('Starting Derechos Laborales Backend...');
 
 // DEBUG LOGGER (Moved to Top)
 app.use((req, res, next) => {
