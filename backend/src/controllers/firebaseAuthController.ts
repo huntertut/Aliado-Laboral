@@ -65,17 +65,29 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 });
             }
 
-            // 4. Create UserRole linking to User
-            console.log(`[verifyFirebaseToken] Creating UserRole for ${email}`);
-            userRole = await prisma.userRole.create({
-                data: {
-                    firebaseUid,
-                    role: existingUser.role,
-                    email: existingUser.email,
-                    fullName: existingUser.fullName,
-                    userId: existingUser.id
-                }
+            // 4. Create or Update UserRole linking to User
+            const existingRoleByUserId = await prisma.userRole.findUnique({
+                where: { userId: existingUser.id }
             });
+
+            if (existingRoleByUserId) {
+                console.log(`[verifyFirebaseToken] Updating existing UserRole for ${email} with new UID`);
+                userRole = await prisma.userRole.update({
+                    where: { id: existingRoleByUserId.id },
+                    data: { firebaseUid }
+                });
+            } else {
+                console.log(`[verifyFirebaseToken] Creating new UserRole for ${email}`);
+                userRole = await prisma.userRole.create({
+                    data: {
+                        firebaseUid,
+                        role: existingUser.role,
+                        email: existingUser.email,
+                        fullName: existingUser.fullName,
+                        userId: existingUser.id
+                    }
+                });
+            }
 
             // Continue to fetching logic...
         }
