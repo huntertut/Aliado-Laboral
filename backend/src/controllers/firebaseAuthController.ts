@@ -176,7 +176,7 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
         }
 
         res.status(500).json({
-            error: 'Error al verificar token',
+            error: `DEBUG (Verificar Token): ${error.message} | Code: ${error.code || 'N/A'}`,
             details: error.message,
             code: error.code || 'UNKNOWN'
         });
