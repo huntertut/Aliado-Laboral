@@ -175,7 +175,11 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Token inválido' });
         }
 
-        res.status(500).json({ error: 'Error al verificar token' });
+        res.status(500).json({
+            error: 'Error al verificar token',
+            details: error.message,
+            code: error.code || 'UNKNOWN'
+        });
     }
 };
 
