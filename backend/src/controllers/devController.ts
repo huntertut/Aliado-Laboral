@@ -91,21 +91,29 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                     create: { lawyerId: lawyer.id }
                 });
 
+                const now = new Date();
+                const nextMonth = new Date();
+                nextMonth.setDate(now.getDate() + 30);
+
                 await prisma.lawyerSubscription.upsert({
                     where: { lawyerId: lawyer.id },
                     update: {
                         plan: u.plan,
-                        status: 'active'
+                        status: 'active',
+                        startDate: now,
+                        endDate: nextMonth
                     },
                     create: {
                         lawyerId: lawyer.id,
                         plan: u.plan,
                         status: 'active',
                         amount: u.plan === 'pro' ? 299 : 99,
-                        autoRenew: true
+                        autoRenew: true,
+                        startDate: now,
+                        endDate: nextMonth
                     }
                 });
-                results.push(`Forced Lawyer Profile & Sub for: ${u.email}`);
+                results.push(`Forced Lawyer Profile & Sub (Dates Fixed) for: ${u.email}`);
             }
 
             if (u.role === 'pyme') {
