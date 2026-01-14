@@ -1,6 +1,6 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { getPendingLawyers, verifyLawyer, getSupervisorStats } from '../controllers/supervisorController';
+import { getPendingLawyers, verifyLawyer, rejectLawyer, getSupervisorStats } from '../controllers/supervisorController';
 
 const router = express.Router();
 
@@ -10,6 +10,7 @@ const router = express.Router();
 
 router.get('/pending-lawyers', authMiddleware, getPendingLawyers);
 router.put('/verify-lawyer/:id', authMiddleware, verifyLawyer);
+router.delete('/reject-lawyer/:id', authMiddleware, rejectLawyer);
 router.get('/stats', authMiddleware, getSupervisorStats);
 
 export default router;
