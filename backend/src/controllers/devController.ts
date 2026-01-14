@@ -50,9 +50,11 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                 userId = existingUser.id;
                 results.push(`DB User Exists: ${u.email}`);
 
-                // REPAIR LOGIC: Check if profile data exists, if not, create it.
+                // REPAIR LOGIC: Aggressively check and fix missing profiles
                 if (u.role === 'lawyer') {
+                    // Check if Lawyer Base Record exists
                     const existingLawyer = await prisma.lawyer.findFirst({ where: { userId } });
+
                     if (!existingLawyer) {
                         const lawyer = await prisma.lawyer.create({
                             data: {
@@ -64,6 +66,7 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                                 acceptsPymeClients: u.plan === 'pro'
                             }
                         });
+                        // Create dependencies
                         await prisma.lawyerProfile.create({ data: { lawyerId: lawyer.id } });
                         await prisma.lawyerSubscription.create({
                             data: {
@@ -74,7 +77,22 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                                 autoRenew: true
                             }
                         });
-                        results.push(`Repaired Lawyer Profile for: ${u.email}`);
+                        results.push(`Repaired Lawyer Profile (Created Full Stack) for: ${u.email}`);
+                    } else {
+                        // Lawyer exists, checks if Subscription exists
+                        const sub = await prisma.lawyerSubscription.findUnique({ where: { lawyerId: existingLawyer.id } });
+                        if (!sub) {
+                            await prisma.lawyerSubscription.create({
+                                data: {
+                                    lawyerId: existingLawyer.id,
+                                    plan: u.plan,
+                                    status: 'active',
+                                    amount: u.plan === 'pro' ? 299 : 99,
+                                    autoRenew: true
+                                }
+                            });
+                            results.push(`Repaired Lawyer Subscription (Missing Sub) for: ${u.email}`);
+                        }
                     }
                 }
 
@@ -87,17 +105,16 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                                 userId,
                                 razonSocial: u.name,
                                 industry: 'Comercio',
-                                riskScore: 85,
                                 riskScore: 85
                             }
                         });
-                        // Ensure User has correct subscription level
-                        await prisma.user.update({
-                            where: { id: userId },
-                            data: { subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic' }
-                        });
                         results.push(`Repaired Pyme Profile for: ${u.email}`);
                     }
+                    // Ensure User has correct subscription level
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: { subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic' }
+                    });
                 }
             } else {
                 // User doesn't exist, Create everything
