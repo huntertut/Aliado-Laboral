@@ -88,8 +88,13 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                                 razonSocial: u.name,
                                 industry: 'Comercio',
                                 riskScore: 85,
-                                subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic'
+                                riskScore: 85
                             }
+                        });
+                        // Ensure User has correct subscription level
+                        await prisma.user.update({
+                            where: { id: userId },
+                            data: { subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic' }
                         });
                         results.push(`Repaired Pyme Profile for: ${u.email}`);
                     }
