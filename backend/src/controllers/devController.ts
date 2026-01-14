@@ -49,6 +49,51 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
             if (existingUser) {
                 userId = existingUser.id;
                 results.push(`DB User Exists: ${u.email}`);
+
+                // REPAIR LOGIC: Check if profile data exists, if not, create it.
+                if (u.role === 'lawyer') {
+                    const existingLawyer = await prisma.lawyer.findFirst({ where: { userId } });
+                    if (!existingLawyer) {
+                        const lawyer = await prisma.lawyer.create({
+                            data: {
+                                userId,
+                                licenseNumber: 'DEMO_' + Math.floor(Math.random() * 10000),
+                                isVerified: true,
+                                specialty: 'Laboral',
+                                professionalName: u.name,
+                                acceptsPymeClients: u.plan === 'pro'
+                            }
+                        });
+                        await prisma.lawyerProfile.create({ data: { lawyerId: lawyer.id } });
+                        await prisma.lawyerSubscription.create({
+                            data: {
+                                lawyerId: lawyer.id,
+                                plan: u.plan,
+                                status: 'active',
+                                amount: u.plan === 'pro' ? 299 : 99,
+                                autoRenew: true
+                            }
+                        });
+                        results.push(`Repaired Lawyer Profile for: ${u.email}`);
+                    }
+                }
+
+                if (u.role === 'pyme') {
+                    const existingPyme = await prisma.pymeProfile.findUnique({ where: { userId } });
+                    if (!existingPyme) {
+                        // @ts-ignore
+                        await prisma.pymeProfile.create({
+                            data: {
+                                userId,
+                                razonSocial: u.name,
+                                industry: 'Comercio',
+                                riskScore: 85,
+                                subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic'
+                            }
+                        });
+                        results.push(`Repaired Pyme Profile for: ${u.email}`);
+                    }
+                }
             } else {
                 // User doesn't exist, Create everything
                 const passwordHash = await bcrypt.hash(u.password, SALT_ROUNDS);
