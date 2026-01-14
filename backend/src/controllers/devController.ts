@@ -50,7 +50,7 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                 update: {
                     role: u.role,
                     plan: u.plan,
-                    subscriptionLevel: u.subscriptionLevel || (u.plan === 'pro' ? 'premium' : 'basic'),
+                    subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic',
                     fullName: u.name,
                     profileStatus: 'active'
                 },
@@ -60,7 +60,7 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                     fullName: u.name,
                     role: u.role,
                     plan: u.plan,
-                    subscriptionLevel: u.subscriptionLevel || (u.plan === 'pro' ? 'premium' : 'basic'),
+                    subscriptionLevel: u.plan === 'pro' ? 'premium' : 'basic',
                     profileStatus: 'active'
                 }
             });
