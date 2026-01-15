@@ -1,7 +1,7 @@
-
 import express from 'express';
 import { getPublicConfig, updateConfig } from '../controllers/systemController';
-import { authenticateToken, isAdmin } from '../middleware/authMiddleware';
+import { authMiddleware } from '../middleware/auth';
+import { adminMiddleware } from '../middleware/adminMiddleware';
 
 const router = express.Router();
 
@@ -9,6 +9,6 @@ const router = express.Router();
 router.get('/public', getPublicConfig);
 
 // Admin endpoint (protected)
-router.put('/update', authenticateToken, isAdmin, updateConfig);
+router.put('/update', authMiddleware, adminMiddleware, updateConfig);
 
 export default router;
