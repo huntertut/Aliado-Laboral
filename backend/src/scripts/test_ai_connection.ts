@@ -31,7 +31,7 @@ const runTest = async () => {
         log('Initializing GoogleGenerativeAI...');
         const genAI = new GoogleGenerativeAI(key);
 
-        const modelName = 'gemini-1.5-flash';
+        const modelName = 'gemini-1.5-pro';
         log(`Getting model: ${modelName}`);
         const model = genAI.getGenerativeModel({ model: modelName });
 
