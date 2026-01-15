@@ -119,6 +119,22 @@ const AdminDashboardScreen = ({ navigation }: any) => {
                 </View>
 
                 {/* Action Items */}
+                <TouchableOpacity
+                    style={styles.promoButton}
+                    onPress={() => navigation.navigate('Promociones')}
+                >
+                    <LinearGradient
+                        colors={[theme.colors.secondary, '#e91e63']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.promoGradient}
+                    >
+                        <Ionicons name="pricetags" size={24} color="#fff" />
+                        <Text style={styles.promoText}>Gestionar Promociones & Ofertas</Text>
+                        <Ionicons name="arrow-forward" size={24} color="#fff" />
+                    </LinearGradient>
+                </TouchableOpacity>
+
                 <Text style={styles.sectionTitle}>Atención Requerida</Text>
 
                 {stats?.actionItems?.pendingLawyers > 0 && (
@@ -351,6 +367,29 @@ const styles = StyleSheet.create({
         width: 8,
         backgroundColor: theme.colors.primary,
         borderRadius: 4,
+    },
+    promoButton: {
+        marginBottom: 20,
+        borderRadius: 15,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#e91e63',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    promoGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 20,
+    },
+    promoText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        flex: 1,
+        marginLeft: 15,
     },
 });
 

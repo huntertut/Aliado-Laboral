@@ -43,7 +43,11 @@ const AdminNavigator = () => {
             })}
         >
             <Tab.Screen name="Dashboard" component={AdminDashboardScreen} />
-            <Tab.Screen name="Promociones" component={AdminPromotionsScreen} />
+            <Tab.Screen
+                name="Promociones"
+                component={AdminPromotionsScreen}
+                options={{ tabBarButton: () => null }}
+            />
             <Tab.Screen name="Usuarios" component={AdminUsersScreen} />
             <Tab.Screen name="Finanzas" component={AdminFinanceScreen} />
             <Tab.Screen name="Casos" component={AdminCasesScreen} />
