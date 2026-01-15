@@ -12,10 +12,24 @@ const LawyerDashboardScreen = () => {
     const [metrics, setMetrics] = useState<any>(null);
     const [subscription, setSubscription] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [promoConfig, setPromoConfig] = useState<any>(null); // NEW
 
     useEffect(() => {
         fetchDashboardData();
+        fetchSystemConfig(); // NEW
     }, []);
+
+    const fetchSystemConfig = async () => {
+        try {
+            const res = await fetch(`${API_URL}/system/public`);
+            if (res.ok) {
+                const data = await res.json();
+                setPromoConfig(data);
+            }
+        } catch (e) {
+            console.warn('Failed to fetch system config', e);
+        }
+    };
 
     const fetchDashboardData = async () => {
         try {
@@ -233,6 +247,31 @@ const LawyerDashboardScreen = () => {
                         </View>
                     </TouchableOpacity>
                 </View>
+
+                {/* PROMO BANNER (Dynamic) */}
+                {promoConfig?.promoActive && !subscription?.hasSubscription && (
+                    <View style={styles.section}>
+                        <LinearGradient
+                            colors={['#FF9800', '#F44336']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.promoBanner}
+                        >
+                            <Ionicons name="gift-outline" size={32} color="#fff" />
+                            <View style={styles.promoContent}>
+                                <Text style={styles.promoTitle}>¡OFERTA ESPECIAL!</Text>
+                                <Text style={styles.promoText}>{promoConfig.bannerText}</Text>
+                                <Text style={styles.promoSubText}>{promoConfig.trialDays} días GRATIS si te suscribes hoy.</Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.promoButton}
+                                onPress={() => navigation.navigate('SubscriptionManagement' as never)}
+                            >
+                                <Text style={styles.promoButtonText}>Reclamar</Text>
+                            </TouchableOpacity>
+                        </LinearGradient>
+                    </View>
+                )}
 
                 {/* Metrics grid */}
                 <View style={styles.section}>
@@ -577,6 +616,50 @@ const styles = StyleSheet.create({
         color: '#95a5a6',
         fontStyle: 'italic',
         marginLeft: 5,
+    },
+    promoBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderRadius: 15,
+        marginBottom: 10,
+        elevation: 4,
+        shadowColor: '#F44336',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    promoContent: {
+        flex: 1,
+        marginLeft: 15,
+    },
+    promoTitle: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginBottom: 2,
+    },
+    promoText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    promoSubText: {
+        color: 'rgba(255,255,255,0.9)',
+        fontSize: 12,
+        fontStyle: 'italic',
+    },
+    promoButton: {
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    promoButtonText: {
+        color: '#F44336',
+        fontWeight: 'bold',
+        fontSize: 12,
     },
 });
 

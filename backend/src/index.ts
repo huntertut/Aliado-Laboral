@@ -20,6 +20,7 @@ import chatRoutes from './routes/chatRoutes';
 import vaultRoutes from './routes/vaultRoutes';
 import newsRoutes from './routes/newsRoutes';
 import pymeRoutes from './routes/pymeRoutes';
+import systemRoutes from './routes/systemRoutes';
 import devRoutes from './routes/devRoutes';
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/chat', chatRoutes);
 app.use('/vault', vaultRoutes);
 app.use('/news', newsRoutes);
 app.use('/pyme-profile', pymeRoutes);
+app.use('/system', systemRoutes);
 
 app.use('/api/dev', devRoutes);
 

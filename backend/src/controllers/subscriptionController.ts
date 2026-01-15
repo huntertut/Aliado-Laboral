@@ -132,17 +132,34 @@ export const upgradeSubscription = async (req: Request, res: Response) => {
                 // Upsert Subscription
                 const existingSub = await tx.lawyerSubscription.findUnique({ where: { lawyerId: lawyer.id } });
 
+                // CHECK FOR DYNAMIC PROMOTIONS FROM SYSTEM CONFIG
+                const promoActiveConfig = await tx.systemConfig.findUnique({ where: { key: 'PROMO_IS_ACTIVE' } });
+                const promoDaysConfig = await tx.systemConfig.findUnique({ where: { key: 'PROMO_LAWYER_TRIAL_DAYS' } });
+
+                const isPromoActive = promoActiveConfig?.value === 'true';
+                const promoDays = parseInt(promoDaysConfig?.value || '0');
+
+                if (isPromoActive && promoDays > 0) {
+                    console.log(`🎁 [Upgrade] Applying Promo: ${promoDays} days free trial.`);
+                    // Override EndDate for Free Trial
+                    const trialEndDate = new Date();
+                    trialEndDate.setDate(trialEndDate.getDate() + promoDays);
+
+                    // Update variables
+                    endDate.setTime(trialEndDate.getTime());
+                }
+
                 if (existingSub) {
                     await tx.lawyerSubscription.update({
                         where: { id: existingSub.id },
                         data: {
                             plan: 'pro',
                             status: 'active',
-                            amount: 299.00,
+                            amount: isPromoActive ? 0.00 : 299.00, // Zero cost for trial entry
                             startDate: new Date(),
                             endDate: endDate,
                             paymentMethod: 'stripe',
-                            lastPaymentId: mockTransactionId
+                            lastPaymentId: mockTransactionId + (isPromoActive ? '_PROMO' : '')
                         }
                     });
                 } else {

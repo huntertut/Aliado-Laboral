@@ -21,6 +21,7 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
             { email: 'lawyer_pro@test.com', role: 'lawyer', plan: 'pro', password: 'password123', name: 'Lic. Roberto Mtz (Pro)' },
             { email: 'pyme_basic@test.com', role: 'pyme', plan: 'basic', password: 'password123', name: 'Tienda La Esquina' },
             { email: 'pyme_premium@test.com', role: 'pyme', plan: 'pro', password: 'password123', name: 'Constructora Elite S.A.' },
+            { email: 'admin@test.com', role: 'admin', plan: 'pro', password: 'password123', name: 'Super Admin' },
         ];
 
         const results = [];

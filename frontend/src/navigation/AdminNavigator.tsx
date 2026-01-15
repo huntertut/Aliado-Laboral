@@ -6,6 +6,7 @@ import AdminUsersScreen from '../screens/admin/AdminUsersScreen';
 import AdminFinanceScreen from '../screens/admin/AdminFinanceScreen';
 import AdminCasesScreen from '../screens/admin/AdminCasesScreen';
 import AdminSecurityScreen from '../screens/admin/AdminSecurityScreen';
+import AdminPromotionsScreen from '../screens/admin/AdminPromotionsScreen';
 import { SupervisorDashboard } from '../modules/supervisor/dashboard/SupervisorDashboard';
 import { theme } from '../theme/colors';
 
@@ -30,6 +31,8 @@ const AdminNavigator = () => {
                         iconName = focused ? 'checkmark-done-circle' : 'checkmark-done-circle-outline';
                     } else if (route.name === 'Seguridad') {
                         iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
+                    } else if (route.name === 'Promociones') {
+                        iconName = focused ? 'pricetag' : 'pricetag-outline';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
@@ -44,6 +47,7 @@ const AdminNavigator = () => {
             <Tab.Screen name="Finanzas" component={AdminFinanceScreen} />
             <Tab.Screen name="Casos" component={AdminCasesScreen} />
             <Tab.Screen name="Verificaciones" component={SupervisorDashboard} />
+            <Tab.Screen name="Promociones" component={AdminPromotionsScreen} />
             <Tab.Screen name="Seguridad" component={AdminSecurityScreen} />
         </Tab.Navigator>
     );
