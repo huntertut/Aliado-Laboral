@@ -39,8 +39,27 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+// --- SECURITY: Rate Limiting ---
+import rateLimit from 'express-rate-limit';
 
+// 1. Global Limiter (100 reqs / 15 min)
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Demasiadas solicitudes, por favor intente más tarde.' }
+});
+app.use(globalLimiter);
 
+// 2. Strict Auth Limiter (10 attempts / hour)
+const authLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 15, // A bit of buffer for legitimate retries
+    message: { error: 'Demasiados intentos de inicio de sesión. Bloqueado por 1 hora.' }
+});
+app.use('/auth/', authLimiter);
+// -------------------------------
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend is reachable', ip: req.ip });
