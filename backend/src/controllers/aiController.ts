@@ -151,9 +151,9 @@ export const chatWithAI = async (req: Request, res: Response) => {
 
         const selectedPrompt = PROMPTS[persona as 'elias' | 'veronica'] || PROMPTS.elias;
 
-        // Configurar Modelo Gemini
+        // Configurar Modelo Gemini (Usando gemini-pro por compatibilidad)
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-pro",
             systemInstruction: selectedPrompt,
         });
 
