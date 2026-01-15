@@ -26,6 +26,24 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
 
         const results = [];
 
+        // 1. SEED SYSTEM CONFIG (Promotions)
+        await prisma.systemConfig.upsert({
+            where: { key: 'PROMO_IS_ACTIVE' },
+            update: {}, // Don't overwrite if exists
+            create: { key: 'PROMO_IS_ACTIVE', value: 'false', description: 'Enable/Disable Lawyer Promo' }
+        });
+        await prisma.systemConfig.upsert({
+            where: { key: 'PROMO_LAWYER_TRIAL_DAYS' },
+            update: {},
+            create: { key: 'PROMO_LAWYER_TRIAL_DAYS', value: '30', description: 'Days of free trial' }
+        });
+        await prisma.systemConfig.upsert({
+            where: { key: 'PROMO_BANNER_TEXT' },
+            update: {},
+            create: { key: 'PROMO_BANNER_TEXT', value: '¡Oferta Especial!', description: 'Text to show in banner' }
+        });
+        results.push('Synced System Config');
+
         for (const u of USERS) {
             // 1. Ensure Firebase User Exists
             try {
