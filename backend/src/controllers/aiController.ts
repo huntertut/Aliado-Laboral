@@ -179,7 +179,6 @@ export const chatWithAI = async (req: Request, res: Response) => {
         console.error('Gemini Error:', error);
 
         // 2. Google Quota Handling (429 / 503)
-        // Error message often contains "429" or "quota" inside
         const isQuotaError = error.message?.includes('429') || error.message?.includes('quota') || error.status === 429;
 
         if (isQuotaError) {
@@ -191,8 +190,12 @@ export const chatWithAI = async (req: Request, res: Response) => {
             });
         }
 
+        // Diagnostic information for 500 errors
+        const keyStatus = process.env.GOOGLE_API_KEY ? `Present (Length: ${process.env.GOOGLE_API_KEY.length})` : 'MISSING';
+
         res.status(500).json({
-            error: 'Error al procesar la solicitud con Gemini',
+            error: 'Error interno del servicio de IA',
+            message: `Error técnico: ${error.message || 'Desconocido'}. Estado de Llave: ${keyStatus}.`,
             details: error.message
         });
     }
