@@ -2,6 +2,7 @@ import Parser from 'rss-parser';
 import cron from 'node-cron';
 import * as newsAIService from './newsAIService';
 import { PrismaClient } from '@prisma/client';
+import { sendPushNotification } from './notificationService';
 
 const prisma = new PrismaClient();
 const parser = new Parser();
@@ -96,6 +97,37 @@ export const fetchLaborNews = async () => {
 
         await prisma.legalNews.create({ data: finalData });
         console.log('✅ [Scheduler] News saved to DB (AI or Fallback).');
+
+        // --- BROADCAST NOTIFICATION ---
+        try {
+            // Fetch users with push tokens (Optimization: Select only needed fields)
+            const users = await prisma.user.findMany({
+                where: { pushToken: { not: null } },
+                select: { id: true, pushToken: true }
+            });
+
+            console.log(`📢 [Scheduler] Broadcasting news to ${users.length} users...`);
+
+            const notificationTitle = "🗞️ Nueva Noticia Laboral";
+            const notificationBody = finalData.titleClickable || "Actualización importante sobre la LFT.";
+
+            // Send in parallel (or use the chunk logic inside notificationService if optimized)
+            // For now, simple loop using the service's single-send or we could refactor service to batch.
+            // Using a simple loop for safety/simplicity in this fix.
+
+            let sentCount = 0;
+            for (const user of users) {
+                // Avoiding await inside loop to not block, but for mass push ideally use chunks.
+                // Since sendPushNotification is async, we can fire and forget or gather promises.
+                // Let's gather promises for better robustness.
+                sendPushNotification(user.id, notificationTitle, notificationBody, { type: 'news', newsId: topItem.link });
+                sentCount++;
+            }
+            console.log(`🔔 [Scheduler] Broadcasted to ${sentCount} users.`);
+
+        } catch (notifyError) {
+            console.error('⚠️ [Scheduler] Failed to broadcast notifications:', notifyError);
+        }
 
     } catch (error) {
         console.error('❌ [Scheduler] Error fetching RSS:', error);
