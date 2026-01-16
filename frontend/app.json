@@ -34,11 +34,6 @@
     "web": {
       "favicon": "./assets/images/logo.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "fd8db100-267c-4c03-89c8-f91c8960f1de"
-      }
-    },
     "plugins": [
       "expo-secure-store",
       "expo-local-authentication"
@@ -48,6 +43,11 @@
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "edbaa94d-8deb-4e42-9eae-b9d597dcf595"
+      }
     }
   }
 }

@@ -158,6 +158,30 @@ export const seedProductionUsers = async (req: Request, res: Response) => {
                 results.push(`Synced Pyme Profile for: ${u.email}`);
             }
 
+            // WORKER SUBSCRIPTION FIX
+            if (u.role === 'worker' && u.plan === 'pro') {
+                const now = new Date();
+                const nextMonth = new Date();
+                nextMonth.setDate(now.getDate() + 30);
+
+                await prisma.workerSubscription.upsert({
+                    where: { userId: userId },
+                    update: {
+                        status: 'active',
+                        endDate: nextMonth
+                    },
+                    create: {
+                        userId: userId,
+                        status: 'active',
+                        amount: 29.00,
+                        startDate: now,
+                        endDate: nextMonth,
+                        autoRenew: true
+                    }
+                });
+                results.push(`Fixed Worker Subscription for: ${u.email}`);
+            }
+
             // Existing UserRole Link Logic (Keep as is)
 
 

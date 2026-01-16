@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../theme/colors';
+import { theme } from '../../theme/colors';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../../config/constants';
+import { API_URL } from '../../config/constants';
 
 const AdminPromotionsScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(true);

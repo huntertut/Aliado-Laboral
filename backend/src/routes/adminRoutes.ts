@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { getDashboardStats, getLawyers, verifyLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData } from '../controllers/adminController';
+import { getDashboardStats, getLawyers, verifyLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription } from '../controllers/adminController';
 
 const router = express.Router();
 
@@ -16,6 +16,7 @@ router.get('/lawyers', getLawyers);
 router.put('/lawyers/:lawyerId/verify', verifyLawyer);
 router.get('/workers', getWorkers);
 router.get('/pymes', getPymes);
+router.put('/users/:userId/subscription', updateUserSubscription);
 
 // Financials
 router.get('/financials/stats', getFinancialStats);

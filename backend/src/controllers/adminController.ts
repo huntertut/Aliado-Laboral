@@ -432,3 +432,95 @@ export const purgeCaseData = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al purgar los datos' });
     }
 };
+
+/**
+ * Update User Subscription (Admin Manual Override)
+ */
+export const updateUserSubscription = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        const { plan, role } = req.body; // plan: 'free' | 'premium' (worker) OR 'basic' | 'pro' (lawyer/pyme)
+
+        console.log(`[Admin] Updating subscription for User ${userId} (${role}) to ${plan}`);
+
+        // 1. Update User Record
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                plan: plan,
+                subscriptionLevel: (plan === 'pro' || plan === 'premium') ? 'premium' : 'basic'
+            }
+        });
+
+        const now = new Date();
+        const nextMonth = new Date();
+        nextMonth.setDate(now.getDate() + 30);
+
+        // 2. Update Role Specific Tables
+        if (role === 'worker') {
+            if (plan === 'premium' || plan === 'pro') {
+                await prisma.workerSubscription.upsert({
+                    where: { userId: userId },
+                    update: { status: 'active', endDate: nextMonth }, // Reactivate if exists
+                    create: {
+                        userId: userId,
+                        status: 'active',
+                        amount: 29.00,
+                        startDate: now,
+                        endDate: nextMonth,
+                        autoRenew: true
+                    }
+                });
+            } else {
+                // Downgrade
+                await prisma.workerSubscription.updateMany({
+                    where: { userId: userId },
+                    data: { status: 'inactive' }
+                });
+            }
+        } else if (role === 'lawyer') {
+            const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
+            if (lawyer) {
+                if (plan === 'pro') {
+                    await prisma.lawyerSubscription.upsert({
+                        where: { lawyerId: lawyer.id },
+                        update: { status: 'active', plan: 'pro', endDate: nextMonth },
+                        create: {
+                            lawyerId: lawyer.id,
+                            status: 'active',
+                            plan: 'pro',
+                            amount: 299.00,
+                            startDate: now,
+                            endDate: nextMonth
+                        }
+                    });
+                    // Also update lawyer table flags
+                    await prisma.lawyer.update({
+                        where: { id: lawyer.id },
+                        data: { acceptsPymeClients: true }
+                    });
+
+                } else {
+                    // Downgrade
+                    await prisma.lawyerSubscription.updateMany({
+                        where: { lawyerId: lawyer.id },
+                        data: { status: 'inactive', plan: 'basic' }
+                    });
+                    // Remove privileges
+                    await prisma.lawyer.update({
+                        where: { id: lawyer.id },
+                        data: { acceptsPymeClients: false }
+                    });
+                }
+            }
+        } else if (role === 'pyme') {
+            // For Pymes, we just rely on User.subscriptionLevel for now, but good to keep consistent
+            // Future: PymeSubscription table
+        }
+
+        res.json({ success: true, message: `Plan actualizado a ${plan}`, user });
+    } catch (error) {
+        console.error('Update subscription error:', error);
+        res.status(500).json({ error: 'Error al actualizar suscripción' });
+    }
+};

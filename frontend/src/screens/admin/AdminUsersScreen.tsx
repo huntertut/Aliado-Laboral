@@ -125,6 +125,37 @@ const AdminUsersScreen = () => {
         </View>
     );
 
+    const handleUpdatePlan = async (userId: string, role: string, currentPlan: string, name: string) => {
+        const isPro = currentPlan === 'premium' || currentPlan === 'pro';
+        const targetPlan = isPro ? (role === 'worker' ? 'free' : 'basic') : (role === 'worker' ? 'premium' : 'pro');
+
+        Alert.alert(
+            'Cambiar Plan de Usuario',
+            `¿Deseas cambiar el plan de ${name} a ${targetPlan.toUpperCase()}?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Confirmar',
+                    onPress: async () => {
+                        try {
+                            const token = await AsyncStorage.getItem('authToken');
+                            await axios.put(
+                                `${API_URL}/admin/users/${userId}/subscription`,
+                                { plan: targetPlan, role },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            Alert.alert('Éxito', `Plan actualizado correctamente.`);
+                            fetchData(); // Reload list
+                        } catch (error) {
+                            console.error('Update plan error:', error);
+                            Alert.alert('Error', 'No se pudo actualizar el plan.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const renderLawyerItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -142,14 +173,23 @@ const AdminUsersScreen = () => {
 
             <View style={styles.cardFooter}>
                 <Text style={styles.date}>Reg: {new Date(item.createdAt).toLocaleDateString()}</Text>
-                <TouchableOpacity
-                    style={[styles.actionButton, { backgroundColor: item.isVerified ? '#ffebee' : '#e8f5e9' }]}
-                    onPress={() => handleVerifyLawyer(item.id, item.isVerified, item.fullName)}
-                >
-                    <Text style={[styles.actionText, { color: item.isVerified ? '#c62828' : '#2e7d32' }]}>
-                        {item.isVerified ? 'Suspender' : 'Aprobar'}
-                    </Text>
-                </TouchableOpacity>
+                <View style={styles.actionRow}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#e3f2fd', marginRight: 10 }]}
+                        onPress={() => handleUpdatePlan(item.userId, 'lawyer', item.subscriptionStatus === 'active' && item.plan === 'pro' ? 'pro' : 'basic', item.fullName)}
+                    >
+                        <Text style={[styles.actionText, { color: '#1565c0' }]}>Plan</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: item.isVerified ? '#ffebee' : '#e8f5e9' }]}
+                        onPress={() => handleVerifyLawyer(item.id, item.isVerified, item.fullName)}
+                    >
+                        <Text style={[styles.actionText, { color: item.isVerified ? '#c62828' : '#2e7d32' }]}>
+                            {item.isVerified ? 'Suspender' : 'Aprobar'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
@@ -168,8 +208,13 @@ const AdminUsersScreen = () => {
                 </View>
             </View>
             <View style={styles.cardFooter}>
-                <Text style={styles.date}>Solicitudes: {item.contactRequests || 0}</Text>
-                <Text style={styles.date}>Reg: {new Date(item.createdAt).toLocaleDateString()}</Text>
+                <Text style={styles.date}>Sol: {item.contactRequests || 0}</Text>
+                <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#e3f2fd' }]}
+                    onPress={() => handleUpdatePlan(item.id, 'worker', item.subscriptionStatus === 'active' ? 'premium' : 'free', item.fullName)}
+                >
+                    <Text style={[styles.actionText, { color: '#1565c0' }]}>Cambiar Plan</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -191,6 +236,12 @@ const AdminUsersScreen = () => {
             </View>
             <View style={styles.cardFooter}>
                 <Text style={styles.date}>Reg: {new Date(item.createdAt).toLocaleDateString()}</Text>
+                <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: '#e3f2fd' }]}
+                    onPress={() => handleUpdatePlan(item.id, 'pyme', item.subscriptionLevel, item.companyName)}
+                >
+                    <Text style={[styles.actionText, { color: '#1565c0' }]}>Cambiar Plan</Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -373,6 +424,10 @@ const styles = StyleSheet.create({
     date: {
         fontSize: 12,
         color: '#999',
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     actionButton: {
         paddingHorizontal: 15,
