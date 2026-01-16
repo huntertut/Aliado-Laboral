@@ -77,7 +77,7 @@ export const fetchLaborNews = async () => {
                 summarySme: processed.resumen_pyme,
                 summaryLawyer: processed.resumen_abogado,
                 quizQuestion: processed.pregunta_quiz,
-                imageUrl: "https://cdn-icons-png.flaticon.com/512/2537/2537926.png",
+                imageUrl: getRandomImage(),
                 isPublished: true
             };
         } else {
@@ -90,7 +90,7 @@ export const fetchLaborNews = async () => {
                 summarySme: "Resumen pendiente (IA analizando...)",
                 summaryLawyer: "Resumen pendiente (IA analizando...)",
                 quizQuestion: "¿Te interesa esta noticia?",
-                imageUrl: "https://cdn-icons-png.flaticon.com/512/2537/2537926.png",
+                imageUrl: getRandomImage(),
                 isPublished: true
             };
         }
@@ -141,11 +141,47 @@ export const startScheduler = () => {
     // Run every day at 8:00 AM Mexico City Time
     // Note: Node-cron uses server time. Assuming Railway is UTC, 8AM MX (UTC-6) is 14:00 UTC.
     // Let's run it every 6 hours just in case to catch midday news, but the duplicate check prevents spam.
-    cron.schedule('0 */6 * * *', () => {
+    cron.schedule('0 8 * * *', () => { // Run at 8:00 AM
         fetchLaborNews();
+        cleanOldNews(); // Cleanup old news
     });
 
-    console.log('📅 [Scheduler] Daily News Job initialized.');
+    // Also run cleanup on startup/deploy
+    setTimeout(() => cleanOldNews(), 5000);
+};
+
+/**
+ * Delete news older than 7 days
+ */
+const cleanOldNews = async () => {
+    try {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const deleted = await prisma.legalNews.deleteMany({
+            where: {
+                createdAt: { lt: sevenDaysAgo }
+            }
+        });
+        console.log(`🧹 [Scheduler] Cleaned up ${deleted.count} old news items.`);
+    } catch (error) {
+        console.error('❌ [Scheduler] Error cleaning old news:', error);
+    }
+};
+
+const LEGAL_IMAGES = [
+    "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=800&q=80", // Gavel
+    "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=800&q=80", // Classical Building
+    "https://images.unsplash.com/photo-1479142506502-19b3a3b7ff33?auto=format&fit=crop&w=800&q=80", // Pen & Contract
+    "https://images.unsplash.com/photo-1555374018-13a8994ab246?auto=format&fit=crop&w=800&q=80", // Office Discussion
+    "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80"  // Handshake
+];
+
+const getRandomImage = () => {
+    return LEGAL_IMAGES[Math.floor(Math.random() * LEGAL_IMAGES.length)];
+};
+
+console.log('📅 [Scheduler] Daily News Job initialized.');
 
     // Run immediately on startup for testing/deployment confirmation
     // setTimeout(() => fetchLaborNews(), 10000); 
