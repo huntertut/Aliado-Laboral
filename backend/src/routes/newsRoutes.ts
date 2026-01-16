@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { createNews, getNewsFeed, deleteNews } from '../controllers/newsController';
+import { createNews, getNewsFeed, deleteNews, triggerNewsFetch } from '../controllers/newsController';
 
 const router = express.Router();
 
@@ -11,6 +11,7 @@ router.get('/', authMiddleware, getNewsFeed);
 
 // Private Admin routes
 router.post('/', authMiddleware, adminMiddleware, createNews);
+router.post('/trigger', authMiddleware, adminMiddleware, triggerNewsFetch);
 router.delete('/:id', authMiddleware, adminMiddleware, deleteNews);
 
 export default router;

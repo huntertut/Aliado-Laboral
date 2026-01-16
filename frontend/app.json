@@ -42,6 +42,12 @@
     "plugins": [
       "expo-secure-store",
       "expo-local-authentication"
-    ]
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/fd8db100-267c-4c03-89c8-f91c8960f1de"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    }
   }
 }
