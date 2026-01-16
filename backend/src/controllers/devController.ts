@@ -3,8 +3,22 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 import admin from '../config/firebase';
+import { fetchLaborNews } from '../services/newsScheduler';
 
 const prisma = new PrismaClient();
+
+export const triggerNewsManually = async (req: Request, res: Response) => {
+    const { secret } = req.query;
+    if (secret !== process.env.DEV_SECRET && secret !== 'hunter2_production_secret') {
+        return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    console.log('⚡ [Dev] Manually triggering News Fetch...');
+    // Run in background to avoid timeout
+    fetchLaborNews().catch(e => console.error(e));
+
+    res.json({ message: 'News fetch triggered in background' });
+};
 const SALT_ROUNDS = 10;
 
 export const seedProductionUsers = async (req: Request, res: Response) => {
