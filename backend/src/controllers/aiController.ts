@@ -151,24 +151,62 @@ export const chatWithAI = async (req: Request, res: Response) => {
 
         const selectedPrompt = PROMPTS[persona as 'elias' | 'veronica'] || PROMPTS.elias;
 
-        // Configurar Modelo Gemini
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            systemInstruction: selectedPrompt,
-        });
+        // Configurar Modelo Gemini con Fallback
+        let model;
+        let chatSession;
 
-        const chatSession = model.startChat({
-            history: history || [],
-            generationConfig: {
-                maxOutputTokens: 500,
-                temperature: 0.7,
-            },
-        });
+        try {
+            // Intento 1: Gemini 1.5 Flash (Más rápido/barato)
+            model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: selectedPrompt,
+            });
+            chatSession = model.startChat({
+                history: history || [],
+                generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+            });
+        } catch (initError) {
+            console.warn("⚠️ Error initializing 1.5-flash, trying gemini-pro...");
+            model = genAI.getGenerativeModel({
+                model: "gemini-pro",
+                systemInstruction: selectedPrompt,
+            });
+            chatSession = model.startChat({
+                history: history || [],
+                generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+            });
+        }
 
-        const result = await chatSession.sendMessage(message);
-        const responseText = result.response.text();
+        let responseText = "";
+        let requiresLawyer = false;
 
-        const requiresLawyer = detectComplexCase(message, responseText);
+        try {
+            const result = await chatSession.sendMessage(message);
+            responseText = result.response.text();
+            requiresLawyer = detectComplexCase(message, responseText);
+        } catch (chatError: any) {
+            console.warn(`⚠️ Error with primary model: ${chatError.message}. Retrying with Fallback (gemini-pro)...`);
+
+            // Re-init with Fallback Model
+            const fallbackModel = genAI.getGenerativeModel({
+                model: "gemini-pro",
+                systemInstruction: selectedPrompt,
+            });
+            const fallbackSession = fallbackModel.startChat({
+                history: history || [],
+                generationConfig: { maxOutputTokens: 500, temperature: 0.7 },
+            });
+
+            try {
+                const fallbackResult = await fallbackSession.sendMessage(message);
+                responseText = fallbackResult.response.text();
+                requiresLawyer = detectComplexCase(message, responseText);
+                console.log("✅ Recovered with Fallback Model.");
+            } catch (fallbackError: any) {
+                console.error("❌ Fallback failed:", fallbackError);
+                throw fallbackError; // Re-throw to be caught by main handler
+            }
+        }
 
         res.json({
             response: responseText,
@@ -176,7 +214,7 @@ export const chatWithAI = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error('Gemini Error:', error);
+        console.error('Gemini Main Handler Error:', error);
 
         // 2. Google Quota Handling (429 / 503)
         const isQuotaError = error.message?.includes('429') || error.message?.includes('quota') || error.status === 429;
@@ -186,6 +224,15 @@ export const chatWithAI = async (req: Request, res: Response) => {
             return res.status(429).json({
                 error: 'Límite de servicio alcanzado',
                 message: 'El asistente está descansando un momento (Límite de uso gratuito). Por favor intenta de nuevo en 1 minuto.',
+                requiresLawyer: false
+            });
+        }
+
+        // 404 Special Handling
+        if (error.message?.includes('404') || error.message?.includes('not found')) {
+            return res.status(503).json({
+                error: 'Modelos de IA no disponibles',
+                message: 'Estamos actualizando nuestros cerebros digitales. Por favor intenta más tarde o verifica tu configuración.',
                 requiresLawyer: false
             });
         }
