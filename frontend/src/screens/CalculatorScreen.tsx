@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,10 +10,12 @@ import { useNavigation } from '@react-navigation/native';
 import DatePickerModal from '../components/DatePickerModal';
 import { LABOR_LAW_CONSTANTS, SEPARATION_REASONS } from '../config/constants';
 import AppHeader from '../components/common/AppHeader';
+import { ViralShareService } from '../services/ViralShareService';
 
 const CalculatorScreen = () => {
     const { user } = useAuth();
     const navigation = useNavigation();
+    const resultsRef = useRef(null);
 
     // Wizard State
     const [currentStep, setCurrentStep] = useState(1);
@@ -377,7 +379,13 @@ const CalculatorScreen = () => {
         if (!results) return null;
 
         return (
-            <ScrollView style={styles.resultsContainer}>
+        return (
+            <ScrollView
+                style={styles.resultsContainer}
+                contentContainerStyle={{ paddingBottom: 50, backgroundColor: '#f5f6fa' }}
+                ref={resultsRef}
+                collapsable={false}
+            >
                 <Text style={styles.resultsTitle}>Resumen de Tu Finiquito y Liquidación</Text>
                 <Text style={styles.resultsSubtitle}>Antigüedad: {results.yearsWorked} años</Text>
 
@@ -479,6 +487,22 @@ const CalculatorScreen = () => {
                     <Text style={styles.totalLabel}>TOTAL A RECIBIR (ESTIMADO)</Text>
                     <Text style={styles.totalAmount}>${results.totalNet.toFixed(2)}</Text>
                 </View>
+
+                {/* Viral Share Button */}
+                <TouchableOpacity
+                    style={[styles.shareViralButton, { marginBottom: 15 }]}
+                    onPress={() => ViralShareService.shareView(resultsRef)}
+                >
+                    <LinearGradient
+                        colors={['#FF512F', '#DD2476']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.shareGradient}
+                    >
+                        <Ionicons name="logo-instagram" size={24} color="#fff" />
+                        <Text style={styles.shareViralText}>Compartir Resultado (Viral)</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
 
                 <View style={styles.disclaimer}>
                     <Text style={styles.disclaimerText}>
@@ -798,165 +822,190 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    shareViralButton: {
+        borderRadius: 12,
+        overflow: 'hidden',
+        elevation: 4,
+        shadowColor: '#FF512F',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
         shadowRadius: 5,
-        elevation: 3,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
-    },
-    sectionSubtitle: {
-        fontSize: 12,
-        color: '#999',
-        marginBottom: 15,
-    },
-    resultRow: {
+    shareGradient: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 15,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f5f5f5',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
     },
-    resultLabel: {
-        flex: 1,
-    },
-    resultName: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#333',
-    },
-    resultExplain: {
-        fontSize: 11,
-        color: '#999',
-        marginTop: 2,
-    },
-    resultAmount: {
+    shareViralText: {
+        color: '#fff',
+        fontWeight: 'bold',
         fontSize: 16,
-        fontWeight: 'bold',
-        color: '#27ae60',
-    },
-    subtotalRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingTop: 10,
-        borderTopWidth: 2,
-        borderTopColor: '#e0e0e0',
-        marginTop: 5,
-    },
-    subtotalLabel: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    subtotalAmount: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: theme.colors.primary,
-    },
-    warningBox: {
-        flexDirection: 'row',
-        backgroundColor: '#fff9e6',
-        borderRadius: 8,
-        padding: 12,
-        marginTop: 10,
-    },
-    warningText: {
-        fontSize: 12,
-        color: '#856404',
         marginLeft: 10,
-        flex: 1,
     },
+    shadowRadius: 5,
+    elevation: 3,
+},
+    sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+},
+    sectionSubtitle: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 15,
+},
+    resultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+},
+    resultLabel: {
+    flex: 1,
+},
+    resultName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+},
+    resultExplain: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
+},
+    resultAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#27ae60',
+},
+    subtotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+    borderTopWidth: 2,
+    borderTopColor: '#e0e0e0',
+    marginTop: 5,
+},
+    subtotalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+},
+    subtotalAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+},
+    warningBox: {
+    flexDirection: 'row',
+    backgroundColor: '#fff9e6',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+},
+    warningText: {
+    fontSize: 12,
+    color: '#856404',
+    marginLeft: 10,
+    flex: 1,
+},
     totalCard: {
-        backgroundColor: theme.colors.primary,
-        borderRadius: 15,
-        padding: 25,
-        alignItems: 'center',
-        marginBottom: 15,
-    },
+    backgroundColor: theme.colors.primary,
+    borderRadius: 15,
+    padding: 25,
+    alignItems: 'center',
+    marginBottom: 15,
+},
     totalLabel: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.9)',
-        marginBottom: 10,
-    },
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 10,
+},
     totalAmount: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#fff',
+},
     disclaimer: {
-        backgroundColor: '#f8f9fa',
-        borderRadius: 10,
-        padding: 15,
-        marginBottom: 20,
-    },
+    backgroundColor: '#f8f9fa',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+},
     disclaimerText: {
-        fontSize: 11,
-        color: '#666',
-        textAlign: 'center',
-        lineHeight: 16,
-    },
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 16,
+},
     newCalculationButton: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: theme.colors.primary,
-        marginBottom: 10,
-    },
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    marginBottom: 10,
+},
     newCalculationText: {
-        color: theme.colors.primary,
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 8,
-    },
+    color: theme.colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+},
     actionButtonsContainer: {
-        marginTop: 10,
-    },
+    marginTop: 10,
+},
     lawyerButton: {
-        backgroundColor: '#27ae60',
-        borderRadius: 10,
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
+    backgroundColor: '#27ae60',
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+},
     lawyerButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 8,
-    },
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+},
     advisorButton: {
-        backgroundColor: '#3498db',
-        borderRadius: 10,
-        padding: 15,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
+    backgroundColor: '#3498db',
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+},
     advisorButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 8,
-    },
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+},
 });
 
 export default CalculatorScreen;
