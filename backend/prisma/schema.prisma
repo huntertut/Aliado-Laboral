@@ -36,6 +36,11 @@ model User {
   workerProfile        WorkerProfile? // NUEVO: perfil laboral del trabajador
   userRole             UserRole? // Mapeo a Firebase UID
   pymeProfile          PymeProfile?
+  
+  // Community Relations
+  forumPosts           ForumPost[]
+  forumVotes           ForumVote[]
+  reviewsGiven         LawyerReview[]
 }
 
 // Mapeo de Firebase UID a roles de usuario
@@ -151,6 +156,10 @@ model Lawyer {
   requiresPhysicalPresence   Boolean   @default(true)
   physicalPresenceStates     String?   @default("") // SQLite: Comma-separated list
   isCorrespondent            Boolean   @default(false)
+
+  // Community Relations
+  forumAnswers               ForumAnswer[]
+  reviews                    LawyerReview[]
 }
 
 // ==========================================
@@ -506,4 +515,78 @@ model SystemConfig {
   value       String   // JSON or primitive value
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// SECCIÓN DE COMUNIDAD (FORO ANONIMO)
+// ==========================================
+
+model ForumPost {
+  id          String   @id @default(uuid())
+  userId      String   // Autor (Hidden in UI)
+  user        User     @relation(fields: [userId], references: [id])
+  
+  topic       String   // 'despido', 'salarios', 'vacaciones', 'otro'
+  title       String
+  content     String
+  
+  status      String   @default("open") // 'open', 'resolved', 'closed'
+  views       Int      @default(0)
+  
+  answers     ForumAnswer[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ForumAnswer {
+  id          String   @id @default(uuid())
+  postId      String
+  post        ForumPost @relation(fields: [postId], references: [id])
+  
+  lawyerId    String
+  lawyer      Lawyer   @relation(fields: [lawyerId], references: [id])
+  
+  content     String
+  upvotes     Int      @default(0)
+  isAccepted  Boolean  @default(false) // Si el autor la marca como útil
+  
+  votes       ForumVote[]
+  
+  createdAt   DateTime @default(now())
+}
+
+model ForumVote {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  answerId    String
+  answer      ForumAnswer @relation(fields: [answerId], references: [id])
+  
+  value       Int      // 1 (Upvote), -1 (Downvote)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([userId, answerId]) // Un voto por respuesta por usuario
+}
+
+// ==========================================
+// SECCIÓN DE REPUTACIÓN
+// ==========================================
+
+model LawyerReview {
+  id          String   @id @default(uuid())
+  caseId      String?  @unique // Opcional si es review general, pero idealmente ligado a caso
+  
+  lawyerId    String
+  lawyer      Lawyer   @relation(fields: [lawyerId], references: [id])
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  rating      Int      // 1-5
+  comment     String?
+  
+  createdAt   DateTime @default(now())
 }
