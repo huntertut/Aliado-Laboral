@@ -181,8 +181,4 @@ const getRandomImage = () => {
     return LEGAL_IMAGES[Math.floor(Math.random() * LEGAL_IMAGES.length)];
 };
 
-console.log('📅 [Scheduler] Daily News Job initialized.');
 
-    // Run immediately on startup for testing/deployment confirmation
-    // setTimeout(() => fetchLaborNews(), 10000); 
-};
