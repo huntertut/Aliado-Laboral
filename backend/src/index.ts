@@ -27,10 +27,7 @@ import forumRoutes from './routes/forumRoutes';
 
 // ... (middleware)
 
-// ... (routes)
-app.use('/pyme-profile', pymeRoutes);
-app.use('/system', systemRoutes);
-app.use('/forum', forumRoutes); // Forum Routes
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -91,7 +88,9 @@ app.use('/chat', chatRoutes);
 app.use('/vault', vaultRoutes);
 app.use('/news', newsRoutes);
 app.use('/pyme-profile', pymeRoutes);
+app.use('/pyme-profile', pymeRoutes);
 app.use('/system', systemRoutes);
+app.use('/forum', forumRoutes); // Forum Routes
 
 app.use('/api/dev', devRoutes);
 
