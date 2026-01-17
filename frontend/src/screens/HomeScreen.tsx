@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import DonationModal from '../components/DonationModal';
+import PanicButton from '../components/common/PanicButton';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -231,8 +232,11 @@ const HomeScreen = () => {
                         <Text style={styles.creditsName}>SAVE</Text>
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
         </View>
+            </ScrollView >
+
+    <PanicButton />
+        </View >
     );
 };
 
