@@ -139,6 +139,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         loadUser();
 
+        // Sync Push Token on Mount/Resume (Ensures token exists even if DB was wiped)
+        const syncToken = async () => {
+            const tokenStr = await AsyncStorage.getItem('authToken');
+            if (tokenStr) {
+                import('../services/PushNotificationService').then(async ({ registerForPushNotificationsAsync }) => {
+                    const token = await registerForPushNotificationsAsync();
+                    if (token) {
+                        try {
+                            console.log('[AuthContext] 🔄 Auto-Syncing Push Token:', token);
+                            await axios.post(`${API_URL}/auth/update-push-token`, { pushToken: token }, {
+                                headers: { Authorization: `Bearer ${tokenStr}` }
+                            });
+                        } catch (tokenErr) {
+                            console.error('[AuthContext] Failed to auto-sync push token:', tokenErr);
+                        }
+                    }
+                });
+            }
+        };
+        syncToken();
+
         // Listen for Firebase Auth state changes
         const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
             // ... (rest of logic same as before, simplified for this snippet context if needed, but keeping existing is fine)

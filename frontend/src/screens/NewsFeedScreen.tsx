@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl, TouchableOpacity, Modal, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
@@ -11,6 +11,10 @@ const NewsFeedScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [news, setNews] = useState<any[]>([]);
+
+    // Modal State
+    const [selectedNews, setSelectedNews] = useState<any>(null);
+    const [modalVisible, setModalVisible] = useState(false);
 
     const fetchNews = async () => {
         try {
@@ -36,8 +40,22 @@ const NewsFeedScreen = () => {
         fetchNews();
     };
 
+    const openNewsDetail = (item: any) => {
+        setSelectedNews(item);
+        setModalVisible(true);
+    };
+
+    const closeNewsDetail = () => {
+        setModalVisible(false);
+        setSelectedNews(null);
+    };
+
     const renderNewsItem = ({ item }: { item: any }) => (
-        <TouchableOpacity style={styles.card} activeOpacity={0.9}>
+        <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => openNewsDetail(item)}
+        >
             {item.imageUrl && (
                 <Image source={{ uri: item.imageUrl }} style={styles.image} />
             )}
@@ -49,20 +67,81 @@ const NewsFeedScreen = () => {
                     <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                 </View>
 
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.summary}>{item.summary}</Text>
+                <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+                <Text style={styles.summary} numberOfLines={3}>{item.summary}</Text>
 
-                {item.quiz && (
-                    <View style={styles.quizSection}>
-                        <View style={styles.quizHeader}>
-                            <Ionicons name="help-circle" size={20} color={theme.colors.primary} />
-                            <Text style={styles.quizTitle}>¿Lo sabías?</Text>
-                        </View>
-                        <Text style={styles.quizText}>{item.quiz}</Text>
-                    </View>
-                )}
+                <View style={styles.readMoreRow}>
+                    <Text style={styles.readMoreText}>Leer noticia completa</Text>
+                    <Ionicons name="arrow-forward" size={16} color={theme.colors.primary} />
+                </View>
             </View>
         </TouchableOpacity>
+    );
+
+    const renderDetailModal = () => (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={closeNewsDetail}
+        >
+            <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                    {/* Header with Back Button */}
+                    <View style={styles.modalHeader}>
+                        <TouchableOpacity onPress={closeNewsDetail} style={styles.backButton}>
+                            <Ionicons name="close" size={28} color="#333" />
+                        </TouchableOpacity>
+                        <Text style={styles.modalHeaderText} numberOfLines={1}>Detalle de Noticia</Text>
+                        <View style={{ width: 28 }} />
+                    </View>
+
+                    <ScrollView contentContainerStyle={styles.modalScroll}>
+                        {selectedNews?.imageUrl && (
+                            <Image source={{ uri: selectedNews.imageUrl }} style={styles.modalImage} />
+                        )}
+
+                        <View style={styles.modalBody}>
+                            <Text style={styles.modalTitle}>{selectedNews?.title}</Text>
+
+                            <View style={styles.modalMeta}>
+                                <Ionicons name="calendar-outline" size={16} color="#7f8c8d" />
+                                <Text style={styles.modalDate}>
+                                    Publicado el {selectedNews ? new Date(selectedNews.createdAt).toLocaleDateString() : ''}
+                                </Text>
+                            </View>
+
+                            <View style={styles.separator} />
+
+                            <Text style={styles.sectionHeader}>Resumen para ti:</Text>
+                            <Text style={styles.modalText}>{selectedNews?.summary}</Text>
+
+                            {/* Show full content or context if available */}
+                            {selectedNews?.originalText && (
+                                <>
+                                    <View style={styles.separator} />
+                                    <Text style={styles.sectionHeader}>Información Adicional:</Text>
+                                    <Text style={styles.modalTextSmall}>
+                                        {/* Simplistic extraction or just showing snippet */}
+                                        {selectedNews.originalText.replace(/TITULO:.*|LINK:.*|FUENTE:.*/g, '').trim().substring(0, 300) + '...'}
+                                    </Text>
+                                </>
+                            )}
+
+                            {selectedNews?.quiz && (
+                                <View style={styles.quizSection}>
+                                    <View style={styles.quizHeader}>
+                                        <Ionicons name="bulb-outline" size={24} color={theme.colors.primary} />
+                                        <Text style={styles.quizTitle}>Quiz Rápido</Text>
+                                    </View>
+                                    <Text style={styles.quizText}>{selectedNews.quiz}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
     );
 
     if (loading) {
@@ -76,13 +155,13 @@ const NewsFeedScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#34495e']}
+                colors={[theme.colors.primary, '#2c3e50']}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
                 <Text style={styles.headerTitle}>Noticias Legales</Text>
-                <Text style={styles.headerSubtitle}>Procesadas con Inteligencia Artificial</Text>
+                <Text style={styles.headerSubtitle}>Actualizaciones Laborales de México</Text>
             </LinearGradient>
 
             <FlatList
@@ -98,6 +177,8 @@ const NewsFeedScreen = () => {
                     </View>
                 }
             />
+
+            {renderDetailModal()}
         </View>
     );
 };
@@ -105,14 +186,19 @@ const NewsFeedScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f4f6f8',
     },
     header: {
         paddingTop: 60,
         paddingBottom: 25,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 20,
-        borderBottomRightRadius: 20,
+        borderBottomLeftRadius: 25,
+        borderBottomRightRadius: 25,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
     },
     headerTitle: {
         fontSize: 28,
@@ -121,7 +207,7 @@ const styles = StyleSheet.create({
     },
     headerSubtitle: {
         fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
+        color: 'rgba(255,255,255,0.9)',
         marginTop: 5,
     },
     loadingContainer: {
@@ -131,37 +217,35 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 15,
+        paddingTop: 20,
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 20, // More rounded
-        marginBottom: 24,
-        marginHorizontal: 4, // Side spacing
+        borderRadius: 16,
+        marginBottom: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 }, // Deeper shadow
-        shadowOpacity: 0.12,
-        shadowRadius: 15,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 3,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.03)'
     },
     image: {
         width: '100%',
-        height: 180,
+        height: 160,
     },
     cardContent: {
-        padding: 15,
+        padding: 16,
     },
     tagContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     tag: {
-        backgroundColor: theme.colors.primary + '20',
-        paddingHorizontal: 10,
+        backgroundColor: theme.colors.primary + '15',
+        paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
     },
@@ -176,39 +260,133 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#2c3e50',
-        marginBottom: 10,
+        fontWeight: '700',
+        color: '#2d3436',
+        marginBottom: 8,
         lineHeight: 24,
     },
     summary: {
         fontSize: 14,
+        color: '#636e72',
+        lineHeight: 20,
+        marginBottom: 12,
+    },
+    readMoreRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+    },
+    readMoreText: {
+        color: theme.colors.primary,
+        fontSize: 13,
+        fontWeight: '600',
+        marginRight: 4,
+    },
+    // Modal Styles
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)', // Backdrop
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        height: '92%',
+        width: '100%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f1f1',
+    },
+    backButton: {
+        padding: 5,
+    },
+    modalHeaderText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+    },
+    modalScroll: {
+        paddingBottom: 40,
+    },
+    modalImage: {
+        width: '100%',
+        height: 220,
+        resizeMode: 'cover',
+    },
+    modalBody: {
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: '800',
+        color: '#2d3436',
+        marginBottom: 10,
+        lineHeight: 30,
+    },
+    modalMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalDate: {
+        marginLeft: 6,
+        color: '#7f8c8d',
+        fontSize: 13,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: '#eee',
+        marginVertical: 15,
+    },
+    sectionHeader: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#2c3e50',
+        marginBottom: 10,
+    },
+    modalText: {
+        fontSize: 16,
+        color: '#4a4a4a',
+        lineHeight: 26,
+        fontWeight: '400',
+    },
+    modalTextSmall: {
+        fontSize: 14,
         color: '#7f8c8d',
         lineHeight: 22,
-        marginBottom: 15,
+        fontStyle: 'italic',
     },
     quizSection: {
-        backgroundColor: '#f1f2f6',
-        borderRadius: 10,
-        padding: 12,
+        marginTop: 25,
+        backgroundColor: '#f8f9fa',
+        padding: 15,
+        borderRadius: 12,
         borderLeftWidth: 4,
         borderLeftColor: theme.colors.primary,
     },
     quizHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 5,
+        marginBottom: 8,
     },
     quizTitle: {
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: 'bold',
         color: theme.colors.primary,
-        marginLeft: 5,
+        marginLeft: 8,
     },
     quizText: {
-        fontSize: 13,
-        color: '#2c3e50',
-        fontStyle: 'italic',
+        fontSize: 15,
+        color: '#333',
+        fontWeight: '500',
     },
     emptyContainer: {
         alignItems: 'center',
