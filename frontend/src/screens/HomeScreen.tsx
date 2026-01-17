@@ -144,12 +144,22 @@ const HomeScreen = () => {
                             <Text style={styles.subGreeting}>¿En qué te podemos ayudar hoy?</Text>
                         </View>
                     </View>
-                    <TouchableOpacity
-                        style={styles.profileButton}
-                        onPress={() => navigation.navigate('Profile' as never)}
-                    >
-                        <Ionicons name="person-circle-outline" size={40} color="#fff" />
-                    </TouchableOpacity>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('NewsFeed' as never)}
+                            style={{ padding: 5 }}
+                        >
+                            <Ionicons name="notifications-outline" size={28} color="#fff" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.profileButton}
+                            onPress={() => navigation.navigate('Profile' as never)}
+                        >
+                            <Ionicons name="person-circle-outline" size={40} color="#fff" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </LinearGradient>
 
