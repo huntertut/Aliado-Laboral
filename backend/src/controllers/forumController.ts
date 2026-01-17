@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export const createPost = async (req: Request, res: Response) => {
     try {
         const { topic, title, content } = req.body;
-        const userId = req.user?.userId;
+        const userId = (req as any).user?.userId;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
@@ -39,6 +39,16 @@ export const getPosts = async (req: Request, res: Response) => {
         if (topic) where.topic = String(topic);
         if (filter === 'unanswered') where.answers = { none: {} };
 
+        // 7-Day Visibility Rule (Except for Admin)
+        const userRole = (req as any).user?.role;
+        if (userRole !== 'admin') {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            where.createdAt = {
+                gte: sevenDaysAgo
+            };
+        }
+
         const posts = await prisma.forumPost.findMany({
             where,
             include: {
@@ -52,7 +62,7 @@ export const getPosts = async (req: Request, res: Response) => {
                         lawyer: {
                             select: {
                                 professionalName: true,
-                                specialties: true, // Assuming this field exists or similar
+                                specialty: true, // Fixed property name
                                 licenseNumber: true
                             }
                         }
@@ -109,7 +119,7 @@ export const answerPost = async (req: Request, res: Response) => {
     try {
         const { postId } = req.params;
         const { content } = req.body;
-        const lawyerUserId = req.user?.userId;
+        const lawyerUserId = (req as any).user?.userId;
 
         // Verify Lawyer Role
         const lawyer = await prisma.lawyer.findUnique({
@@ -141,7 +151,7 @@ export const voteAnswer = async (req: Request, res: Response) => {
     try {
         const { answerId } = req.params;
         const { value } = req.body; // 1 or -1
-        const userId = req.user?.userId;
+        const userId = (req as any).user?.userId;
 
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 

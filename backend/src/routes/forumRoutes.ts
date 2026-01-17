@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
+import { authMiddleware } from '../middleware/auth';
 import * as forumController from '../controllers/forumController';
 
 const router = Router();
@@ -9,8 +9,8 @@ router.get('/posts', forumController.getPosts);
 router.get('/posts/:postId', forumController.getPostDetails);
 
 // Protected
-router.post('/posts', authenticateToken, forumController.createPost);
-router.post('/posts/:postId/answer', authenticateToken, forumController.answerPost);
-router.post('/answers/:answerId/vote', authenticateToken, forumController.voteAnswer);
+router.post('/posts', authMiddleware, forumController.createPost);
+router.post('/posts/:postId/answer', authMiddleware, forumController.answerPost);
+router.post('/answers/:answerId/vote', authMiddleware, forumController.voteAnswer);
 
 export default router;

@@ -22,6 +22,7 @@ import newsRoutes from './routes/newsRoutes';
 import pymeRoutes from './routes/pymeRoutes';
 import systemRoutes from './routes/systemRoutes';
 import forumRoutes from './routes/forumRoutes';
+import devRoutes from './routes/devRoutes';
 
 // ... (imports)
 
