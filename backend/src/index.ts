@@ -21,7 +21,16 @@ import vaultRoutes from './routes/vaultRoutes';
 import newsRoutes from './routes/newsRoutes';
 import pymeRoutes from './routes/pymeRoutes';
 import systemRoutes from './routes/systemRoutes';
-import devRoutes from './routes/devRoutes';
+import forumRoutes from './routes/forumRoutes';
+
+// ... (imports)
+
+// ... (middleware)
+
+// ... (routes)
+app.use('/pyme-profile', pymeRoutes);
+app.use('/system', systemRoutes);
+app.use('/forum', forumRoutes); // Forum Routes
 
 const app = express();
 const port = process.env.PORT || 3000;
