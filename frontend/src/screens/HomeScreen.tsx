@@ -104,6 +104,13 @@ const HomeScreen = () => {
             icon: 'shield-checkmark-outline',
             gradient: ['#cd9cf2', '#f6f3ff'],
             premiumGradient: ['#9c88ff', '#4834d4']
+        },
+        {
+            title: 'Foro Anónimo',
+            route: 'AnonymousForum',
+            icon: 'people-outline',
+            gradient: ['#fab1a0', '#e17055'],
+            premiumGradient: ['#d35400', '#e74c3c']
         }
     ];
 

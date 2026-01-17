@@ -197,6 +197,7 @@ const AppNavigator = () => {
                                 <Stack.Screen name="CaseChat" component={require('../screens/CaseChatScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="Vault" component={require('../screens/VaultScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
+                                <Stack.Screen name="AnonymousForum" component={require('../screens/forum/AnonymousForumScreen').default} options={{ headerShown: false }} />
                             </>
                         )}
                     </>
