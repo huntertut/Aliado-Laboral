@@ -239,11 +239,10 @@ const HomeScreen = () => {
                         <Text style={styles.creditsName}>SAVE</Text>
                     </TouchableOpacity>
                 </View>
-        </View>
-            </ScrollView >
+            </ScrollView>
 
-    <PanicButton />
-        </View >
+            <PanicButton />
+        </View>
     );
 };
 
