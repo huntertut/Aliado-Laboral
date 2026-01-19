@@ -379,6 +379,7 @@ const CalculatorScreen = () => {
         if (!results) return null;
 
         return (
+        return (
             <ScrollView
                 style={styles.resultsContainer}
                 contentContainerStyle={{ paddingBottom: 50, backgroundColor: '#f5f6fa' }}
@@ -846,6 +847,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 10,
     },
+    shadowRadius: 5,
+    elevation: 3,
 },
     sectionTitle: {
     fontSize: 18,
