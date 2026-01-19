@@ -846,8 +846,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 10,
     },
-    shadowRadius: 5,
-    elevation: 3,
 },
     sectionTitle: {
     fontSize: 18,
