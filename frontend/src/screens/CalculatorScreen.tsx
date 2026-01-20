@@ -503,6 +503,33 @@ const CalculatorScreen = () => {
                     </LinearGradient>
                 </TouchableOpacity>
 
+                {/* Forum Post Button */}
+                <TouchableOpacity
+                    style={[styles.shareViralButton, { marginBottom: 15, backgroundColor: '#2e86de' }]} // Blue theme for Forum
+                    onPress={() => {
+                        const forumContent = `Hola comunidad, acabo de realizar mi cálculo de finiquito/liquidación y me gustaría saber su opinión.\n\n` +
+                            `- **Antigüedad**: ${results.yearsWorked} años\n` +
+                            `- **Motivo**: ${SEPARATION_REASONS.find(r => r.id === separationReason)?.label || 'No especificado'}\n` +
+                            `- **Sueldo Diario**: $${results.dailySalary.toFixed(2)}\n\n` +
+                            `**Resultados del cálculo:**\n` +
+                            `- Finiquito: $${results.finiquitoTotal.toFixed(2)}\n` +
+                            `- Liquidación (Indemnización): $${results.liquidacionTotal.toFixed(2)}\n` +
+                            `- **Total Neto Estimado**: $${results.totalNet.toFixed(2)}\n\n` +
+                            `¿Es correcto este cálculo? Agradezco sus comentarios.`;
+
+                        (navigation as any).navigate('ForumCreatePost', {
+                            initialTitle: 'Duda sobre mi cálculo de liquidación',
+                            initialContent: forumContent,
+                            initialTopic: separationReason === 'despido_injustificado' ? 'despido' : 'renuncia'
+                        });
+                    }}
+                >
+                    <View style={styles.shareGradient}>
+                        <Ionicons name="chatbubbles" size={24} color="#fff" />
+                        <Text style={styles.shareViralText}>Preguntar en Foro</Text>
+                    </View>
+                </TouchableOpacity>
+
                 <View style={styles.disclaimer}>
                     <Text style={styles.disclaimerText}>
                         Este cálculo es una simulación basada en la información proporcionada y los mínimos legales vigentes.

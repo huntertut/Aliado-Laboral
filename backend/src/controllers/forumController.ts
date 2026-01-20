@@ -12,14 +12,23 @@ export const createPost = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        // Verify User is Pro/Premium (or allow basic for now with limits?)
-        // For now, let's allow all authenticated users to ask to seed content
+        // 1. Security Check: Phone Numbers
+        if (containsPhoneNumber(title) || containsPhoneNumber(content)) {
+            return res.status(400).json({
+                error: 'Por seguridad y privacidad, no está permitido publicar números de teléfono en el foro.'
+            });
+        }
+
+        // 2. Content Moderation: Profanity Masking
+        const cleanTitle = maskProfanity(title);
+        const cleanContent = maskProfanity(content);
+
         const post = await prisma.forumPost.create({
             data: {
                 userId,
                 topic,
-                title,
-                content,
+                title: cleanTitle,
+                content: cleanContent,
                 status: 'open'
             }
         });
@@ -79,6 +88,26 @@ export const getPosts = async (req: Request, res: Response) => {
     }
 };
 
+// Basic Profanity List (Generic for Mexico context)
+const BAD_WORDS = ['puto', 'puta', 'pendejo', 'pendeja', 'verga', 'mierda', 'imbecil', 'estupido', 'idiota', 'chinga', 'chingar', 'pinche', 'cabron', 'mamada', 'zorra'];
+
+const containsPhoneNumber = (text: string): boolean => {
+    // Detects sequences of 10 digits, allowing for common separators like space, dot, dash
+    const phoneRegex = /(\d[\s.-]?){10,}/;
+    return phoneRegex.test(text);
+};
+
+const maskProfanity = (text: string): string => {
+    let cleanText = text;
+    BAD_WORDS.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        cleanText = cleanText.replace(regex, '*'.repeat(word.length));
+    });
+    return cleanText;
+};
+
+// ... existing createPost was modified in previous step, now updating answerPost ...
+
 export const getPostDetails = async (req: Request, res: Response) => {
     try {
         const { postId } = req.params;
@@ -89,19 +118,19 @@ export const getPostDetails = async (req: Request, res: Response) => {
                 answers: {
                     include: {
                         lawyer: {
-                            include: {
-                                user: {
-                                    select: { fullName: true }
-                                }
-                            }
+                            include: { user: { select: { fullName: true } } }
                         }
                     },
-                    orderBy: { upvotes: 'desc' }
+                    orderBy: {
+                        isAccepted: 'desc'
+                    }
                 }
             }
         });
 
-        if (!post) return res.status(404).json({ error: 'Post not found' });
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
 
         // Increment views
         await prisma.forumPost.update({
@@ -119,31 +148,35 @@ export const answerPost = async (req: Request, res: Response) => {
     try {
         const { postId } = req.params;
         const { content } = req.body;
-        const lawyerUserId = (req as any).user?.userId;
+        const userId = (req as any).user?.userId;
 
-        // Verify Lawyer Role
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId: lawyerUserId }
-        });
-
+        // Verify User is a Lawyer
+        const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
         if (!lawyer) {
-            return res.status(403).json({ error: 'Only lawyers can answer' });
+            return res.status(403).json({ error: 'Only lawyers can answer posts' });
         }
+
+        // 1. Security Check: Phone Numbers
+        if (containsPhoneNumber(content)) {
+            return res.status(400).json({
+                error: 'Por seguridad y privacidad, no está permitido publicar números de teléfono.'
+            });
+        }
+
+        // 2. Content Moderation
+        const cleanContent = maskProfanity(content);
 
         const answer = await prisma.forumAnswer.create({
             data: {
                 postId,
                 lawyerId: lawyer.id,
-                content
+                content: cleanContent
             }
         });
 
-        // Gamification: Add Reputation
-        // TODO: Implement reputation update logic here
-
         res.status(201).json(answer);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to submit answer' });
+        res.status(500).json({ error: 'Failed to post answer' });
     }
 };
 
@@ -193,5 +226,76 @@ export const voteAnswer = async (req: Request, res: Response) => {
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: 'Failed to vote' });
+    }
+};
+
+export const deletePost = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.params;
+        const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
+
+        const post = await prisma.forumPost.findUnique({ where: { id: postId } });
+        if (!post) return res.status(404).json({ error: 'Post not found' });
+
+        if (userRole !== 'admin' && post.userId !== userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        // Delete associated answers and votes manually if cascade not set
+        // Or simply delete post
+        await prisma.forumAnswer.deleteMany({ where: { postId: postId } }); // Pragma cascade might handle this but safer
+        await prisma.forumPost.delete({ where: { id: postId } });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to delete post' });
+    }
+};
+
+export const hidePost = async (req: Request, res: Response) => {
+    try {
+        const { postId } = req.params;
+        const userRole = (req as any).user?.role;
+
+        if (userRole !== 'admin') {
+            return res.status(403).json({ error: 'Forbidden: Admin only' });
+        }
+
+        await prisma.forumPost.update({
+            where: { id: postId },
+            data: { status: 'hidden' }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to hide post' });
+    }
+};
+
+export const deleteAnswer = async (req: Request, res: Response) => {
+    try {
+        const { answerId } = req.params;
+        const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
+
+        const answer = await prisma.forumAnswer.findUnique({
+            where: { id: answerId },
+            include: { lawyer: true }
+        });
+
+        if (!answer) return res.status(404).json({ error: 'Answer not found' });
+
+        // Admin or Owner (Lawyer User)
+        if (userRole !== 'admin' && answer.lawyer.userId !== userId) {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        await prisma.forumAnswer.delete({ where: { id: answerId } });
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete answer' });
     }
 };

@@ -10,6 +10,8 @@ import AdminPromotionsScreen from '../screens/admin/AdminPromotionsScreen';
 import { SupervisorDashboard } from '../modules/supervisor/dashboard/SupervisorDashboard';
 import { theme } from '../theme/colors';
 
+import AdminForumScreen from '../screens/admin/AdminForumScreen';
+
 const Tab = createBottomTabNavigator();
 
 const AdminNavigator = () => {
@@ -23,6 +25,8 @@ const AdminNavigator = () => {
                         iconName = focused ? 'stats-chart' : 'stats-chart-outline';
                     } else if (route.name === 'Usuarios') {
                         iconName = focused ? 'people' : 'people-outline';
+                    } else if (route.name === 'Foro') {
+                        iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
                     } else if (route.name === 'Finanzas') {
                         iconName = focused ? 'cash' : 'cash-outline';
                     } else if (route.name === 'Casos') {
@@ -49,6 +53,7 @@ const AdminNavigator = () => {
                 options={{ tabBarButton: () => null }}
             />
             <Tab.Screen name="Usuarios" component={AdminUsersScreen} />
+            <Tab.Screen name="Foro" component={AdminForumScreen} />
             <Tab.Screen name="Finanzas" component={AdminFinanceScreen} />
             <Tab.Screen name="Casos" component={AdminCasesScreen} />
             <Tab.Screen name="Verificaciones" component={SupervisorDashboard} />

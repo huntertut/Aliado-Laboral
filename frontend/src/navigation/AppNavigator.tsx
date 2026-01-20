@@ -228,6 +228,11 @@ const AppNavigator = () => {
                     component={PrivacyPolicyScreen}
                     options={{ presentation: 'modal' }}
                 />
+                <Stack.Screen
+                    name="ForumCreatePost"
+                    component={require('../screens/forum/ForumCreatePostScreen').default}
+                    options={{ presentation: 'modal', headerShown: false }}
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );

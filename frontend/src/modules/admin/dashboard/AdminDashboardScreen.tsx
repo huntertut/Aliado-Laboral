@@ -187,25 +187,47 @@ const AdminDashboardScreen = ({ navigation }: any) => {
                 )}
 
                 {/* Trends Section - Empty State Handling */}
-                <Text style={styles.sectionTitle}>Tendencias de Actividad</Text>
-                <View style={styles.chartContainer}>
-                    {/* Visual representation for 'Zero Data' or 'Trends' */}
-                    <View style={styles.chartContent}>
-                        <Ionicons name="bar-chart-outline" size={60} color="#e0e0e0" />
-                        <Text style={styles.chartTitle}>Sin suficiente actividad aún</Text>
-                        <Text style={styles.chartSubtitle}>
-                            Las tendencias gráficas aparecerán aquí cuando haya más registros de usuarios y pagos.
-                        </Text>
-                        {/* Mock Visual Lines for Aesthetics */}
-                        <View style={styles.mockChartLines}>
-                            <View style={[styles.mockBar, { height: 20 }]} />
-                            <View style={[styles.mockBar, { height: 40 }]} />
-                            <View style={[styles.mockBar, { height: 30 }]} />
-                            <View style={[styles.mockBar, { height: 60 }]} />
-                            <View style={[styles.mockBar, { height: 45 }]} />
+                <Text style={styles.sectionTitle}>Tendencias de Actividad (6 Meses)</Text>
+
+                {stats?.trends ? (
+                    <View style={styles.chartContainer}>
+                        <Text style={styles.chartTitle}>Crecimiento de Ingresos</Text>
+                        <View style={styles.chartRow}>
+                            {stats.trends.income.map((val: number, index: number) => {
+                                // Find max for scaling
+                                const max = Math.max(...stats.trends.income, 1);
+                                const heightPercentage = (val / max) * 100;
+                                return (
+                                    <View key={`inc-${index}`} style={styles.barWrapper}>
+                                        <View style={[styles.bar, { height: `${heightPercentage}%`, backgroundColor: '#4caf50' }]} />
+                                        <Text style={styles.barLabel}>{index + 1}</Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+
+                        <Text style={[styles.chartTitle, { marginTop: 20 }]}>Nuevos Usuarios</Text>
+                        <View style={styles.chartRow}>
+                            {stats.trends.users.map((val: number, index: number) => {
+                                const max = Math.max(...stats.trends.users, 1);
+                                const heightPercentage = (val / max) * 100;
+                                return (
+                                    <View key={`usr-${index}`} style={styles.barWrapper}>
+                                        <View style={[styles.bar, { height: `${heightPercentage}%`, backgroundColor: '#2196f3' }]} />
+                                        <Text style={styles.barLabel}>{index + 1}</Text>
+                                    </View>
+                                );
+                            })}
                         </View>
                     </View>
-                </View>
+                ) : (
+                    <View style={styles.chartContainer}>
+                        <View style={styles.chartContent}>
+                            <Ionicons name="bar-chart-outline" size={60} color="#e0e0e0" />
+                            <Text style={styles.chartTitle}>Cargando tendencias...</Text>
+                        </View>
+                    </View>
+                )}
 
             </View>
         </ScrollView>
@@ -391,6 +413,30 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 15,
     },
+    chartRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        height: 100,
+        width: '100%',
+        marginTop: 10,
+        paddingHorizontal: 10
+    },
+    barWrapper: {
+        alignItems: 'center',
+        flex: 1,
+        height: '100%',
+        justifyContent: 'flex-end'
+    },
+    bar: {
+        width: 12,
+        borderRadius: 6,
+        marginBottom: 5
+    },
+    barLabel: {
+        fontSize: 10,
+        color: '#999'
+    }
 });
 
 export default AdminDashboardScreen;
