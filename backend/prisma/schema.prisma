@@ -39,6 +39,7 @@ model User {
   
   // Community Relations
   forumPosts           ForumPost[]
+  forumAnswers         ForumAnswer[] // Fix: Opposite relation for ForumAnswer
   forumVotes           ForumVote[]
   reviewsGiven         LawyerReview[]
 }
