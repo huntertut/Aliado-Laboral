@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl, TouchableOpacity, Modal, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, RefreshControl, TouchableOpacity, Modal, ScrollView, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +9,7 @@ import { API_URL } from '../config/constants';
 import { theme } from '../theme/colors';
 
 const NewsFeedScreen = () => {
+    const navigation = useNavigation();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [news, setNews] = useState<any[]>([]);
@@ -23,8 +25,9 @@ const NewsFeedScreen = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setNews(response.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching news:', error);
+            Alert.alert('Error', 'No se pudieron cargar las noticias. ' + (error.message || 'Intenta más tarde'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -160,6 +163,9 @@ const NewsFeedScreen = () => {
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginBottom: 15, width: 40 }}>
+                    <Ionicons name="arrow-back" size={28} color="#fff" />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Noticias Legales</Text>
                 <Text style={styles.headerSubtitle}>Actualizaciones Laborales de México</Text>
             </LinearGradient>

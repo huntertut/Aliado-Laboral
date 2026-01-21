@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// import AsyncStorage from '@react-native-async-storage/async-storage'; // No longer needed directly
+import { useAuth } from '../../context/AuthContext';
 
 const TOPICS = [
     { id: 'despido', label: 'Despido Injustificado' },
@@ -20,6 +21,7 @@ const TOPICS = [
 const ForumCreatePostScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
+    const { getAccessToken } = useAuth();
 
     // Params from Calculator or other screens
     const { initialTitle, initialContent, initialTopic } = route.params as any || {};
@@ -53,7 +55,9 @@ const ForumCreatePostScreen = () => {
 
         setLoading(true);
         try {
-            const token = await AsyncStorage.getItem('authToken');
+            const token = await getAccessToken();
+            if (!token) throw new Error('No se encontró sesión activa. Por favor inicia sesión nuevamente.');
+
             await axios.post(
                 `${API_URL}/forum/posts`,
                 {
@@ -69,9 +73,9 @@ const ForumCreatePostScreen = () => {
             Alert.alert('Post Publicado', 'Tu duda ha sido publicada en el foro anónimo.', [
                 { text: 'OK', onPress: () => navigation.goBack() }
             ]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating post:', error);
-            Alert.alert('Error', 'No se pudo publicar el post. Inténtalo de nuevo.');
+            Alert.alert('Error', 'No se pudo publicar el post. ' + (error.message || 'Inténtalo de nuevo.'));
         } finally {
             setLoading(false);
         }
@@ -81,18 +85,20 @@ const ForumCreatePostScreen = () => {
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="close" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Nueva Pregunta</Text>
                 <TouchableOpacity
+                    style={[styles.postButton, (loading || !title.trim() || !content.trim()) && styles.disabledButton]}
                     onPress={handleSubmit}
-                    style={[styles.publishButton, (!title.trim() || !content.trim()) && styles.disabledButton]}
                     disabled={loading || !title.trim() || !content.trim()}
                 >
                     {loading ? (
                         <ActivityIndicator color={theme.colors.primary} size="small" />
                     ) : (
-                        <Text style={[styles.publishButtonText, (!title.trim() || !content.trim()) && styles.disabledButtonText]}>Publicar</Text>
+                        <Text style={[styles.postButtonText, (loading || !title.trim() || !content.trim()) && styles.disabledText]}>
+                            Publicar
+                        </Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -101,56 +107,61 @@ const ForumCreatePostScreen = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={{ flex: 1 }}
             >
-                <ScrollView style={styles.content}>
-                    <View style={styles.section}>
-                        <Text style={styles.label}>Tema Relacionado</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicScroll}>
-                            {TOPICS.map(topic => (
+                <ScrollView contentContainerStyle={styles.content}>
+                    <View style={styles.topicSection}>
+                        <Text style={styles.label}>Tema de tu consulta:</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicList}>
+                            {TOPICS.map((topic) => (
                                 <TouchableOpacity
                                     key={topic.id}
                                     style={[
                                         styles.topicChip,
-                                        selectedTopic === topic.id && styles.activeTopicChip
+                                        selectedTopic === topic.id && styles.selectedTopicChip
                                     ]}
                                     onPress={() => setSelectedTopic(topic.id)}
                                 >
-                                    <Text style={[
-                                        styles.topicText,
-                                        selectedTopic === topic.id && styles.activeTopicText
-                                    ]}>{topic.label}</Text>
+                                    <Text
+                                        style={[
+                                            styles.topicText,
+                                            selectedTopic === topic.id && styles.selectedTopicText
+                                        ]}
+                                    >
+                                        {topic.label}
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
 
-                    <View style={styles.section}>
-                        <Text style={styles.label}>Título de tu pregunta</Text>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Título Corto:</Text>
                         <TextInput
-                            style={styles.titleInput}
-                            placeholder="Ej. ¿Es correcto mi cálculo de despido?"
+                            style={styles.inputTitle}
+                            placeholder="Ej: Despido sin liquidación..."
                             value={title}
                             onChangeText={setTitle}
                             maxLength={80}
+                            placeholderTextColor="#999"
                         />
                     </View>
 
-                    <View style={styles.section}>
-                        <Text style={styles.label}>Detalles</Text>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Detalle de tu situación:</Text>
                         <TextInput
-                            style={styles.contentInput}
-                            placeholder="Describe tu situación laboral, años trabajados, etc. Recuerda no incluir nombres reales ni empresas para mantener el anonimato."
+                            style={[styles.inputContent]}
+                            placeholder="Describe tu caso sin incluir nombres reales o datos sensibles..."
                             value={content}
                             onChangeText={setContent}
                             multiline
                             textAlignVertical="top"
+                            placeholderTextColor="#999"
                         />
-                    </View>
-
-                    <View style={styles.tipBox}>
-                        <Ionicons name="shield-checkmark" size={20} color="#27ae60" />
-                        <Text style={styles.tipText}>
-                            Tu publicación es anónima. Los abogados verán tu duda pero no tu nombre real hasta que decidas contactarlos.
-                        </Text>
+                        <View style={styles.privacyHint}>
+                            <Ionicons name="shield-checkmark-outline" size={16} color="#27ae60" />
+                            <Text style={styles.privacyText}>
+                                Formato anónimo. No compartas teléfonos ni nombres reales.
+                            </Text>
+                        </View>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -176,11 +187,11 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     headerTitle: {
-        color: '#fff',
         fontSize: 18,
         fontWeight: 'bold',
+        color: '#fff',
     },
-    publishButton: {
+    postButton: {
         backgroundColor: '#fff',
         paddingHorizontal: 15,
         paddingVertical: 6,
@@ -189,82 +200,85 @@ const styles = StyleSheet.create({
     disabledButton: {
         backgroundColor: 'rgba(255,255,255,0.5)',
     },
-    publishButtonText: {
+    postButtonText: {
         color: theme.colors.primary,
         fontWeight: 'bold',
         fontSize: 14,
     },
-    disabledButtonText: {
-        color: '#eee',
+    disabledText: {
+        color: '#666',
     },
     content: {
-        flex: 1,
         padding: 20,
+        paddingBottom: 40,
     },
-    section: {
+    topicSection: {
         marginBottom: 25,
     },
     label: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: '#333',
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#2c3e50',
         marginBottom: 10,
     },
-    topicScroll: {
+    topicList: {
         flexDirection: 'row',
-        paddingBottom: 5,
     },
     topicChip: {
         paddingHorizontal: 15,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: '#f5f6fa',
+        backgroundColor: '#f0f2f5',
         marginRight: 10,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#e1e4e8',
     },
-    activeTopicChip: {
-        backgroundColor: 'rgba(46, 134, 222, 0.1)',
+    selectedTopicChip: {
+        backgroundColor: theme.colors.primary,
         borderColor: theme.colors.primary,
     },
     topicText: {
         color: '#666',
         fontSize: 13,
     },
-    activeTopicText: {
-        color: theme.colors.primary,
+    selectedTopicText: {
+        color: '#fff',
         fontWeight: 'bold',
     },
-    titleInput: {
+    inputGroup: {
+        marginBottom: 20,
+    },
+    inputTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#2c3e50',
         borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomColor: '#ddd',
         paddingVertical: 10,
     },
-    contentInput: {
+    inputContent: {
         fontSize: 16,
-        color: '#555',
-        minHeight: 150,
-        lineHeight: 24,
-    },
-    tipBox: {
-        flexDirection: 'row',
-        backgroundColor: '#e8f5e9',
-        padding: 15,
+        color: '#34495e',
+        minHeight: 200,
+        backgroundColor: '#f8f9fa',
         borderRadius: 10,
-        marginTop: 10,
-        marginBottom: 40,
-        alignItems: 'center',
+        padding: 15,
+        marginTop: 5,
     },
-    tipText: {
-        color: '#2e7d32',
+    privacyHint: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+        backgroundColor: '#eafaf1',
+        padding: 10,
+        borderRadius: 8,
+    },
+    privacyText: {
         fontSize: 12,
-        marginLeft: 10,
+        color: '#27ae60',
+        marginLeft: 8,
         flex: 1,
-        lineHeight: 18,
-    }
+    },
 });
 
 export default ForumCreatePostScreen;

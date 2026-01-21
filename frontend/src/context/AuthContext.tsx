@@ -198,6 +198,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AuthContext] 3. Backend response received:', response.status);
             const userData = response.data.user;
 
+            // 3.5. DEMO MODE OVERRIDES (For Testing/Demos)
+            const demoEmail = email.toLowerCase();
+            if (demoEmail === 'worker_free@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing Free Worker');
+                userData.role = 'worker';
+                userData.plan = undefined; // No plan
+            } else if (demoEmail === 'worker_premium@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing Premium Worker');
+                userData.role = 'worker';
+                userData.plan = 'worker_premium';
+            } else if (demoEmail === 'lawyer_basic@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing Basic Lawyer');
+                userData.role = 'lawyer';
+                userData.plan = 'basic'; // lawyer_basic
+            } else if (demoEmail === 'lawyer_pro@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing PRO Lawyer');
+                userData.role = 'lawyer';
+                userData.plan = 'pro'; // lawyer_pro
+            } else if (demoEmail === 'pyme_basic@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing Basic Pyme');
+                userData.role = 'pyme';
+                userData.subscriptionLevel = 'basic';
+            } else if (demoEmail === 'pyme_pro@test.com') {
+                console.log('🚧 [AuthContext] DEMO MODE: Forcing Premium Pyme');
+                userData.role = 'pyme';
+                userData.subscriptionLevel = 'premium';
+            }
+
             // 4. Store token and user data
             console.log('[AuthContext] 4. Storing data in Async Storage...');
             await AsyncStorage.setItem('authToken', idToken);

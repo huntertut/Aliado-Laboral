@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/colors';
 import { API_URL } from '../config/constants';
@@ -86,12 +86,22 @@ const ChatScreen = () => {
         } catch (error: any) {
             console.error('Error al comunicarse con el backend:', error);
 
-            // Use the error message directly if it comes from our backend logic
-            const message = error.message || 'Lo siento, hubo un error técnico. Intenta más tarde.';
+            // Detailed Error Message construction
+            let errorMessage = 'Lo siento, hubo un error técnico. Intenta más tarde.';
+
+            if (error.message.includes('JSON')) {
+                errorMessage = 'Error de formato de respuesta (Backend posiblemente caído o devolviendo HTML).';
+            } else if (error.message.includes('Network request failed')) {
+                errorMessage = 'Error de Red: No se puede conectar al servidor. Verifica tu internet.';
+            } else {
+                errorMessage = `Error del Servidor: ${error.message}`;
+            }
+
+            Alert.alert('Diagnóstico de Error', errorMessage);
 
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
-                text: message,
+                text: "⚠️ " + errorMessage,
                 sender: 'ai',
                 timestamp: new Date()
             };

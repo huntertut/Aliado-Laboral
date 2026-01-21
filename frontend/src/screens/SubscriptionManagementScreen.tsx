@@ -116,18 +116,18 @@ const SubscriptionManagementScreen = () => {
         }
     };
 
-    const handleActivate = async () => {
+    const handleActivate = async (planConfig = CONFIG) => {
         Alert.alert(
             'Activar Suscripción',
-            `Se cobrará $${CONFIG.price} MXN por acceso ${CONFIG.period}.`,
+            `Se cobrará $${planConfig.price} MXN por acceso ${planConfig.period}.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'Pagar ahora', onPress: confirmActivation }
+                { text: 'Pagar ahora', onPress: () => confirmActivation(planConfig) }
             ]
         );
     };
 
-    const confirmActivation = async () => {
+    const confirmActivation = async (planConfigToUse: any) => {
         setActionLoading(true);
         try {
             const token = await getAccessToken();
@@ -146,7 +146,7 @@ const SubscriptionManagementScreen = () => {
                 },
                 body: JSON.stringify({
                     paymentMethod: 'stripe',
-                    planType: CONFIG.planType
+                    planType: planConfigToUse.planType
                 })
             });
 
@@ -165,7 +165,7 @@ const SubscriptionManagementScreen = () => {
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
                 defaultBillingDetails: {
-                    name: CONFIG.billingName,
+                    name: isWorker ? 'Trabajador' : 'Abogado', // Fallback or distinct
                 },
                 returnURL: 'derechoslaboralesmx://stripe-redirect',
             });
@@ -248,8 +248,28 @@ const SubscriptionManagementScreen = () => {
                 { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Mejorar ahora', onPress: () => {
+                        // Directly access the PRO config (Index 1 is PRO in our inline array logic above)
+                        // Ideally we should extract the array to a constant, but for now we reconstruct/access it
+                        const lawyerPlans = [
+                            {
+                                id: 'basic',
+                                title: 'Suscripción Básica',
+                                price: 99,
+                                period: 'mensual',
+                                planType: 'lawyer_basic'
+                            },
+                            {
+                                id: 'pro',
+                                title: 'Suscripción PRO',
+                                price: 299,
+                                period: 'mensual',
+                                planType: 'lawyer_pro'
+                            }
+                        ];
+                        const proPlan = lawyerPlans[1];
+
                         setSelectedLawyerTier(1);
-                        setTimeout(() => handleActivate(), 300);
+                        setTimeout(() => handleActivate(proPlan), 300);
                     }
                 }
             ]
@@ -573,7 +593,7 @@ const SubscriptionManagementScreen = () => {
                 {!hasActiveSubscription ? (
                     <TouchableOpacity
                         style={[styles.actionButton, actionLoading && { opacity: 0.5 }]}
-                        onPress={handleActivate}
+                        onPress={() => handleActivate()}
                         disabled={actionLoading}
                     >
                         <LinearGradient
@@ -616,7 +636,7 @@ const SubscriptionManagementScreen = () => {
                 ) : currentPlan === 'pro' ? (
                     // PRO PLAN: Show Extend + Downgrade + Cancel
                     <View style={styles.buttonStack}>
-                        <TouchableOpacity style={styles.actionButton} onPress={handleActivate}>
+                        <TouchableOpacity style={styles.actionButton} onPress={() => handleActivate()}>
                             <LinearGradient
                                 colors={['#FFD200', '#F7971E']}
                                 style={styles.actionGradient}
@@ -643,7 +663,7 @@ const SubscriptionManagementScreen = () => {
                         </View>
                     </View>
                 ) : (
-                    <TouchableOpacity style={styles.renewButton} onPress={handleActivate}>
+                    <TouchableOpacity style={styles.renewButton} onPress={() => handleActivate()}>
                         <Text style={styles.renewButtonText}>Extender Suscripción</Text>
                     </TouchableOpacity>
                 )}

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-import { getApiUrl } from '../../config/api';
+import { API_URL } from '../../config/constants';
 
 interface ForumPost {
     id: string;
@@ -25,7 +25,7 @@ interface ForumPost {
 
 const AnonymousForumScreen = () => {
     const navigation = useNavigation();
-    const { user, token } = useAuth();
+    const { user, getAccessToken } = useAuth();
     const [posts, setPosts] = useState<ForumPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -33,13 +33,15 @@ const AnonymousForumScreen = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await axios.get(`${getApiUrl()}/forum/posts`, {
+            const token = await getAccessToken();
+            const response = await axios.get(`${API_URL}/forum/posts`, {
                 params: { filter: filter === 'unanswered' ? 'unanswered' : undefined },
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(response.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching forum posts:', error);
+            Alert.alert('Error de Foro', 'No se pudieron cargar posts. ' + (error.message || 'Error desconocido'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -62,7 +64,7 @@ const AnonymousForumScreen = () => {
         return (
             <TouchableOpacity
                 style={styles.postCard}
-                onPress={() => console.log('Navigate to details', item.id)} // Todo: Detail Screen
+                onPress={() => navigation.navigate('ForumDetail', { postId: item.id })}
                 activeOpacity={0.7}
             >
                 <View style={styles.postHeader}>
@@ -151,7 +153,7 @@ const AnonymousForumScreen = () => {
             {/* FAB for New Post */}
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => console.log('Open Create Post Modal')} // Todo: Create Post Modal
+                onPress={() => navigation.navigate('ForumCreatePost' as never)}
             >
                 <Ionicons name="add" size={30} color="#fff" />
             </TouchableOpacity>

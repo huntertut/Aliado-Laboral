@@ -382,7 +382,6 @@ const CalculatorScreen = () => {
             <ScrollView
                 style={styles.resultsContainer}
                 contentContainerStyle={{ paddingBottom: 50, backgroundColor: '#f5f6fa' }}
-                ref={resultsRef}
                 collapsable={false}
             >
                 <Text style={styles.resultsTitle}>Resumen de Tu Finiquito y Liquidación</Text>
@@ -487,21 +486,34 @@ const CalculatorScreen = () => {
                     <Text style={styles.totalAmount}>${results.totalNet.toFixed(2)}</Text>
                 </View>
 
-                {/* Viral Share Button */}
-                <TouchableOpacity
-                    style={[styles.shareViralButton, { marginBottom: 15 }]}
-                    onPress={() => ViralShareService.shareView(resultsRef)}
-                >
-                    <LinearGradient
-                        colors={['#FF512F', '#DD2476']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.shareGradient}
+                {/* Share Result Buttons */}
+                <Text style={styles.shareLabel}>Compartir Resultado en Redes:</Text>
+                <View style={styles.shareButtonsContainer}>
+                    {/* Facebook Style */}
+                    <TouchableOpacity
+                        style={[styles.shareButton, { backgroundColor: '#1877F2', flex: 1, marginRight: 8 }]}
+                        onPress={() => ViralShareService.shareView(resultsRef)}
                     >
-                        <Ionicons name="logo-instagram" size={24} color="#fff" />
-                        <Text style={styles.shareViralText}>Compartir Resultado (Viral)</Text>
-                    </LinearGradient>
-                </TouchableOpacity>
+                        <Ionicons name="logo-facebook" size={24} color="#fff" />
+                        <Text style={styles.shareButtonText}>Facebook</Text>
+                    </TouchableOpacity>
+
+                    {/* Instagram Style */}
+                    <TouchableOpacity
+                        style={[styles.shareButton, { flex: 1, marginLeft: 8, padding: 0, overflow: 'hidden' }]}
+                        onPress={() => ViralShareService.shareView(resultsRef)}
+                    >
+                        <LinearGradient
+                            colors={['#833ab4', '#fd1d1d', '#fcb045']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={[styles.shareButton, { width: '100%', height: '100%', borderRadius: 0 }]} // Fill container
+                        >
+                            <Ionicons name="logo-instagram" size={24} color="#fff" />
+                            <Text style={styles.shareButtonText}>Instagram</Text>
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
 
                 {/* Forum Post Button */}
                 <TouchableOpacity
@@ -584,6 +596,61 @@ const CalculatorScreen = () => {
                 {currentStep === 4 && renderStep4()}
             </ScrollView>
 
+            {/* Hidden Infographic Template for Sharing */}
+            <View
+                style={[styles.infographicContainer, { position: 'absolute', zIndex: -10, opacity: 1, left: -9999 }]}
+                collapsable={false}
+                ref={resultsRef}
+            >
+                {/* Header */}
+                <View style={styles.infoHeader}>
+                    <Text style={styles.infoHeaderText}>TRANSPARENCIA SALARIAL</Text>
+                    <Text style={styles.infoHeaderSub}>TUS DOS ESCENARIOS</Text>
+                </View>
+
+                {/* Split Screen */}
+                <View style={styles.splitContainer}>
+                    {/* Scenario A: Resignation (Top) */}
+                    <View style={styles.splitTop}>
+                        <View style={styles.scenarioLabelContainer}>
+                            <Text style={styles.scenarioTitle}>📄 Escenario A</Text>
+                            <Text style={styles.scenarioSubtitle}>Si tú decides renunciar (Finiquito)</Text>
+                        </View>
+
+                        <View style={styles.amountContainer}>
+                            <Ionicons name="document-text-outline" size={40} color="#7f8c8d" />
+                            <Text style={styles.amountTextSmall}>
+                                ${results ? results.finiquitoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                            </Text>
+                        </View>
+                        <Text style={styles.scenarioContext}>Derechos proporcionales acumulados.</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    {/* Scenario B: Unjustified Dismissal (Bottom) */}
+                    <View style={styles.splitBottom}>
+                        <View style={styles.scenarioLabelContainer}>
+                            <Text style={styles.scenarioTitleLight}>⚖️ Escenario B</Text>
+                            <Text style={styles.scenarioSubtitleLight}>Despido Injustificado (Liquidación)</Text>
+                        </View>
+
+                        <View style={styles.amountContainer}>
+                            <Ionicons name="scale-outline" size={50} color="#1dd1a1" />
+                            <Text style={styles.amountTextLarge}>
+                                ${results ? results.totalNet.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                            </Text>
+                        </View>
+                        <Text style={styles.scenarioContextLight}>Indemnización constitucional completa.</Text>
+                    </View>
+                </View>
+
+                {/* Footer */}
+                <View style={styles.infoFooter}>
+                    <Text style={styles.infoFooterText}>Información es poder. Calcula tu caso en Alianza Laboral App.</Text>
+                </View>
+            </View>
+
             <DatePickerModal
                 visible={showStartPicker}
                 onClose={() => setShowStartPicker(false)}
@@ -602,9 +669,142 @@ const CalculatorScreen = () => {
 };
 
 const styles = StyleSheet.create({
+    // ... existing styles ...
+    infographicContainer: {
+        width: 375, // Standard width ~9:16 ratio base
+        height: 667,
+        backgroundColor: '#fff',
+    },
+    infoHeader: {
+        paddingTop: 40,
+        paddingBottom: 20,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    infoHeaderText: {
+        fontSize: 14,
+        letterSpacing: 3,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+    },
+    infoHeaderSub: {
+        fontSize: 10,
+        letterSpacing: 1,
+        color: '#7f8c8d',
+        marginTop: 5,
+    },
+    splitContainer: {
+        flex: 1,
+    },
+    splitTop: {
+        flex: 1,
+        backgroundColor: '#dbe4eb', // Muted Grey-Blue
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    splitBottom: {
+        flex: 1,
+        backgroundColor: '#1e3799', // Corporate Deep Blue
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    divider: {
+        height: 2,
+        backgroundColor: '#bdc3c7',
+        width: '80%',
+        alignSelf: 'center',
+    },
+    scenarioLabelContainer: {
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    scenarioTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#34495e',
+    },
+    scenarioSubtitle: {
+        fontSize: 14,
+        color: '#576574',
+    },
+    scenarioTitleLight: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    scenarioSubtitleLight: {
+        fontSize: 14,
+        color: '#a4b0be',
+    },
+    amountContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 15,
+        marginBottom: 10,
+    },
+    amountTextSmall: {
+        fontSize: 32,
+        fontWeight: '300',
+        color: '#2c3e50',
+    },
+    amountTextLarge: {
+        fontSize: 42,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    scenarioContext: {
+        fontSize: 12,
+        color: '#7f8c8d',
+        marginTop: 5,
+        fontStyle: 'italic',
+    },
+    scenarioContextLight: {
+        fontSize: 12,
+        color: '#1dd1a1', // Teal accent
+        marginTop: 5,
+        fontStyle: 'italic',
+    },
+    infoFooter: {
+        padding: 15,
+        backgroundColor: '#222f3e',
+        alignItems: 'center',
+    },
+    infoFooterText: {
+        color: '#c8d6e5',
+        fontSize: 10,
+    },
     container: {
         flex: 1,
         backgroundColor: '#f5f6fa',
+    },
+    shareLabel: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#666',
+        marginBottom: 10,
+        textAlign: 'center',
+    },
+    shareButtonsContainer: {
+        flexDirection: 'row',
+        marginBottom: 20,
+        paddingHorizontal: 5,
+    },
+    shareButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        borderRadius: 10,
+    },
+    shareButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        marginLeft: 8,
+        fontSize: 14,
     },
     header: {
         paddingTop: 50,

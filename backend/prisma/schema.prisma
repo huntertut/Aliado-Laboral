@@ -544,8 +544,17 @@ model ForumAnswer {
   postId      String
   post        ForumPost @relation(fields: [postId], references: [id])
   
-  lawyerId    String
-  lawyer      Lawyer   @relation(fields: [lawyerId], references: [id])
+  // Threading (Respuestas anidadas)
+  parentId    String?
+  parent      ForumAnswer? @relation("ThreadedAnswers", fields: [parentId], references: [id])
+  children    ForumAnswer[] @relation("ThreadedAnswers")
+
+  // Autor (Puede ser Lawyer o User/Worker ahora)
+  lawyerId    String?
+  lawyer      Lawyer?  @relation(fields: [lawyerId], references: [id])
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
   
   content     String
   upvotes     Int      @default(0)

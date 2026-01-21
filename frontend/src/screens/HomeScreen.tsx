@@ -125,7 +125,7 @@ const HomeScreen = () => {
                 style={styles.header}
             >
                 <View style={styles.headerTop}>
-                    <View style={styles.greetingContainer}>
+                    <View style={[styles.greetingContainer, { maxWidth: '75%' }]}>
                         {/* Show Logo PRO if premium, otherwise regular logo */}
                         <Image
                             source={isPro
@@ -135,9 +135,9 @@ const HomeScreen = () => {
                             style={styles.headerLogo}
                             resizeMode="contain"
                         />
-                        <View>
+                        <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.greeting}>
+                                <Text style={styles.greeting} numberOfLines={1}>
                                     Hola, {user?.fullName
                                         ? user.fullName.split(' ')[0]
                                         : 'Bienvenido'}
@@ -149,14 +149,14 @@ const HomeScreen = () => {
                                     </View>
                                 )}
                             </View>
-                            <Text style={styles.subGreeting}>¿En qué te podemos ayudar hoy?</Text>
+                            <Text style={styles.subGreeting}>¿En qué te podemos ayudar?</Text>
                         </View>
                     </View>
 
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('NewsFeed' as never)}
-                            style={{ padding: 5 }}
+                            style={{ padding: 8, marginRight: 8 }}
                         >
                             <Ionicons name="notifications-outline" size={28} color="#fff" />
                         </TouchableOpacity>
@@ -165,7 +165,7 @@ const HomeScreen = () => {
                             style={styles.profileButton}
                             onPress={() => navigation.navigate('Profile' as never)}
                         >
-                            <Ionicons name="person-circle-outline" size={40} color="#fff" />
+                            <Ionicons name="person-circle-outline" size={42} color="#fff" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -279,13 +279,14 @@ const styles = StyleSheet.create({
     greetingContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        // Gap removed for compatibility, using margins in children if needed
     },
     headerLogo: {
         width: 45,
         height: 45,
         borderRadius: 10,
         backgroundColor: '#fff',
+        marginRight: 12, // Added margin to replace gap
     },
     scrollContent: {
         padding: theme.spacing.l,

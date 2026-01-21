@@ -119,11 +119,17 @@ export const getPostDetails = async (req: Request, res: Response) => {
                     include: {
                         lawyer: {
                             include: { user: { select: { fullName: true } } }
+                        },
+                        user: {
+                            select: { fullName: true, role: true } // Include user details for non-active lawyers
                         }
                     },
-                    orderBy: {
-                        isAccepted: 'desc'
-                    }
+                    // Sort order: Accepted first, then by date (oldest first usually makes sense for reading flow, or newest?)
+                    // Usually oldest first for threads.
+                    orderBy: [
+                        { isAccepted: 'desc' },
+                        { createdAt: 'asc' }
+                    ]
                 }
             }
         });
@@ -140,6 +146,7 @@ export const getPostDetails = async (req: Request, res: Response) => {
 
         res.json(post);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch post details' });
     }
 };
@@ -147,13 +154,12 @@ export const getPostDetails = async (req: Request, res: Response) => {
 export const answerPost = async (req: Request, res: Response) => {
     try {
         const { postId } = req.params;
-        const { content } = req.body;
+        const { content, parentId } = req.body;
         const userId = (req as any).user?.userId;
+        const userRole = (req as any).user?.role;
 
-        // Verify User is a Lawyer
-        const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
-        if (!lawyer) {
-            return res.status(403).json({ error: 'Only lawyers can answer posts' });
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
 
         // 1. Security Check: Phone Numbers
@@ -166,16 +172,33 @@ export const answerPost = async (req: Request, res: Response) => {
         // 2. Content Moderation
         const cleanContent = maskProfanity(content);
 
+        // 3. Determine Author Type (Lawyer vs User)
+        let lawyerId = null;
+        let finalUserId = null;
+
+        // Try to find if user is acting as a lawyer
+        const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
+
+        if (lawyer) {
+            lawyerId = lawyer.id;
+        } else {
+            // Regular user (Worker/Pyme)
+            finalUserId = userId;
+        }
+
         const answer = await prisma.forumAnswer.create({
             data: {
                 postId,
-                lawyerId: lawyer.id,
+                parentId: parentId || null, // Threading
+                lawyerId: lawyerId,
+                userId: finalUserId,
                 content: cleanContent
             }
         });
 
         res.status(201).json(answer);
     } catch (error) {
+        console.error('Error answering post:', error);
         res.status(500).json({ error: 'Failed to post answer' });
     }
 };
@@ -183,7 +206,7 @@ export const answerPost = async (req: Request, res: Response) => {
 export const voteAnswer = async (req: Request, res: Response) => {
     try {
         const { answerId } = req.params;
-        const { value } = req.body; // 1 or -1
+        const { value } = req.body; // 1 (Like) or -1 (Dislike)
         const userId = (req as any).user?.userId;
 
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -198,22 +221,36 @@ export const voteAnswer = async (req: Request, res: Response) => {
             }
         });
 
+        // Get answer to find author
+        const answer = await prisma.forumAnswer.findUnique({
+            where: { id: answerId },
+            include: { lawyer: true }
+        });
+
+        if (!answer) return res.status(404).json({ error: 'Answer not found' });
+
+        let scoreDelta = 0;
+
         if (existingVote) {
-            // Update vote or remove if same? Let's just update for now
             if (existingVote.value === value) {
                 return res.json({ message: 'Already voted' });
             }
-            // Update logic would be complex, simplistic approach:
+            // Changing vote (e.g., -1 to 1 => +2 delta)
+            scoreDelta = value * 2; // Not strictly accurate for reputation but simpler for now
+
             await prisma.forumVote.update({
                 where: { id: existingVote.id },
                 data: { value }
             });
-            // Update counter
             await prisma.forumAnswer.update({
                 where: { id: answerId },
-                data: { upvotes: { increment: value * 2 } } // Swing of 2
+                data: { upvotes: { increment: scoreDelta } }
             });
+
         } else {
+            // New Vote
+            scoreDelta = value;
+
             await prisma.forumVote.create({
                 data: { userId, answerId, value }
             });
@@ -223,8 +260,31 @@ export const voteAnswer = async (req: Request, res: Response) => {
             });
         }
 
-        res.json({ success: true });
+        // --- REPUTATION SYSTEM ---
+        // Only affect reputation if the author is a Lawyer and it's a positive interactions
+        if (answer.lawyerId) {
+            // Define points: Like = +0.5, Dislike = -0.1 (Punish less than Reward)
+            // Simpler: Just map the scoreDelta (1 vote = 0.5 points)
+            const points = scoreDelta * 0.5;
+
+            // Update Lawyer Profile
+            // We need to find the profile first potentially or just update
+            try {
+                await prisma.lawyerProfile.update({
+                    where: { lawyerId: answer.lawyerId },
+                    data: {
+                        reputationScore: { increment: points }
+                    }
+                });
+            } catch (err) {
+                // Ignore if profile doesn't exist yet or other minor issue, don't fail the vote
+                console.log('Skipped reputation update (Profile might not exist)');
+            }
+        }
+
+        res.json({ success: true, newScore: (answer.upvotes + scoreDelta) });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to vote' });
     }
 };

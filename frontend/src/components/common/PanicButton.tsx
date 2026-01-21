@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import { theme } from '../theme/colors';
 
 const PanicButton = () => {
+    const navigation = useNavigation();
     const [isCrisisMode, setIsCrisisMode] = useState(false);
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [isRecording, setIsRecording] = useState(false);
@@ -131,8 +133,7 @@ const PanicButton = () => {
                                 style={styles.callButton}
                                 onPress={() => {
                                     toggleCrisisMode();
-                                    // Navigate to Chat or Call Logic
-                                    Alert.alert("Contactando", "Abriendo chat prioritario con Soporte...");
+                                    navigation.navigate('SubscriptionManagement' as never);
                                 }}
                             >
                                 <Text style={styles.callButtonText}>S.O.S. CONTACTAR ABOGADO</Text>

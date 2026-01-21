@@ -95,7 +95,7 @@ const AppNavigator = () => {
                                     component={require('../screens/pyme/LiquidationCalculatorView').default}
                                     options={{ headerShown: false }}
                                 />
-                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ title: 'Guía Laboral' }} />
+                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="Lawyers" component={require('../screens/LawyersScreen').default} options={{ title: 'Directorio de Abogados' }} />
                                 <Stack.Screen name="LawyerDetail" component={require('../screens/LawyerDetailScreen').default} options={{ title: 'Perfil del Abogado' }} />
                                 <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
@@ -183,7 +183,7 @@ const AppNavigator = () => {
                                 <Stack.Screen name="SubscriptionManagement" component={require('../screens/SubscriptionManagementScreen').default} options={{ headerShown: false }} />
 
                                 {/* New Content Modules */}
-                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ title: 'Guía Laboral' }} />
+                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="MyChest" component={require('../screens/MyChestScreen').default} options={{ title: 'Mi Kit Laboral' }} />
                                 <Stack.Screen name="Benefits" component={require('../screens/BenefitsScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="ContractTypes" component={require('../screens/ContractTypesScreen').default} options={{ title: 'Tipos de Contrato' }} />
@@ -232,6 +232,11 @@ const AppNavigator = () => {
                     name="ForumCreatePost"
                     component={require('../screens/forum/ForumCreatePostScreen').default}
                     options={{ presentation: 'modal', headerShown: false }}
+                />
+                <Stack.Screen
+                    name="ForumDetail"
+                    component={require('../screens/forum/ForumDetailScreen').default}
+                    options={{ headerShown: false }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
