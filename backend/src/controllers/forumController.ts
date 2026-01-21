@@ -347,9 +347,19 @@ export const deleteAnswer = async (req: Request, res: Response) => {
 
         if (!answer) return res.status(404).json({ error: 'Answer not found' });
 
-        // Admin or Owner (Lawyer User)
-        if (userRole !== 'admin' && answer.lawyer.userId !== userId) {
-            return res.status(403).json({ error: 'Forbidden' });
+        // Admin or Owner (Lawyer User or Regular User)
+        if (userRole !== 'admin') {
+            let isOwner = false;
+
+            if (answer.lawyer && answer.lawyer.userId === userId) {
+                isOwner = true;
+            } else if (answer.userId === userId) {
+                isOwner = true;
+            }
+
+            if (!isOwner) {
+                return res.status(403).json({ error: 'Forbidden' });
+            }
         }
 
         await prisma.forumAnswer.delete({ where: { id: answerId } });
