@@ -125,10 +125,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             await AsyncStorage.setItem('userData', JSON.stringify(freshUser));
                         }
                     } catch (refreshErr: any) {
-                        console.warn('[AuthContext] Token verification failed (possibly expired):', refreshErr.response?.status);
-                        // Do NOT logout here immediately. 
-                        // Let onAuthStateChanged handle the token refresh/session restore.
-                        // If the session is truly dead, the interceptor or onAuthStateChanged will handle it.
+                        console.warn('[AuthContext] Token verification failed:', refreshErr.response?.status);
+
+                        // FIX: If backend explicitly rejects token (Invalid Signature/Expired), force logout.
+                        // This prevents "Zombie Sessions" where the app thinks it's logged in but backend rejects everything.
+                        if (refreshErr.response?.status === 401 || refreshErr.response?.status === 403) {
+                            console.warn('[AuthContext] Backend rejected token/session. Forcing local logout.');
+                            await logout();
+                            return;
+                        }
+
+                        // If it's a Network Error or Server Error (500), we keep the session 
+                        // and let Firebase try to silent-refresh later.
                     }
                 }
             } catch (e) {

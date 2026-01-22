@@ -21,60 +21,107 @@ const SubscriptionManagementScreen = () => {
     const { getAccessToken, user } = useAuth();
 
     const isWorker = user?.role === 'worker';
+    const isPyme = user?.role === 'pyme';
+    const isLawyer = user?.role === 'lawyer';
 
     // Config based on Role
-    const [selectedLawyerTier, setSelectedLawyerTier] = useState(0);
+    const [selectedTier, setSelectedTier] = useState(0);
 
-    const CONFIG = isWorker ? {
-        title: 'Aliado Premium',
-        price: 29,
-        period: 'mensual',
-        gradient: ['#fa709a', '#fee140'] as const,
-        benefits: [
-            'Cálculos de finiquito ilimitados',
-            'Descarga de reportes en PDF',
-            'Acceso a Guías Laborales Avanzadas',
-            'Prioridad en el Chat con Abogados',
-            'Sin anuncios'
-        ],
-        billingName: 'Trabajador',
-        planType: 'worker_premium'
-    } : [
-        {
-            id: 'basic',
-            title: 'Suscripción Básica',
-            price: 99,
-            period: 'mensual',
-            gradient: ['#667eea', '#764ba2'] as const,
-            image: require('../../assets/images/ali-abo-bac.jpg'),
-            benefits: [
-                'Recibir solicitudes de contacto',
-                'Acceso a datos de contacto',
-                'Perfil en el directorio',
-                'Estadísticas básicas',
-            ],
-            planType: 'lawyer_basic'
-        },
-        {
-            id: 'pro',
-            title: 'Suscripción PRO',
-            price: 299,
-            period: 'mensual',
-            gradient: ['#FFD200', '#F7971E'] as const, // Gold PRO Gradient
-            image: require('../../assets/images/ali-abo-pro.jpg'),
-            benefits: [
-                'Todo lo de la suscripción Básica',
-                'Posición prioritaria en el directorio',
-                'Insignia de Verificado PRO',
-                'Acceso a "Hot Leads" (Casos Urgentes)',
-                'Soporte 24/7 y Asesoría'
-            ],
-            planType: 'lawyer_pro'
-        }
-    ][selectedLawyerTier];
+    let CONFIG: any;
 
-    // Reference to lawyer tiers for the switcher
-    const LAWYER_TIERS_REF = !isWorker ? [
+    if (isWorker) {
+        CONFIG = {
+            title: 'Aliado Premium',
+            price: 29,
+            period: 'mensual',
+            gradient: ['#fa709a', '#fee140'] as const,
+            benefits: [
+                'Cálculos de finiquito ilimitados',
+                'Descarga de reportes en PDF',
+                'Acceso a Guías Laborales Avanzadas',
+                'Prioridad en el Chat con Abogados',
+                'Sin anuncios'
+            ],
+            billingName: 'Trabajador',
+            planType: 'worker_premium'
+        };
+    } else if (isPyme) {
+        // Pyme Plans
+        const pymePlans = [
+            {
+                id: 'basic',
+                title: 'PYME Basic',
+                price: 0,
+                period: 'siempre',
+                gradient: ['#11998e', '#38ef7d'] as const,
+                benefits: [
+                    'Diagnóstico laboral básico',
+                    'Revisión de contratos (informativa)',
+                    'Simulador de finiquito (visual)',
+                    'Guía PYME (Errores comunes)'
+                ],
+                planType: 'pyme_basic'
+            },
+            {
+                id: 'pro',
+                title: 'Blindaje Laboral Pro',
+                price: 999,
+                period: 'mensual',
+                gradient: ['#00b09b', '#96c93d'] as const,
+                benefits: [
+                    'Chat ilimitado con abogados',
+                    'Revisión legal de documentos / PDFs',
+                    'Alertas automáticas (IMSS, Riesgos)',
+                    'Guardado de simulaciones',
+                    'Acceso a módulo documental'
+                ],
+                planType: 'pyme_pro'
+            }
+        ];
+        CONFIG = pymePlans[selectedTier];
+    } else {
+        // Lawyer Plans (Default if other role, but mainly Lawyer)
+        const lawyerPlans = [
+            {
+                id: 'basic',
+                title: 'Suscripción Abogado',
+                price: 99,
+                period: 'mensual',
+                gradient: ['#667eea', '#764ba2'] as const,
+                image: require('../../assets/images/ali-abo-bac.jpg'),
+                benefits: [
+                    'Recibir solicitudes de contacto',
+                    'Acceso a datos de contacto',
+                    'Perfil en el directorio',
+                    'Estadísticas básicas',
+                ],
+                planType: 'lawyer_basic'
+            },
+            {
+                id: 'pro',
+                title: 'Suscripción Abogado PRO',
+                price: 299,
+                period: 'mensual',
+                gradient: ['#FFD200', '#F7971E'] as const,
+                image: require('../../assets/images/ali-abo-pro.jpg'),
+                benefits: [
+                    'Todo lo de la suscripción Básica',
+                    'Posición prioritaria en el directorio',
+                    'Insignia de Verificado PRO',
+                    'Acceso a "Hot Leads" (Casos Urgentes)',
+                    'Soporte 24/7 y Asesoría'
+                ],
+                planType: 'lawyer_pro'
+            }
+        ];
+        CONFIG = lawyerPlans[selectedTier];
+    }
+
+    // Reference tiers for switcher
+    const TIERS_REF = isPyme ? [
+        { id: 'basic', name: 'Básico', gradient: ['#11998e', '#38ef7d'] as const },
+        { id: 'pro', name: 'PRO', gradient: ['#00b09b', '#96c93d'] as const }
+    ] : isLawyer ? [
         { id: 'basic', name: 'Básico', gradient: ['#667eea', '#764ba2'] as const },
         { id: 'pro', name: 'PRO', gradient: ['#FFD200', '#F7971E'] as const }
     ] : [];
@@ -103,26 +150,30 @@ const SubscriptionManagementScreen = () => {
             setSubscription(data);
 
             // Sync selected tier with current plan
-            if (data.plan === 'pro') {
-                setSelectedLawyerTier(1);
-            } else if (data.plan === 'basic') {
-                setSelectedLawyerTier(0);
+            const plan = data.plan?.toLowerCase() || '';
+            if (plan.includes('pro') || plan.includes('premium')) {
+                setSelectedTier(1);
+            } else {
+                setSelectedTier(0);
             }
+
         } catch (error) {
             console.error('Error al cargar suscripción:', error);
-            // Optional: alert the user if it's a critical failure but at least stop loading
         } finally {
             setLoading(false);
         }
     };
 
     const handleActivate = async (planConfig = CONFIG) => {
+        const isFree = planConfig.price === 0;
         Alert.alert(
-            'Activar Suscripción',
-            `Se cobrará $${planConfig.price} MXN por acceso ${planConfig.period}.`,
+            isFree ? 'Activar Plan Gratuito' : 'Activar Suscripción',
+            isFree
+                ? `Estás a punto de activar ${planConfig.title}.`
+                : `Se cobrará $${planConfig.price} MXN por acceso ${planConfig.period}.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
-                { text: 'Pagar ahora', onPress: () => confirmActivation(planConfig) }
+                { text: isFree ? 'Activar Ahora' : 'Pagar ahora', onPress: () => confirmActivation(planConfig) }
             ]
         );
     };
@@ -133,6 +184,34 @@ const SubscriptionManagementScreen = () => {
             const token = await getAccessToken();
             if (!token) {
                 Alert.alert('Error', 'No se ha encontrado sesión');
+                setActionLoading(false);
+                return;
+            }
+
+            // HANDLE FREE PLAN DIRECTLY
+            if (planConfigToUse.price === 0) {
+                // Simulate activation or call backend to set "free" plan status
+                // For now we assume calling activate with 'stripe' but 0 price might trigger backend logic
+                // OR we just assume backend handles "pyme_basic" as free if configured.
+                // Let's try calling activate. If backend requires paymentIntent, this might fail, 
+                // but typically free plans just update the user record.
+                // TODO: Backend should handle price 0 bypass.
+                const response = await fetch(`${API_URL}/subscription/activate-free`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ planType: planConfigToUse.planType })
+                });
+
+                if (response.ok) {
+                    Alert.alert('¡Plan Activado!', 'Has activado tu plan gratuito.');
+                    fetchSubscription();
+                } else {
+                    // Fallback check if it was just a regular update
+                    Alert.alert('Aviso', 'No se pudo activar el plan gratuito automáticamente.');
+                }
                 setActionLoading(false);
                 return;
             }
@@ -165,7 +244,7 @@ const SubscriptionManagementScreen = () => {
                 customerEphemeralKeySecret: ephemeralKey,
                 paymentIntentClientSecret: paymentIntent,
                 defaultBillingDetails: {
-                    name: isWorker ? 'Trabajador' : 'Abogado', // Fallback or distinct
+                    name: isWorker ? 'Trabajador' : (isPyme ? 'Empresa' : 'Abogado'), // Fallback or distinct
                 },
                 returnURL: 'derechoslaboralesmx://stripe-redirect',
             });
@@ -250,26 +329,49 @@ const SubscriptionManagementScreen = () => {
                     text: 'Mejorar ahora', onPress: () => {
                         // Directly access the PRO config (Index 1 is PRO in our inline array logic above)
                         // Ideally we should extract the array to a constant, but for now we reconstruct/access it
-                        const lawyerPlans = [
-                            {
-                                id: 'basic',
-                                title: 'Suscripción Básica',
-                                price: 99,
-                                period: 'mensual',
-                                planType: 'lawyer_basic'
-                            },
-                            {
-                                id: 'pro',
-                                title: 'Suscripción PRO',
-                                price: 299,
-                                period: 'mensual',
-                                planType: 'lawyer_pro'
-                            }
-                        ];
-                        const proPlan = lawyerPlans[1];
+                        let upgradePlan: any;
 
-                        setSelectedLawyerTier(1);
-                        setTimeout(() => handleActivate(proPlan), 300);
+                        if (isPyme) {
+                            const pymePlans = [
+                                {
+                                    id: 'basic',
+                                    title: 'PYME Basic',
+                                    price: 0,
+                                    period: 'siempre',
+                                    planType: 'pyme_basic'
+                                },
+                                {
+                                    id: 'pro',
+                                    title: 'Blindaje Laboral Pro',
+                                    price: 999,
+                                    period: 'mensual',
+                                    planType: 'pyme_pro'
+                                }
+                            ];
+                            upgradePlan = pymePlans[1];
+                        } else {
+                            // Lawyer
+                            const lawyerPlans = [
+                                {
+                                    id: 'basic',
+                                    title: 'Suscripción Básica',
+                                    price: 99,
+                                    period: 'mensual',
+                                    planType: 'lawyer_basic'
+                                },
+                                {
+                                    id: 'pro',
+                                    title: 'Suscripción PRO',
+                                    price: 299,
+                                    period: 'mensual',
+                                    planType: 'lawyer_pro'
+                                }
+                            ];
+                            upgradePlan = lawyerPlans[1];
+                        }
+
+                        setSelectedTier(1);
+                        setTimeout(() => handleActivate(upgradePlan), 300);
                     }
                 }
             ]
@@ -456,23 +558,23 @@ const SubscriptionManagementScreen = () => {
                     </View>
                 )}
 
-                {/* Lawyer Plan Switcher (Only if NO active subscription) */}
+                {/* Plan Switcher (Only if NO active subscription) for non-workers */}
                 {!isWorker && currentPlan === 'none' && (
                     <View style={styles.tierSwitcher}>
                         <Text style={styles.tierTitle}>Selecciona un Plan para Activar o Mejorar</Text>
                         <View style={styles.tierButtons}>
-                            {LAWYER_TIERS_REF.map((tier, index) => (
+                            {TIERS_REF.map((tier, index) => (
                                 <TouchableOpacity
                                     key={tier.id}
                                     style={[
                                         styles.tierButton,
-                                        selectedLawyerTier === index && { backgroundColor: tier.gradient[0] }
+                                        selectedTier === index && { backgroundColor: tier.gradient[0] }
                                     ]}
-                                    onPress={() => setSelectedLawyerTier(index)}
+                                    onPress={() => setSelectedTier(index)}
                                 >
                                     <Text style={[
                                         styles.tierButtonText,
-                                        selectedLawyerTier === index && { color: '#fff' }
+                                        selectedTier === index && { color: '#fff' }
                                     ]}>
                                         {tier.name}
                                     </Text>
