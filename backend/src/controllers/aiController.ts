@@ -228,11 +228,12 @@ export const chatWithAI = async (req: Request, res: Response) => {
             });
         }
 
-        // 404 Special Handling
+        // 404 Special Handling - Usually means API is disabled or Model not found
         if (error.message?.includes('404') || error.message?.includes('not found')) {
+            console.error('❌ [AI Error] 404 Detected. Most likely cause: Generative Language API is NOT enabled in Google Cloud Console.');
             return res.status(503).json({
                 error: 'Modelos de IA no disponibles',
-                message: 'Estamos actualizando nuestros cerebros digitales. Por favor intenta más tarde o verifica tu configuración.',
+                message: 'El asistente está durmiendo. (Error 404: Verifica que la API Generative Language esté habilitada en Google Cloud).',
                 requiresLawyer: false
             });
         }
