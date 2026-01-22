@@ -77,7 +77,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             }
 
             req.user = {
-                id: userId, // Now guaranteed to be a valid User.id
+                id: userId,
+                userId: userId, // BACKWARD COMPATIBILITY: Some controllers expect .userId
                 email: userRole.email,
                 role: userRole.role,
                 firebaseUid: firebaseUid
@@ -158,6 +159,7 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
             // 3. Set req.user and proceed
             req.user = {
                 id: finalUserId,
+                userId: finalUserId, // BACKWARD COMPATIBILITY
                 email: email,
                 role: finalRole,
                 firebaseUid: firebaseUid
