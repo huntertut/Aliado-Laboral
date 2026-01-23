@@ -38,8 +38,13 @@ const LaborGuideScreen = () => {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>📘 Guía Laboral</Text>
-                <Text style={styles.headerSubtitle}>Tu manual para entender el mundo laboral</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={24} color="#2c3e50" />
+                </TouchableOpacity>
+                <View>
+                    <Text style={styles.headerTitle}>📘 Guía Laboral</Text>
+                    <Text style={styles.headerSubtitle}>Tu manual para entender el mundo laboral</Text>
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -85,6 +90,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: '#eee',
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     headerTitle: {
         fontSize: 28,
@@ -137,6 +144,10 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.9)',
         lineHeight: 18,
     },
+    backButton: {
+        marginRight: 15,
+        padding: 5,
+    }
 });
 
 export default LaborGuideScreen;

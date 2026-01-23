@@ -1,15 +1,11 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const apiKey = process.env.GOOGLE_API_KEY;
+const apiKey = process.env.GROQ_API_KEY;
 if (!apiKey) {
-    console.warn("⚠️ GOOGLE_API_KEY no encontrada en .env");
+    console.warn("⚠️ GROQ_API_KEY no encontrada en .env");
 }
-
-const genAI = new GoogleGenerativeAI(apiKey || "");
-const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
 export interface ProcessedNews {
     titulo_clickeable: string;
@@ -20,49 +16,67 @@ export interface ProcessedNews {
 }
 
 /**
- * Process legal news text using Google Gemini AI
+ * Process legal news text using Groq AI (Llama 3)
  */
 export async function processLegalNews(originalText: string): Promise<ProcessedNews | null> {
-    console.log("🚀 Enviando noticia a la IA de Google (Gemini)...");
+    console.log("🚀 Enviando noticia a la IA de Groq (Llama 3)...");
 
-    const prompt = `
+    const systemPrompt = `
     Eres un editor experto de una App Laboral en México.
-    IMPORTANTE: Solo procesa noticias que ocurran en MÉXICO o que afecten directamente al sistema laboral mexicano (incluyendo entidades federativas como CDMX, Nuevo León, Jalisco, etc.).
-    A continuación te paso una noticia legal o texto legislativo.
-    Tu objetivo es reescribirla para que sea adictiva de leer y útil para diferentes perfiles.
-
-    TEXTO ORIGINAL:
-    """${originalText}"""
-
+    IMPORTANTE: Solo procesa noticias que ocurran en MÉXICO o que afecten directamente al sistema laboral mexicano.
+    
+    Tu objetivo es reescribir la noticia para que sea adictiva y útil.
+    
     INSTRUCCIONES DE FORMATO:
-    Responde ÚNICAMENTE con un objeto JSON válido (sin texto antes ni después, sin markdown).
-    Si el texto original NO tiene relación con México o su sistema laboral, devuelve un JSON con campos vacíos pero con la estructura correcta.
-
-    Estructura del JSON requerido:
+    Responde ÚNICAMENTE con un objeto JSON válido.
+    NO incluyas texto antes ni después del JSON (sin markdown ' \`\`\`json ').
+    
+    Estructura JSON requerida:
     {
       "titulo_clickeable": "Un título corto, intrigante y directo (max 15 palabras).",
-      "resumen_trabajador": "Explicación sencilla para el empleado, sin tecnicismos, usando emojis. Enfocado en: ¿Cómo afecta mi sueldo, mis vacaciones o mis derechos?",
-      "resumen_pyme": "Enfocado en el dueño de negocio (PYME). Habla de costes, nuevas obligaciones, multas y cómo evitar problemas legales. Tono urgente.",
-      "resumen_abogado": "Enfoque técnico de alto nivel para abogados. Menciona artículos de la LFT, jurisprudencia o reformas específicas si aplica.",
-      "pregunta_quiz": "Haz una pregunta sencilla de opción múltiple (solo la pregunta) sobre esta noticia para poner en la app."
+      "resumen_trabajador": "Explicación sencilla para el empleado, sin tecnicismos.",
+      "resumen_pyme": "Enfocado en el dueño de negocio. Tono urgente.",
+      "resumen_abogado": "Enfoque técnico para abogados.",
+      "pregunta_quiz": "Pregunta sencilla de opción múltiple (solo la pregunta)."
     }
-  `;
+    `;
 
     try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const textoRespuesta = response.text();
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: `TEXTO ORIGINAL:\n"""${originalText}"""` }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.5,
+                response_format: { type: "json_object" } // Force JSON
+            })
+        });
 
-        // Limpiar la respuesta de markdown
-        const textoLimpio = textoRespuesta.replace(/```json/g, '').replace(/```/g, '').trim();
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error(`Groq API Error: ${response.status}`, errText);
+            return null;
+        }
 
-        const datosProcesados = JSON.parse(textoLimpio) as ProcessedNews;
+        const data: any = await response.json();
+        const content = data.choices[0]?.message?.content || "{}";
 
-        console.log("✅ Noticia procesada con éxito por IA.");
-        return datosProcesados;
+        // Clean markdown just in case, though json_object mode should help
+        const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const processedData = JSON.parse(cleanContent) as ProcessedNews;
+        console.log("✅ Noticia procesada con éxito por Groq.");
+        return processedData;
 
     } catch (error) {
-        console.error("❌ Error procesando con Google AI:", error);
+        console.error("❌ Error procesando con Groq AI:", error);
         return null;
     }
 }
