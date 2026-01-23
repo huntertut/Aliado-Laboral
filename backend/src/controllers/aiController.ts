@@ -131,7 +131,7 @@ export const chatWithAI = async (req: Request, res: Response) => {
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: message }
                 ],
-                model: 'llama3-70b-8192', // High intelligence model
+                model: 'llama-3.3-70b-versatile', // High intelligence model (Updated 2025)
                 temperature: 0.7,
                 max_tokens: 800
             })
