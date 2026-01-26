@@ -932,7 +932,10 @@ export const uploadSettlementDoc = async (req: Request, res: Response) => {
         });
         if (!lawyer) return res.status(404).json({ error: 'Abogado no encontrado' });
 
-        const request = await prisma.contactRequest.findUnique({ where: { id: requestId } });
+        const request = await prisma.contactRequest.findUnique({
+            where: { id: requestId },
+            include: { worker: true }
+        });
         if (!request) return res.status(404).json({ error: 'Caso no encontrado' });
 
         // 1. Process File

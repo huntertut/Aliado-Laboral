@@ -5,7 +5,7 @@ interface UserPayload {
     id: string;
     email: string;
     role: string;
-    firebaseUid?: string; // Optional because not all users might have it, or required if logic demands
+    firebaseUid: string; // Mandatory to satisfy route types
 }
 
 declare global {
