@@ -752,7 +752,7 @@ export const closeCaseWithCommission = async (req: Request, res: Response) => {
             where: { id },
             data: {
                 crmStatus: 'CLOSED_WON',
-                finalSettlementAmount: amount,
+                settlementAmount: amount, // Corrected field name
                 commissionRate: commissionRate,
                 commissionAmount: commissionFee,
                 commissionStatus: 'pending', // Needs invoice

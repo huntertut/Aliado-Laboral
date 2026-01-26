@@ -31,6 +31,10 @@ model User {
   // Legal Armor & Privacy
   hasAcceptedDataSharing Boolean   @default(false)
   
+  // AI Rate Limiting (New)
+  dailyTokenCount       Int       @default(0)
+  lastTokenReset        DateTime?
+
   // Relations
   legalCases           LegalCase[]
   calculations         CalculationRecord[]
@@ -50,254 +54,7 @@ model User {
   documents            UserDocument[] // Bóveda de documentos
 }
 
-// Bóveda de Documentos del Usuario
-model UserDocument {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  type      String   // 'contract', 'id_card', 'proof_address', 'other'
-  url       String
-  name      String?  // Nombre original del archivo
-  createdAt DateTime @default(now())
-}
-
-// Mapeo de Firebase UID a roles de usuario
-model UserRole {
-  id          String   @id @default(uuid())
-  firebaseUid String   @unique
-  role        String   // 'worker', 'lawyer', 'admin', 'supervisor', 'accountant'
-  email       String
-  fullName    String?
-  userId      String?  @unique // Relación opcional con User existente
-  user        User?    @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-
-// Perfil laboral y de PROFEDET del trabajador
-model WorkerProfile {
-  id                    String   @id @default(uuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id])
-
-  // Datos Laborales (Opcional)
-  occupation            String?
-  federalEntity         String?
-  startDate             DateTime?
-  monthlySalary         Decimal?
-
-  // Datos de PROFEDET
-  profedetIsActive      Boolean  @default(false)
-  profedetStage         String?  // 'initial_advice', 'conciliation', 'file_open'
-  profedetCaseFile      String?
-  
-  // JSON strings for structured data (SQLite doesn't support JSON type natively in all versions/prisma adapters cleanly without mapping)
-  profedetInitialContact String? // JSON: { fullName, nss, employerName, visitDates }
-  profedetDocuments      String? // JSON: array of strings
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
-model LegalCase {
-  id           String        @id @default(uuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  title        String
-  status       String        @default("active") // 'active', 'resolved', 'archived'
-  employerName String?
-  startDate    DateTime?
-  createdAt    DateTime      @default(now())
-  
-  history      CaseHistory[]
-}
-
-model CaseHistory {
-  id          String    @id @default(uuid())
-  caseId      String
-  legalCase   LegalCase @relation(fields: [caseId], references: [id])
-  eventType   String    // 'harassment', 'late_payment', 'meeting'
-  description String?
-  occurredAt  DateTime
-  createdAt   DateTime  @default(now())
-  
-  evidence    EvidenceFile[]
-}
-
-model EvidenceFile {
-  id              String      @id @default(uuid())
-  historyId       String
-  caseHistory     CaseHistory @relation(fields: [historyId], references: [id])
-  fileUrl         String
-  fileType        String      // 'image', 'audio', 'pdf'
-  encryptionKeyId String?
-}
-
-model CalculationRecord {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  dailySalary Decimal
-  startDate   DateTime
-  endDate     DateTime
-  resultJson  String   // SQLite: Store JSON as serialized string
-  createdAt   DateTime @default(now())
-}
-
-model Lawyer {
-  id            String  @id @default(uuid())
-  userId        String  @unique
-  user          User    @relation("UserAsLawyer", fields: [userId], references: [id])
-  licenseNumber     String  @unique
-  specialty         String?
-  professionalName  String? // Nombre profesional capturado en registro
-  isVerified        Boolean @default(false)
-  acceptsPymeClients Boolean @default(false)
-  
-  profile       LawyerProfile? // NUEVO: perfil extendido
-  subscription  LawyerSubscription? // NUEVO: suscripción bimestral
-  assignedPymes PymeProfile[]
-
-  // Stripe-Specific Fields (LAWYERS ALWAYS USE STRIPE)
-  stripeCustomerId        String?   // Stripe customer ID
-  stripePaymentMethodId   String?   // Saved payment method for recurring charges
-  stripeSubscriptionId    String?   // Stripe subscription ID for $99 bimonthly
-  subscriptionStatus      String    @default("inactive") // 'active', 'past_due', 'canceled'
-  subscriptionEndDate     DateTime? // When current subscription period ends
-
-  // National Scope & Correspondent Fields
-  nationalScope              Boolean   @default(false)
-  availableStates            String?   @default("") // SQLite: Comma-separated list
-  acceptsFederalCases        Boolean   @default(false)
-  acceptsLocalCases          Boolean   @default(false)
-  requiresPhysicalPresence   Boolean   @default(true)
-  physicalPresenceStates     String?   @default("") // SQLite: Comma-separated list
-  isCorrespondent            Boolean   @default(false)
-
-  // Community Relations
-  forumAnswers               ForumAnswer[]
-  reviews                    LawyerReview[]
-}
-
-// ==========================================
-// NUEVAS TABLAS - SISTEMA DE CONTACTO
-// ==========================================
-
-// Perfil extendido del abogado
-model LawyerProfile {
-  id                String   @id @default(uuid())
-  lawyerId          String   @unique
-  lawyer            Lawyer   @relation(fields: [lawyerId], references: [id])
-  
-  // Información pública (visible sin pagar)
-  photoUrl          String?
-  yearsOfExperience Int      @default(0)
-  bio               String?
-  
-  // Casos ganados (mínimo 2 para aparecer)
-  wonCase1Summary   String?
-  wonCase2Summary   String?
-  wonCase3Summary   String?
-  
-  // Contacto privado (solo se revela tras aceptar request)
-  phone             String?
-  whatsapp          String?
-  attentionHours    String?  // Horario de atención ej: "Lun-Vie 9-18h"
-  schedule          String?  // JSON: { start: "09:00", end: "18:00" }
-  email             String?  // Email de contacto público
-  
-  // Métricas
-  profileViews      Int      @default(0)
-  successRate       Float?   @default(0)
-  reputationScore   Float    @default(50.0) // 0-100 Score
-  totalCases        Int      @default(0)
-  successfulCases   Int      @default(0)
-  lifetimeCommissionSavings Decimal @default(0.0) // Dopamine Metric: Total saved by being PRO
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  requests          ContactRequest[]
-}
-
-// Suscripción del trabajador ($29 MXN mensual)
-model WorkerSubscription {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id])
-  
-  status            String   @default("inactive") // 'active', 'inactive', 'expired', 'cancelled'
-  startDate         DateTime?
-  endDate           DateTime? // 1 mes después de startDate
-  
-  // Pago
-  amount            Decimal  @default(29.00)
-  paymentProvider   String?  // 'stripe', 'mercadopago'
-  lastPaymentId     String?
-  
-  autoRenew         Boolean  @default(true)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  payments          WorkerSubscriptionPayment[]
-}
-
-// Historial de pagos de suscripción del trabajador
-model WorkerSubscriptionPayment {
-  id             String              @id @default(uuid())
-  subscriptionId String
-  subscription   WorkerSubscription  @relation(fields: [subscriptionId], references: [id])
-  
-  amount         Decimal
-  status         String              // 'pending', 'completed', 'failed', 'refunded'
-  paymentDate    DateTime            @default(now())
-  paymentProvider String?            // 'stripe', 'mercadopago'
-  transactionId  String?
-  
-  createdAt      DateTime            @default(now())
-}
-
-// Suscripción del abogado ($99 MXN cada 2 meses)
-model LawyerSubscription {
-  id                String   @id @default(uuid())
-  lawyerId          String   @unique
-  lawyer            Lawyer   @relation(fields: [lawyerId], references: [id])
-  
-  plan              String   @default("basic") // 'basic', 'pro'
-  status            String   @default("inactive") // 'active', 'inactive', 'expired', 'canceled'
-  startDate         DateTime?
-  endDate           DateTime? // 2 meses después de startDate
-  
-  // Pago
-  amount            Decimal  @default(99.00)
-  paymentMethod     String?  // 'stripe', 'paypal', 'openpay'
-  lastPaymentId     String?
-  
-  autoRenew         Boolean  @default(true)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  payments          SubscriptionPayment[]
-}
-
-// Historial de pagos de suscripción
-model SubscriptionPayment {
-  id             String               @id @default(uuid())
-  subscriptionId String
-  subscription   LawyerSubscription   @relation(fields: [subscriptionId], references: [id])
-  
-  amount         Decimal
-  status         String               // 'pending', 'completed', 'failed', 'refunded'
-  paymentDate    DateTime             @default(now())
-  paymentMethod  String?
-  transactionId  String?
-  
-  createdAt      DateTime             @default(now())
-}
+// ... (Rest of schema)
 
 // Solicitud de contacto (Request)
 model ContactRequest {
@@ -315,6 +72,7 @@ model ContactRequest {
   caseSummary         String
   caseType            String?        // 'despido', 'acoso', 'discriminacion', 'otro' (Legal Category)
   urgency             String         @default("normal") // 'low', 'normal', 'high'
+  estimatedSeverance  Decimal?       // NEW: For 'Hot Case' logic (>150k)
   
   // Legal Armor Fields
   urgencyScore        Int            @default(0) // 1-100 logic-based score
@@ -364,6 +122,7 @@ model ContactRequest {
   
   // Timestamps
   createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt // NEW: For Anti-Flojera Scan
   acceptedAt          DateTime?
   rejectedAt          DateTime?
   expiredAt           DateTime?
@@ -386,6 +145,7 @@ model ContactRequest {
 
   // Commission / Success Fee Logic (El Puente)
   settlementAmount    Decimal?       // Monto final del convenio (extraído por OCR)
+  commissionRate      Decimal?       // NEW: Snapshot of rate applied (0.07 or 0.10)
   commissionAmount    Decimal?       // Monto de la comisión (e.j. 5%)
   commissionStatus    String         @default("not_applicable") // 'not_applicable', 'pending', 'paid', 'overdue'
   commissionInvoiceId String?        // Stripe Invoice ID
