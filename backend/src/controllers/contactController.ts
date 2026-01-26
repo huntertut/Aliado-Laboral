@@ -1048,7 +1048,7 @@ export const uploadSettlementDoc = async (req: Request, res: Response) => {
         // B. WORKER VALUE PROP (SOCIAL AUDIT)
         // Notify worker that "Something happened" but process is pending lawyer action
         if (request.workerId) {
-            const workerMsg = `👋 Hola ${request.worker.fullName || 'Usuario'}, tu abogado ha marcado tu caso como 'Ganado' y ha subido el Convenio/Sentencia.\n\nPara que puedas descargar tu copia oficial y tener el respaldo legal, tu abogado debe completar el registro de cierre final en la plataforma.\n\n¡Felicidades por este gran paso!`;
+            const workerMsg = `👋 Hola ${(request as any).worker?.fullName || 'Usuario'}, tu abogado ha marcado tu caso como 'Ganado' y ha subido el Convenio/Sentencia.\n\nPara que puedas descargar tu copia oficial y tener el respaldo legal, tu abogado debe completar el registro de cierre final en la plataforma.\n\n¡Felicidades por este gran paso!`;
 
             await prisma.chatMessage.create({
                 data: {
