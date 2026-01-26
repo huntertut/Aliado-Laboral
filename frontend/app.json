@@ -22,7 +22,8 @@
       "package": "com.aliadolaboral.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",
-        "backgroundColor": "#1e3799"
+        "backgroundColor": "#1e3799",
+        "googleServicesFile": "./google-services.json"
       },
       "usesCleartextTraffic": true,
       "permissions": [

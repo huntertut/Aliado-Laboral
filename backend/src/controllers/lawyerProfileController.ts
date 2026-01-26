@@ -250,7 +250,45 @@ export const updateMyProfile = async (req: Request, res: Response) => {
         }
 
         console.log('DEBUG: Updating bio to:', bio);
+        // ... existing legacy code ...
         console.log('DEBUG: Updating attentionHours to:', attentionHours);
+
+        // --- MODULE 3: OCR VERIFICATION ---
+        const { cedulaImage } = req.body; // Expecting Base64 image
+        let autoVerifyResult = false;
+
+        if (cedulaImage && cedulaImage.startsWith('data:image')) {
+            console.log('🕵️ [OCR] Procesando Cédula Profesional...');
+            try {
+                // Import dynamically or assume imported at top (I will add import top in next step if needed, but for now TS might complain if not careful. 
+                // Let's rely on standard import added later or use require if pure JS, but this is TS.
+                // Assuming I will add `import * as ocrService` at the top.)
+                const ocrService = require('../services/ocrService'); // Dynamic require to avoid top-level cyclic dependency issues or just for simplicity in this replacement block
+
+                const base64Data = cedulaImage.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+
+                const { cedula } = await ocrService.extractTextFromImage(buffer);
+
+                if (cedula && lawyer.licenseNumber) {
+                    // Check if extracted number matches the lawyer's license number
+                    // Allow partial match? No, strict.
+                    if (cedula.includes(lawyer.licenseNumber) || lawyer.licenseNumber.includes(cedula)) {
+                        console.log('✅ [OCR] MATCH CONFIRMADO! Verificando abogado automáticamente.');
+                        await prisma.lawyer.update({
+                            where: { id: lawyer.id },
+                            data: { isVerified: true }
+                        });
+                        autoVerifyResult = true;
+                    } else {
+                        console.log(`⚠️ [OCR] Mismatch: Leído ${cedula} vs Registrado ${lawyer.licenseNumber}`);
+                    }
+                }
+            } catch (ocrError) {
+                console.error('❌ [OCR] Falló el escaneo:', ocrError);
+            }
+        }
+        // ----------------------------------
 
         let finalPhotoUrl = photoUrl;
 

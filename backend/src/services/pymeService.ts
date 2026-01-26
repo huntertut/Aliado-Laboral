@@ -156,5 +156,41 @@ export const PymeService = {
             label: score >= 80 ? 'Empresa Blindada' : score >= 50 ? 'Riesgo Moderado' : 'Alto Riesgo de Multa',
             pending
         };
+    },
+
+    /**
+     * Calcula el Pasivo Laboral Total (Riesgo de Despido Masivo)
+     */
+    getLiabilityReport: async (pymeId: string) => {
+        const employees = await prisma.pymeEmployee.findMany({
+            where: { pymeProfileId: pymeId }
+        });
+
+        const today = new Date();
+        let totalLiability = 0;
+        const employeeBreakdown: any[] = [];
+
+        employees.forEach(emp => {
+            const result = PymeService.calculateLiquidation({
+                dailySalary: Number(emp.dailySalary) || 248.93, // Default to min wage if 0
+                startDate: emp.joinDate,
+                endDate: today,
+                separationType: 'layoff', // Worst case scenario
+                vacationsTaken: 0 // Worst case: assume no vacations taken
+            });
+
+            totalLiability += result.total;
+            employeeBreakdown.push({
+                name: emp.fullName,
+                years: result.seniority.years,
+                liability: result.total
+            });
+        });
+
+        return {
+            totalLiability,
+            employeeCount: employees.length,
+            breakdown: employeeBreakdown
+        };
     }
 };

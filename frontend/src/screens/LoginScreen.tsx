@@ -151,7 +151,7 @@ const LoginScreen = () => {
                 </View>
                 <Text style={styles.title}>Aliado Laboral</Text>
                 <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
-                <Text style={styles.versionTextHeader}>v1.17 (Biometrics)</Text>
+                <Text style={styles.versionTextHeader}>v1.19.0 (Analytics + Thermometer)</Text>
             </LinearGradient>
 
             <View style={styles.formContainer}>

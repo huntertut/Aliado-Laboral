@@ -22,4 +22,7 @@ router.post('/lawyer/:id/reject', authMiddleware, contactController.rejectContac
 // LAWYER - Get unlocked contact info (only if bothPaymentsSucceeded)
 router.get('/lawyer/:id/contact', authMiddleware, contactController.getUnlockedContact);
 
+// LAWYER - Update CRM Status (e.g. 'CLOSED_WON')
+router.patch('/lawyer/:id/status', authMiddleware, contactController.updateCRMStatus);
+
 export default router;

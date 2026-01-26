@@ -99,6 +99,9 @@ const AppNavigator = () => {
                                 <Stack.Screen name="Lawyers" component={require('../screens/LawyersScreen').default} options={{ title: 'Directorio de Abogados' }} />
                                 <Stack.Screen name="LawyerDetail" component={require('../screens/LawyerDetailScreen').default} options={{ title: 'Perfil del Abogado' }} />
                                 <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
+                                <Stack.Screen name="GenerateAct" component={require('../screens/pyme/GenerateActScreen').default} options={{ headerShown: false }} />
+                                <Stack.Screen name="ContractReview" component={require('../screens/pyme/ContractReviewScreen').default} options={{ headerShown: false }} />
+                                <Stack.Screen name="LaborDocuments" component={require('../screens/pyme/LaborDocumentsScreen').default} options={{ headerShown: false }} />
                             </>
                         ) : (
                             /* Worker and Lawyer Screens */
@@ -191,6 +194,7 @@ const AppNavigator = () => {
                                 <Stack.Screen name="WorkerRights" component={require('../screens/WorkerRightsScreen').default} options={{ title: 'Derechos del Trabajador' }} />
                                 <Stack.Screen name="RightsCalculator" component={require('../screens/RightsCalculatorScreen').default} options={{ headerShown: false }} />
                                 <Stack.Screen name="ProfedetInfoWizard" component={require('../screens/ProfedetInfoWizardScreen').default} options={{ headerShown: false }} />
+                                <Stack.Screen name="SalaryThermometer" component={require('../screens/SalaryThermometerScreen').default} options={{ headerShown: false }} />
 
                                 {/* Live Chat System */}
                                 <Stack.Screen name="LawyerCases" component={require('../screens/LawyerCasesScreen').default} options={{ headerShown: false }} />

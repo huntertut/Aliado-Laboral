@@ -1,28 +1,25 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../../../theme/colors';
+
 import { WorkerLaborDataSection } from './WorkerLaborDataSection';
 import { ProfedetModule } from './ProfedetModule';
 import { ContactLawyerButton } from './ContactLawyerButton';
 
 interface Props {
-    data: any; // Full user profile or just workerData
-    onUpdateLaborData: (data: any) => void;
+    data: any;
+    onUpdateLaborData: (data: any) => Promise<boolean>;
     isSaving: boolean;
 }
 
 export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
-    // Determine where data is coming from (handles both flat and nested structures if needed)
-    const laborData = data?.workerData?.laborData || {
-        fullName: data?.fullName,
-        occupation: data?.occupation,
-        monthlySalary: data?.monthlySalary,
-        federalEntity: data?.federalEntity,
-        startDate: data?.startDate,
-    };
+    const navigation = useNavigation();
 
-    const profedetData = data?.workerData?.profedetData || {
-        isActive: data?.profedetIsActive
-    };
+    // Safely derive props
+    const laborData = data || {};
+    const profedetData = data?.profedet || {};
 
     return (
         <View style={styles.container}>
@@ -31,6 +28,23 @@ export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
                 onUpdate={onUpdateLaborData}
                 isSaving={isSaving}
             />
+
+            {/* VIRAL THERMOMETER BUTTON */}
+            <TouchableOpacity
+                style={styles.thermometerButton}
+                onPress={() => navigation.navigate('SalaryThermometer' as never)}
+            >
+                <View style={styles.thermometerContent}>
+                    <View style={styles.iconContainer}>
+                        <Ionicons name="flame" size={24} color="#fff" />
+                    </View>
+                    <View>
+                        <Text style={styles.thermoTitle}>Termómetro Salarial</Text>
+                        <Text style={styles.thermoSubtitle}>¿Ganas menos que el promedio?</Text>
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#666" />
+            </TouchableOpacity>
 
             <ProfedetModule isActive={!!profedetData.isActive} />
 
@@ -45,5 +59,43 @@ export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    thermometerButton: {
+        backgroundColor: '#fff',
+        marginHorizontal: 20,
+        marginVertical: 10,
+        padding: 15,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+    },
+    thermometerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    iconContainer: {
+        backgroundColor: '#FF4B2B', // Viral Red
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15
+    },
+    thermoTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+    },
+    thermoSubtitle: {
+        fontSize: 12,
+        color: '#e74c3c',
+        fontWeight: '600'
     }
 });

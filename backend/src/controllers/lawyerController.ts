@@ -61,3 +61,37 @@ export const contactLawyer = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+/**
+ * LEGAL ARMOR: Validate Lawyer with SEP (Government API)
+ * This is a stub for the "Cédula Validation Hook"
+ */
+export const verifyLawyerCedula = async (req: Request, res: Response) => {
+    try {
+        const { cedula } = req.body;
+
+        // MOCK: Check length for now (Real impl would call SEP API)
+        if (!cedula || cedula.length < 7) {
+            return res.status(400).json({ valid: false, message: 'Cédula inválida' });
+        }
+
+        // Simulate external API call
+        const isValid = true; // Assume success for demo
+
+        if (isValid) {
+            // Update Lawyer Profile if authenticated
+            // await prisma.lawyer.update(...)
+            return res.json({
+                valid: true,
+                details: {
+                    name: "Abogado Verificado Demo",
+                    profession: "Licenciado en Derecho"
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('SEP verification failed:', error);
+        res.status(500).json({ error: 'Error validating cedula' });
+    }
+};

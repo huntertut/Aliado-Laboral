@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { PymeService } from '../services/pymeService';
+import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
 
@@ -106,5 +107,73 @@ export const addEmployee = async (req: any, res: Response) => {
         res.json(employee);
     } catch (error) {
         res.status(500).json({ error: 'Error al agregar empleado' });
+    }
+};
+
+export const getPymeLiability = async (req: any, res: Response) => {
+    try {
+        const userId = req.user.id;
+        const profile = await prisma.pymeProfile.findUnique({ where: { userId } });
+        if (!profile) return res.status(404).json({ error: 'Pyme no encontrada' });
+
+        const liability = await PymeService.getLiabilityReport(profile.id);
+        res.json(liability);
+    } catch (error) {
+        console.error('Liability Error:', error);
+        res.status(500).json({ error: 'Error al calcular pasivo laboral' });
+    }
+};
+
+export const generateAdministrativeAct = async (req: any, res: Response) => {
+    try {
+        const userId = req.user.id;
+        const { employeeId, incident, date } = req.body;
+
+        const profile = await prisma.pymeProfile.findUnique({ where: { userId } });
+        if (!profile) return res.status(404).json({ error: 'Pyme no encontrada' });
+
+        const employee = await prisma.pymeEmployee.findUnique({ where: { id: employeeId } });
+        if (!employee) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+        // AI Generation
+        if (!process.env.GROQ_API_KEY) {
+            return res.json({
+                content: `<h1>Acta Administrativa (MOCK)</h1><p>Empleado: ${employee.fullName}</p><p>Incidente: ${incident}</p><p>Nota: Configura GROQ_API_KEY para contenido real.</p>`
+            });
+        }
+
+        const groq = new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
+
+        const prompt = `
+            Eres un abogado laboral experto en México.
+            Redacta un "Acta Administrativa" formal.
+            
+            Datos:
+            - Empresa: ${profile.razonSocial || 'La Empresa'}
+            - Empleado: ${employee.fullName} (RFC: ${employee.rfc || 'N/A'})
+            - Fecha del incidente: ${date}
+            - Descripción de los hechos: "${incident}"
+            
+            Instrucciones:
+            - Cita los artículos de la Ley Federal del Trabajo (LFT) aplicables.
+            - Usa lenguaje legal formal, firme pero respetuoso.
+            - Estructura: Lugar y Fecha, Comparecientes, Declaración de Hechos, Fundamento Legal, Cierre y Firmas.
+            - Devuelve el resultado en formato MARKDOWN limpio interactivo (negritas, listas, titulos). NO uses HTML.
+        `;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama3-70b-8192", // Smart Model for Drafting
+        });
+
+        const htmlContent = completion.choices[0]?.message?.content;
+        res.json({ content: htmlContent });
+
+    } catch (error: any) {
+        console.error('Act Generation Error:', error);
+        res.status(500).json({ error: 'Error al generar el acta' });
     }
 };

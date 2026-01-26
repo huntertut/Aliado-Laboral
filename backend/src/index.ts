@@ -23,6 +23,7 @@ import pymeRoutes from './routes/pymeRoutes';
 import systemRoutes from './routes/systemRoutes';
 import forumRoutes from './routes/forumRoutes';
 import devRoutes from './routes/devRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 // ... (imports)
 
@@ -92,6 +93,7 @@ app.use('/pyme-profile', pymeRoutes);
 app.use('/pyme-profile', pymeRoutes);
 app.use('/system', systemRoutes);
 app.use('/forum', forumRoutes); // Forum Routes
+app.use('/analytics', analyticsRoutes);
 
 app.use('/api/dev', devRoutes);
 

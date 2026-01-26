@@ -2,11 +2,11 @@ import React from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
-// import { useNotifications } from './src/hooks/useNotifications';
+import { useNotifications } from './src/hooks/useNotifications';
 
 export default function App() {
-    // Initialize notifications hook - DISABLED for Expo Go (Requires Dev Build)
-    // useNotifications();
+    // Initialize notifications hook
+    useNotifications();
 
     return (
         <StripeProvider

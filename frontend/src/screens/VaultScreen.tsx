@@ -14,12 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
+import { AnalyticsService } from '../services/AnalyticsService';
+
 import { useAuth } from '../context/AuthContext';
 import { theme } from '../theme/colors';
 import moment from 'moment';
 
 const VaultScreen = ({ navigation }: any) => {
-    const { getAccessToken } = useAuth();
+    const { getAccessToken, user } = useAuth();
     const [files, setFiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -97,6 +99,14 @@ const VaultScreen = ({ navigation }: any) => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            // TRACK UPLOAD SUCCESS
+            AnalyticsService.logEvent('vault_file_uploaded', {
+                file_type: asset.mimeType,
+                file_size: asset.size,
+                file_name: asset.name,
+                worker_id: user?.id
+            });
+
             Alert.alert('Éxito', 'Archivo guardado en tu baúl.');
             fetchFiles();
         } catch (error) {
@@ -168,12 +178,49 @@ const VaultScreen = ({ navigation }: any) => {
                 <View style={{ width: 40 }} />
             </View>
 
-            <View style={styles.premiumBanner}>
-                <Ionicons name="shield-checkmark" size={24} color={theme.colors.primary} />
-                <View style={styles.bannerTextContainer}>
-                    <Text style={styles.bannerTitle}>Almacenamiento Seguro</Text>
-                    <Text style={styles.bannerSubtitle}>Tus documentos están encriptados y solo tú puedes verlos.</Text>
+            {/* GAMIFICATION: Shield Meter "Termómetro de Blindaje" */}
+            <View style={styles.shieldContainer}>
+                <View style={styles.shieldHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons
+                            name={files.length >= 3 ? "shield-checkmark" : "shield-half"}
+                            size={28}
+                            color={files.length >= 3 ? "#2ecc71" : "#e74c3c"}
+                        />
+                        <Text style={styles.shieldTitle}>
+                            Nivel de Blindaje: {Math.min(10 + (files.length * 30), 100)}%
+                        </Text>
+                    </View>
+                    <Text style={[
+                        styles.shieldStatus,
+                        { color: files.length >= 3 ? "#2ecc71" : "#e74c3c" }
+                    ]}>
+                        {files.length === 0 ? "PELIGRO" : files.length < 3 ? "VULNERABLE" : "PROTEGIDO"}
+                    </Text>
                 </View>
+
+                {/* Progress Bar */}
+                <View style={styles.progressBarBg}>
+                    <View
+                        style={[
+                            styles.progressBarFill,
+                            {
+                                width: `${Math.min(10 + (files.length * 30), 100)}%`,
+                                backgroundColor: files.length >= 3 ? "#2ecc71" : files.length === 0 ? "#e74c3c" : "#f1c40f"
+                            }
+                        ]}
+                    />
+                </View>
+
+                {/* Motivational Copy */}
+                <Text style={styles.shieldMessage}>
+                    {files.length === 0
+                        ? "⚠️ Sin evidencia, perderás tu demanda. Sube tu Contrato hoy."
+                        : files.length < 3
+                            ? "📈 Vas bien. Sube recibos de nómina para llegar al 100%."
+                            : "🛡️ ¡Excelente! Tienes la evidencia necesaria para defenderte."
+                    }
+                </Text>
             </View>
 
             {loading ? (
@@ -287,6 +334,55 @@ const styles = StyleSheet.create({
     emptyContainer: { alignItems: 'center', marginTop: 60, paddingHorizontal: 40 },
     emptyText: { fontSize: 18, fontWeight: '600', color: '#7f8c8d', marginTop: 16 },
     emptySubtext: { fontSize: 14, color: '#95a5a6', textAlign: 'center', marginTop: 8 },
+
+    // Shield Meter Styles
+    shieldContainer: {
+        backgroundColor: '#fff',
+        margin: 16,
+        marginBottom: 8,
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#eee',
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+    },
+    shieldHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    shieldTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+        marginLeft: 10,
+    },
+    shieldStatus: {
+        fontSize: 12,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    progressBarBg: {
+        height: 10,
+        backgroundColor: '#f1f2f6',
+        borderRadius: 5,
+        overflow: 'hidden',
+        marginBottom: 10,
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 5,
+    },
+    shieldMessage: {
+        fontSize: 13,
+        color: '#7f8c8d',
+        fontStyle: 'italic',
+    },
 });
 
 export default VaultScreen;

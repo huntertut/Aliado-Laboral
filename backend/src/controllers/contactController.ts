@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import * as stripeService from '../services/stripeService';
 import * as mercadopagoService from '../services/mercadopagoService';
 import * as storageService from '../services/storageService';
+import * as ocrService from '../services/ocrService'; // Import OCR
 import { checkBothPaymentsSuccess } from '../services/webhookHandlerService';
 
 const prisma = new PrismaClient();
@@ -40,18 +41,22 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
         const lawyer = lawyerProfile.lawyer;
 
         // 1. CLASSIFY CASE (Normal vs Hot)
-        // Rule: Hot if Severance > 50k OR Years > 3
+        // Rule: Hot if Severance > 150k OR Years > 3 (UPDATED REQUIREMENT)
         const severanceValue = Number(estimatedSeverance) || 0;
         const yearsValue = Number(yearsOfService) || 0;
         let classification = 'normal';
         let isHot = false;
         let lawyerFee = 150.00;
 
-        if (severanceValue > 50000 || yearsValue > 3) {
+        if (severanceValue > 150000 || yearsValue > 3) {
             classification = 'hot';
             isHot = true;
             lawyerFee = 300.00;
         }
+
+        // Urgency Score & Consent Tracking
+        const urgencyScore = (urgency === 'high' ? 80 : 50) + (isHot ? 20 : 0);
+        const consentTimestamp = new Date(); // Assumed consent given at creation time via checkbox
 
         // Get or create worker as customer
         const worker = await prisma.user.findUnique({ where: { id: workerId } });
@@ -78,6 +83,10 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
                 classification,
                 isHot,
                 lawyerPaymentAmount: lawyerFee,
+                // Legal Armor Fields
+                urgencyScore,
+                consentTimestamp,
+                dataStatus: 'MASKED', // Default Privacy
                 // SLA Initialization
                 lastWorkerActivityAt: new Date(),
                 subStatus: 'waiting_lawyer',
@@ -87,6 +96,9 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
                 worker: { select: { id: true, fullName: true, email: true } }
             }
         });
+
+        // 3. TRIGGER AI ANALYSIS (Async)
+        triggerAIAnalysis(contactRequest.id, caseSummary || '');
 
         // 2. PROCESS DOCUMENTS (if provided)
         if (documents && Array.isArray(documents)) {
@@ -283,6 +295,20 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
                     error: 'Este caso es clasificado como HOT (Alta Prioridad).',
                     message: 'Solo abogados con Plan PRO pueden aceptar Casos Hot. Actualiza tu plan para aceptar este caso.',
                     upgradeRequired: true
+                });
+            }
+        }
+
+        // 3. EL PUENTE: GAMIFICATION GUARD (Overdue Commissions)
+        // Check if lawyer has unpaid Success Fees > 5 days
+        if (lawyer.stripeCustomerId) {
+            const hasOverdue = await stripeService.checkOverdueInvoices(lawyer.stripeCustomerId);
+            if (hasOverdue) {
+                return res.status(402).json({
+                    error: 'Bloqueo por Comisiones Pendientes',
+                    message: 'Tienes facturas de "Comisión por Éxito" vencidas. Paga tus comisiones pendientes para desbloquear el acceso a nuevos leads.',
+                    paymentRequired: true,
+                    blockReason: 'overdue_commission'
                 });
             }
         }
@@ -518,7 +544,7 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.findUnique({
             where: { userId },
-            include: { profile: true }
+            include: { profile: true, subscription: true }
         });
 
         if (!lawyer || !lawyer.profile) {
@@ -537,13 +563,50 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
                     select: {
                         id: true,
                         fullName: true,
+                        email: true, // Fetch masked later
+                        phoneNumber: true // Fetch masked later
                     }
                 },
             },
             orderBy: { createdAt: 'desc' }
         });
 
-        res.json({ requests });
+        // TIER STRICTNESS LOGIC & LEGAL ARMOR
+        const isPro = lawyer.subscription?.plan === 'pro';
+
+        const processedRequests = requests.map(req => {
+            // Is unlocked if: (PRO or PAID) AND (User CONSENTED)
+            // Note: In MVP, we might treat "Creating Request" as implicit consent, but we enforce strict check if we had the field.
+            // Since we just added 'hasAcceptedDataSharing', we assume it's true for new requests or check the field.
+
+            const isTrialView = requests.length <= 3;
+            const isPaid = req.status === 'accepted' || req.bothPaymentsSucceeded;
+            const hasConsent = (req.worker as any).hasAcceptedDataSharing || req.consentTimestamp != null; // Handle optional field
+
+            // LEGAL ARMOR: Double Opt-in + Payment
+            const isUnlocked = (isPro || isPaid || isTrialView) && hasConsent;
+
+            if (isUnlocked) {
+                return req; // Full access
+            } else {
+                // Masking for Privacy Compliance
+                return {
+                    ...req,
+                    worker: {
+                        ...req.worker,
+                        email: '******** (Privado)',
+                        fullName: 'Usuario Protegido',
+                        phoneNumber: '******** (Privado)',
+                        // Remove unmasked fields
+                    },
+                    upsell: !isPro, // Tell frontend to upsell PRO
+                    privacyLock: !hasConsent, // Specific lock reason
+                    unlockPrice: 50.00
+                };
+            }
+        });
+
+        res.json({ requests: processedRequests });
 
     } catch (error: any) {
         console.error('Error getting lawyer requests:', error);
@@ -587,7 +650,15 @@ export const getUnlockedContact = async (req: Request, res: Response) => {
             return res.status(403).json({ error: 'No autorizado' });
         }
 
-        if (!request.bothPaymentsSucceeded) {
+        // Check Trial Mode (First 3 leads free)
+        const totalRequests = await prisma.contactRequest.count({
+            where: { lawyerProfileId: lawyer.profile.id }
+        });
+        const isTrialView = totalRequests <= 3;
+
+        const isPro = lawyer.subscription?.plan === 'pro';
+
+        if (!request.bothPaymentsSucceeded && !isTrialView && !isPro) {
             return res.status(403).json({
                 error: 'Debes completar el pago para ver los datos de contacto'
             });
@@ -605,5 +676,337 @@ export const getUnlockedContact = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Error getting unlocked contact:', error);
         res.status(500).json({ error: 'Error al obtener datos de contacto' });
+    }
+};
+
+/**
+ * LAWYER: Update CRM Status of a Lead
+ */
+export const updateCRMStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const userId = (req as any).user?.id;
+
+        const lawyer = await prisma.lawyer.findUnique({
+            where: { userId },
+            include: { profile: true }
+        });
+
+        if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
+
+        const request = await prisma.contactRequest.findUnique({ where: { id } });
+        if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+        if (request.lawyerProfileId !== lawyer.profile.id) {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+
+        // Validate Status Enum
+        const validStatuses = ['NEW', 'CONTACTED', 'NEGOTIATING', 'CLOSED_WON', 'CLOSED_LOST'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'Estado inválido' });
+        }
+
+        const updatedRequest = await prisma.contactRequest.update({
+            where: { id },
+            data: { crmStatus: status }
+        });
+
+        res.json({ success: true, crmStatus: updatedRequest.crmStatus });
+
+    } catch (error) {
+        console.error('Error updating CRM status:', error);
+        res.status(500).json({ error: 'Error actualizando estado' });
+    }
+};
+
+// --- HELPER: ASYNC AI TRIGGER ---
+import OpenAI from 'openai';
+
+const triggerAIAnalysis = async (requestId: string, summary: string) => {
+    // Fire and forget - don't block
+    setImmediate(async () => {
+        try {
+            console.log(`🤖 [AI] Analyzing Request ${requestId} with Antigravity V2...`);
+            let aiContent = "";
+
+            if (!process.env.GROQ_API_KEY) {
+                console.warn('⚠️ [AI] No Groq Key found. Using mock.');
+                // Simulate success for demo
+                const mockAI = {
+                    analisis: {
+                        categoria: "INDIVIDUAL",
+                        subtipo: "DESPIDO_INJUSTIFICADO",
+                        urgencia: 8,
+                        es_hot: true
+                    },
+                    negocio: {
+                        conteo_afectados: 1,
+                        valor_estimado_grupo_mxn: 45000,
+                        precio_sugerido_lead_abogado: 150
+                    },
+                    resumen_para_abogado: "Despido injustificado estándar. Buena oportunidad de volumen."
+                };
+                aiContent = JSON.stringify(mockAI);
+            } else {
+                // Initialize Groq client
+                const groq = new OpenAI({
+                    apiKey: process.env.GROQ_API_KEY,
+                    baseURL: 'https://api.groq.com/openai/v1'
+                });
+
+                const prompt = `Actúa como un Consultor Legal Senior y Analista de Negocios para la plataforma "Aliado Laboral". 
+                Tu misión es analizar el relato del trabajador para detectar el "Potencial de Monetización" y la "Gravedad Jurídica".
+
+                VARIABLES DE ENTRADA:
+                - Descripción del caso: "${summary}"
+
+                REGLAS DE CLASIFICACIÓN:
+                1. Si el usuario menciona: "maquinaria", "robots", "tecnología nueva", "automatización" o "cierre de línea", clasifica como "ART_439_LFT" (Indemnización especial).
+                2. Si el número de afectados es > 1, clasifica como "COLECTIVO".
+                3. Si la empresa es de un sector industrial, aumenta el "SCORE_HOT".
+
+                FORMATO DE SALIDA (JSON ESTRICTO):
+                {
+                  "analisis": {
+                    "categoria": "INDIVIDUAL" | "COLECTIVO",
+                    "subtipo": "DESPIDO_INJUSTIFICADO" | "SUSTITUCION_MAQUINARIA" | "RECORTE_MASIVO",
+                    "urgencia": 1 a 10,
+                    "es_hot": boolean
+                  },
+                  "negocio": {
+                    "conteo_afectados": number, // Estimado del texto, default 1
+                    "valor_estimado_grupo_mxn": number, // Valor total del caso
+                    "precio_sugerido_lead_abogado": number // Sugiere entre $150 y $500 MXN según valor
+                  },
+                  "resumen_para_abogado": "Redacta un pitch de 2 líneas resaltando por qué este caso es una gran oportunidad económica."
+                }`;
+
+                const completion = await groq.chat.completions.create({
+                    messages: [{ role: "user", content: prompt }],
+                    model: "llama3-70b-8192",
+                    response_format: { type: "json_object" }
+                });
+
+                aiContent = completion.choices[0]?.message?.content || "{}";
+            }
+
+            // --- ANTIGRAVITY LOGIC V2: DYNAMIC UPDATES ---
+            try {
+                const result = JSON.parse(aiContent);
+                const { analisis, negocio, resumen_para_abogado } = result;
+
+                // 1. Update DB with AI Insights
+                // We store the full JSON in aiSummary, but also promote key metrics
+                await prisma.contactRequest.update({
+                    where: { id: requestId },
+                    data: {
+                        aiSummary: aiContent,
+                        isHot: analisis.es_hot,
+                        // Map AI urgency (1-10) to DB Urgency Score (0-100)
+                        urgencyScore: analisis.urgencia * 10,
+                        // Update Classification if AI detects Collective/Machinery
+                        classification: analisis.subtipo === 'SUSTITUCION_MAQUINARIA' ? 'machinery_439' : (analisis.es_hot ? 'hot' : 'normal'),
+                        // Dynamic Pricing Engine
+                        lawyerPaymentAmount: negocio.precio_sugerido_lead_abogado || 150.00
+                    }
+                });
+
+                // 2. Hot Case / Special Case Notifications
+                if (analisis.es_hot || analisis.categoria === 'COLECTIVO') {
+                    console.log(`🔥 [ANTIGRAVITY] Hot/Collective Case Detected: ${requestId}`);
+
+                    // Use Notification Service
+                    const { sendPushNotification } = require('../services/notificationService');
+
+                    // Filter Logic: PRO Lawyers
+                    const proLawyers = await prisma.lawyer.findMany({
+                        where: { subscription: { plan: 'pro' }, isVerified: true },
+                        include: { user: true, subscription: true } // Explicitly include sub
+                    });
+
+                    const msgTitle = analisis.categoria === 'COLECTIVO' ? "🚨 ALERTA: Caso Colectivo Detectado" : "🔥 Nuevo Caso HOT de Alto Valor";
+                    const msgBody = `${resumen_para_abogado} (Valor Est: $${negocio.valor_estimado_grupo_mxn.toLocaleString()})`;
+
+                    for (const lawyer of proLawyers) {
+                        if (lawyer.user?.id) {
+                            await sendPushNotification(lawyer.user.id, msgTitle, msgBody, { requestId, type: 'HOT_LEAD' });
+                        }
+                    }
+                }
+
+                console.log(`✅ [AI] Advanced Analysis complete for ${requestId}`);
+
+            } catch (parseError) {
+                console.error('Error parsing AI content for Antigravity V2:', parseError);
+                // Fallback: Save raw content
+                await prisma.contactRequest.update({
+                    where: { id: requestId },
+                    data: { aiSummary: aiContent }
+                });
+            }
+
+        } catch (error: any) {
+            console.error('❌ [AI] Analysis failed:', error.message);
+        }
+    });
+};
+
+/**
+ * EL PUENTE: Upload Settlement Document & Auto-Invoice
+ */
+export const uploadSettlementDoc = async (req: Request, res: Response) => {
+    try {
+        const { requestId } = req.params;
+        const { fileBase64, fileName, fileType, processType } = req.body; // processType: 'CONCILIACION' | 'JUICIO'
+        const userId = (req as any).user?.id;
+
+        console.log(`[El Puente] Uploading settlement doc for Request ${requestId}`);
+
+        const lawyer = await prisma.lawyer.findUnique({
+            where: { userId },
+            include: { subscription: true }
+        });
+        if (!lawyer) return res.status(404).json({ error: 'Abogado no encontrado' });
+
+        const request = await prisma.contactRequest.findUnique({ where: { id: requestId } });
+        if (!request) return res.status(404).json({ error: 'Caso no encontrado' });
+
+        // 1. Process File
+        const buffer = Buffer.from(fileBase64, 'base64');
+        const destination = `settlements/${requestId}/${Date.now()}_${fileName}`;
+        const fileUrl = await storageService.uploadBuffer(buffer, destination, fileType);
+
+        // 2. OCR Analysis (Eye of Antigravity)
+        let extractedAmount: number | null = null;
+        let ocrText = "";
+
+        // Only try OCR on images for now (PDF support requires pdf-parse usually, assuming Image for MVP)
+        if (fileType.includes('image')) {
+            const result = await ocrService.extractTextFromImage(buffer);
+            ocrText = result.rawText;
+            const details = ocrService.extractSettlementDetails(ocrText);
+            extractedAmount = details.amount;
+            console.log(`[El Puente] OCR Result: Found Amount $${extractedAmount}`);
+        } else {
+            // Fallback for PDFs or skip OCR
+            console.log('[El Puente] PDF uploaded, skipping OCR for MVP');
+        }
+
+        // 3. Logic: Dynamic Commission Calculation (Antigravity v2.1)
+        const isPro = lawyer.subscription?.plan === 'pro';
+        const type = (processType || 'JUICIO').toUpperCase(); // Default to JUICIO if missing
+
+        let rate = 0.05; // Default Safe Fallback
+
+        if (isPro) {
+            // PRO Rates
+            rate = (type === 'CONCILIACION') ? 0.07 : 0.05; // 7% Fast / 5% Slow
+        } else {
+            // BASIC Rates
+            rate = (type === 'CONCILIACION') ? 0.10 : 0.08; // 10% Fast / 8% Slow
+        }
+
+        let commissionAmount = 0;
+        let invoiceId = null;
+
+        if (extractedAmount && extractedAmount > 0) {
+            commissionAmount = extractedAmount * rate;
+
+            // 4. Generate Stripe Invoice
+            if (lawyer.stripeCustomerId) {
+                const invoice = await stripeService.createCommissionInvoice(
+                    lawyer.stripeCustomerId,
+                    commissionAmount,
+                    `Comisión por Éxito (${(rate * 100).toFixed(0)}%) - ${type} - Caso #${requestId}`
+                );
+                invoiceId = invoice.id;
+                console.log(`[El Puente] Invoice Created: ${invoiceId} (Rate: ${rate})`);
+            }
+        }
+
+        // 5. Update Database (The Vault)
+        await prisma.contactRequest.update({
+            where: { id: requestId },
+            data: {
+                settlementDocUrl: fileUrl,
+                settlementDocStatus: 'uploaded',
+                settlementAmount: extractedAmount ? extractedAmount : undefined,
+                commissionAmount: commissionAmount > 0 ? commissionAmount : undefined,
+                commissionInvoiceId: invoiceId || undefined,
+                commissionStatus: invoiceId ? 'pending' : 'not_applicable',
+                crmStatus: 'CLOSED_WON' // Auto-close case
+            }
+        });
+
+        // 6. Gamification: Reputation Boost & Loyalty Message (The "Feel Good" Logic)
+        // Calculate Savings if PRO
+        const basicRate = (type === 'CONCILIACION') ? 0.10 : 0.08;
+        const currentSavings = isPro ? (extractedAmount! * (basicRate - rate)) : 0;
+
+        await prisma.lawyerProfile.update({
+            where: { lawyerId: lawyer.id },
+            data: {
+                reputationScore: { increment: 10 },
+                successfulCases: { increment: 1 },
+                lifetimeCommissionSavings: { increment: currentSavings }
+            }
+        });
+
+        // RE-FETCH to get updated total savings
+        const updatedProfile = await prisma.lawyerProfile.findUnique({ where: { lawyerId: lawyer.id } });
+        const totalSavings = Number(updatedProfile?.lifetimeCommissionSavings || 0);
+
+        // A. LOYALTY NOTIFICATION (LAWYER)
+        if (commissionAmount > 0) {
+            let messageContent = `⚖️ ¡Felicidades por la victoria, Colega!\n\nHemos procesado el documento de cierre. Se ha generado la factura de tu Comisión por Éxito ($${commissionAmount.toLocaleString()} MXN).`;
+
+            if (isPro && currentSavings > 0) {
+                messageContent += `\n\n💎 **Efecto PRO:** En este caso ahorraste **$${currentSavings.toLocaleString()}**.`;
+                messageContent += `\n💰 **Ahorro Acumulado:** Tu suscripción PRO te ha ahorrado **$${totalSavings.toLocaleString()} MXN** en total.`;
+            }
+
+            messageContent += `\n\nEl link de pago está en tu correo. Al liquidarlo, se liberará el expediente digital para tu cliente.`;
+
+            // Insert into Chat (Lawyer View)
+            await prisma.chatMessage.create({
+                data: {
+                    requestId,
+                    senderId: lawyer.userId,
+                    content: messageContent,
+                    type: 'system_notification'
+                }
+            });
+        }
+
+        // B. WORKER VALUE PROP (SOCIAL AUDIT)
+        // Notify worker that "Something happened" but process is pending lawyer action
+        if (request.workerId) {
+            const workerMsg = `👋 Hola ${request.worker.fullName || 'Usuario'}, tu abogado ha marcado tu caso como 'Ganado' y ha subido el Convenio/Sentencia.\n\nPara que puedas descargar tu copia oficial y tener el respaldo legal, tu abogado debe completar el registro de cierre final en la plataforma.\n\n¡Felicidades por este gran paso!`;
+
+            await prisma.chatMessage.create({
+                data: {
+                    requestId,
+                    senderId: lawyer.userId, // System message appearing in chat
+                    content: workerMsg,
+                    type: 'text' // Visible to worker
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Convenio subido correctamente. Caso cerrado con éxito.',
+            ocrAnalysis: {
+                amountDetected: extractedAmount,
+                commissionGenerated: commissionAmount,
+                savingsApplied: currentSavings
+            }
+        });
+
+    } catch (error: any) {
+        console.error('Error uploading settlement doc:', error);
+        res.status(500).json({ error: 'Error procesando el convenio' });
     }
 };

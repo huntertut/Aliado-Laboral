@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { endpoints } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { AnalyticsService } from '../services/AnalyticsService';
 
 const LawyerRequestsScreen = () => {
     const navigation = useNavigation<any>();
@@ -15,6 +16,24 @@ const LawyerRequestsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'pending' | 'accepted' | 'rejected'>('pending');
+
+    // TRACK LOCKED VIEWS
+    useEffect(() => {
+        if (!loading && requests.length > 0 && user) {
+            const lockedCount = requests.filter(r => {
+                const isHot = r.isHot || r.classification === 'hot';
+                const isPro = user.plan === 'pro' || user.role === 'admin';
+                return isHot && !isPro;
+            }).length;
+
+            if (lockedCount > 0) {
+                AnalyticsService.logEvent('lead_locked_view', {
+                    locked_count: lockedCount,
+                    lawyer_id: user.id
+                });
+            }
+        }
+    }, [loading, requests, user]);
 
     useEffect(() => {
         if (user) {
@@ -95,7 +114,26 @@ const LawyerRequestsScreen = () => {
         fetchRequests(activeTab);
     };
 
+    useEffect(() => {
+        if (!loading && requests.length > 0 && user) {
+            // Track impressions of locked content
+            const lockedCount = requests.filter(r => {
+                const isHot = r.isHot || r.classification === 'hot';
+                const isPro = user.plan === 'pro' || user.role === 'admin';
+                return isHot && !isPro;
+            }).length;
+
+            if (lockedCount > 0) {
+                AnalyticsService.logEvent('lead_locked_view', {
+                    locked_count: lockedCount,
+                    lawyer_id: user.id
+                });
+            }
+        }
+    }, [loading, requests, user]);
+
     const renderRequest = ({ item }: { item: any }) => {
+        // ... (existing helper configs) ...
         const urgencyConfig = {
             low: { color: '#95a5a6', label: 'Baja' },
             normal: { color: '#3498db', label: 'Normal' },
@@ -105,22 +143,32 @@ const LawyerRequestsScreen = () => {
         const urgency = urgencyConfig[item.urgency as keyof typeof urgencyConfig] || urgencyConfig.normal;
 
         // --- BUINESS LOGIC: HOT CASE RESTRICTION ---
-        // item.classification might come from backend, or we infer from item.isHot
         const isHotCase = item.isHot || item.classification === 'hot';
-        // Check if lawyer can access
-        // Plan 'pro' OR Admin can see everything
         const canAccess = !isHotCase || (user?.plan === 'pro' || user?.role === 'admin');
 
         const handlePress = () => {
             if (canAccess) {
                 navigation.navigate('LawyerRequestDetail' as never, { requestId: item.id } as never);
             } else {
+                // TRACK UNLOCK ATTEMPT
+                AnalyticsService.logEvent('lead_unlock_tap', {
+                    request_id: item.id,
+                    lawyer_id: user?.id,
+                    case_type: item.caseType
+                });
+
                 Alert.alert(
                     'Caso PRO (Hot Lead)',
                     'Este caso es de alta prioridad y alto valor. Actualiza a Plan PRO para aceptarlo.',
                     [
                         { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Ver Planes', onPress: () => Alert.alert('Coming Soon', 'Upgrade flow') }
+                        {
+                            text: 'Ver Planes',
+                            onPress: () => {
+                                // Maybe add another event here: 'upgrade_flow_start'
+                                Alert.alert('Coming Soon', 'Upgrade flow');
+                            }
+                        }
                     ]
                 );
             }
@@ -168,9 +216,49 @@ const LawyerRequestsScreen = () => {
                 </View>
 
                 {/* Case summary preview */}
-                <Text style={styles.summary} numberOfLines={2}>
-                    {canAccess ? item.caseSummary : 'Este resumen está oculto porque es un caso HOT. Actualiza a PRO para ver detalles.'}
-                </Text>
+                {(() => {
+                    let summaryText = item.caseSummary;
+                    let isAI = false;
+                    let aiData = null;
+
+                    if (canAccess && item.aiSummary) {
+                        try {
+                            aiData = JSON.parse(item.aiSummary);
+                            if (aiData && aiData.resumen_breve) {
+                                summaryText = aiData.resumen_breve;
+                                isAI = true;
+                            }
+                        } catch (e) {
+                            // Fallback to raw text if not JSON
+                            summaryText = item.aiSummary;
+                            isAI = true;
+                        }
+                    } else if (!canAccess) {
+                        summaryText = 'Este resumen está oculto porque es un caso HOT. Actualiza a PRO para ver detalles.';
+                    }
+
+                    return (
+                        <View>
+                            {/* AI BADGE */}
+                            {isAI && (
+                                <View style={{ flexDirection: 'row', marginBottom: 6 }}>
+                                    <View style={{ backgroundColor: '#e3f2fd', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center' }}>
+                                        <Ionicons name="sparkles" size={12} color="#2196f3" />
+                                        <Text style={{ fontSize: 10, color: '#2196f3', fontWeight: 'bold', marginLeft: 4 }}>ANÁLISIS IA</Text>
+                                    </View>
+                                    {aiData?.urgencia && (
+                                        <Text style={{ fontSize: 10, color: '#7f8c8d', marginLeft: 8, marginTop: 2 }}>
+                                            • Urgencia: {aiData.urgencia}
+                                        </Text>
+                                    )}
+                                </View>
+                            )}
+                            <Text style={styles.summary} numberOfLines={2}>
+                                {summaryText}
+                            </Text>
+                        </View>
+                    );
+                })()}
 
                 {!canAccess && (
                     <View style={styles.lockOverlay}>

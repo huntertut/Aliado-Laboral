@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -12,6 +12,7 @@ model User {
   email         String    @unique
   passwordHash  String
   fullName      String?
+  phoneNumber   String?  // Worker/User phone number
   role          String    @default("worker") // 'worker', 'lawyer', 'admin', 'supervisor', 'accountant'
   createdAt     DateTime  @default(now())
   pushToken     String?  // Expo Push Token for Notifications
@@ -26,7 +27,11 @@ model User {
   subscriptionLevel     String    @default("basic") // 'basic', 'premium' (pymes)
   profileStatus         String    @default("active") // 'incomplete', 'pending', 'active', 'suspended'
   planExpiresAt         DateTime?
+
+  // Legal Armor & Privacy
+  hasAcceptedDataSharing Boolean   @default(false)
   
+  // Relations
   legalCases           LegalCase[]
   calculations         CalculationRecord[]
   lawyerProfile        Lawyer?   @relation("UserAsLawyer")
@@ -42,6 +47,19 @@ model User {
   forumAnswers         ForumAnswer[] // Fix: Opposite relation for ForumAnswer
   forumVotes           ForumVote[]
   reviewsGiven         LawyerReview[]
+  documents            UserDocument[] // Bóveda de documentos
+}
+
+// Bóveda de Documentos del Usuario
+model UserDocument {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  type      String   // 'contract', 'id_card', 'proof_address', 'other'
+  url       String
+  name      String?  // Nombre original del archivo
+  createdAt DateTime @default(now())
 }
 
 // Mapeo de Firebase UID a roles de usuario
@@ -196,6 +214,7 @@ model LawyerProfile {
   reputationScore   Float    @default(50.0) // 0-100 Score
   totalCases        Int      @default(0)
   successfulCases   Int      @default(0)
+  lifetimeCommissionSavings Decimal @default(0.0) // Dopamine Metric: Total saved by being PRO
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -297,6 +316,17 @@ model ContactRequest {
   caseType            String?        // 'despido', 'acoso', 'discriminacion', 'otro' (Legal Category)
   urgency             String         @default("normal") // 'low', 'normal', 'high'
   
+  // Legal Armor Fields
+  urgencyScore        Int            @default(0) // 1-100 logic-based score
+  consentTimestamp    DateTime?      // When User checked "I accept"
+  dataStatus          String         @default("MASKED") // 'MASKED', 'UNMASKED'
+  
+  // AI Enhanced Data
+  aiSummary           String?        // Resumen procesado por IA (Groq)
+
+  // Lawyer CRM Status
+  crmStatus           String         @default("NEW") // 'NEW', 'CONTACTED', 'NEGOTIATING', 'CLOSED_WON', 'CLOSED_LOST'
+  
   // Business Model Classification
   classification      String         @default("normal") // 'normal', 'hot'
   isHot               Boolean        @default(false)
@@ -353,6 +383,14 @@ model ContactRequest {
   lastMessageAt         DateTime?
   unreadCountLawyer     Int            @default(0)
   unreadCountWorker     Int            @default(0)
+
+  // Commission / Success Fee Logic (El Puente)
+  settlementAmount    Decimal?       // Monto final del convenio (extraído por OCR)
+  commissionAmount    Decimal?       // Monto de la comisión (e.j. 5%)
+  commissionStatus    String         @default("not_applicable") // 'not_applicable', 'pending', 'paid', 'overdue'
+  commissionInvoiceId String?        // Stripe Invoice ID
+  settlementDocUrl    String?        // URL del convenio subido
+  settlementDocStatus String         @default("none") // 'none', 'uploaded', 'verified', 'rejected'
 
   documents           RequestDocument[]
   payments            RequestPayment[]
@@ -489,6 +527,7 @@ model PymeEmployee {
   
   fullName            String
   rfc                 String?
+  dailySalary         Decimal  @default(0.0) // Needed for liability calculation
   joinDate            DateTime
   contractType        String   @default("permanent") // 'trial', 'permanent'
   contractEndDate     DateTime?
@@ -599,4 +638,16 @@ model LawyerReview {
   comment     String?
   
   createdAt   DateTime @default(now())
+}
+
+// ==========================================
+// SECCIÓN DE ANALÍTICA (INTERNAL)
+// ==========================================
+
+model AnalyticsEvent {
+  id        String   @id @default(uuid())
+  event     String   
+  metadata  String?  // JSON string
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
 }

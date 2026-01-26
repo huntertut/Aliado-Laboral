@@ -1,90 +1,114 @@
-import { useEffect, useState } from 'react';
-import messaging from '@react-native-firebase/messaging';
-import { Platform, Alert } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../config/constants';
 import axios from 'axios';
+import { API_URL } from '../config/constants';
 
-// Function to register the token in the backend
+// Configure how notifications behave when the app is in foreground
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+    }),
+});
+
+// Helper: Register Token in Backend
 const registerTokenInBackend = async (token: string) => {
     try {
-        const authToken = await AsyncStorage.getItem('userToken'); // Use key consistent with AuthContext
-        if (!authToken) {
-            console.log('No auth token found, skipping FCM token registration');
-            return;
-        }
+        const authToken = await AsyncStorage.getItem('userToken');
+        if (!authToken) return;
 
-        // Ideally, this endpoint needs to be created in the backend
         await axios.post(`${API_URL}/notifications/register-token`, {
             token,
             platform: Platform.OS
         }, {
             headers: { Authorization: `Bearer ${authToken}` }
         });
-        console.log('✅ FCM Token registered in backend');
+        console.log('✅ Push Token registrado en backend:', token);
     } catch (error) {
-        console.log('⚠️ Error registering FCM token (Backend might not be ready yet):', error);
+        console.log('⚠️ Error registrando token (Backend offline?):', error);
     }
 };
 
 export const useNotifications = () => {
-    const [permissionStatus, setPermissionStatus] = useState<any>(null);
+    const [expoPushToken, setExpoPushToken] = useState<string | undefined>('');
+    const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
+    const notificationListener = useRef<Notifications.Subscription>();
+    const responseListener = useRef<Notifications.Subscription>();
 
-    // 1. Request Permission
-    const requestUserPermission = async () => {
-        try {
-            const authStatus = await messaging().requestPermission();
-            const enabled =
-                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    // 1. Register for Push Notifications
+    const registerForPushNotificationsAsync = async () => {
+        let token;
 
-            setPermissionStatus(authStatus);
-
-            if (enabled) {
-                console.log('Authorization status:', authStatus);
-                getToken();
-            }
-        } catch (error) {
-            console.log('Error requesting permission:', error);
+        if (Platform.OS === 'android') {
+            await Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF231F7C',
+            });
         }
-    };
 
-    // 2. Get Token
-    const getToken = async () => {
-        try {
-            // Check if we already have a token
-            const token = await messaging().getToken();
-            if (token) {
-                console.log('FCM Token:', token);
-                await registerTokenInBackend(token);
+        if (Device.isDevice) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
             }
-        } catch (error) {
-            console.log('Error getting FCM Token:', error);
+
+            if (finalStatus !== 'granted') {
+                console.log('❌ Permiso de notificaciones denegado.');
+                return;
+            }
+
+            try {
+                // Get Expo Push Token
+                const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+                token = (await Notifications.getExpoPushTokenAsync({
+                    projectId: projectId,
+                })).data;
+
+                console.log('📲 Expo Push Token Local:', token);
+            } catch (e) {
+                console.error('Error obteniendo Expo Token:', e);
+            }
+        } else {
+            console.log('⚠️ Debes usar un dispositivo físico para Push Notifications.');
         }
+
+        return token;
     };
 
     useEffect(() => {
-        requestUserPermission();
-
-        // Listener for token refresh
-        const unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
-            registerTokenInBackend(token);
+        registerForPushNotificationsAsync().then(token => {
+            setExpoPushToken(token);
+            if (token) registerTokenInBackend(token);
         });
 
-        // Listener for foreground notifications
-        const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-            console.log('A new FCM message arrived!', JSON.stringify(remoteMessage));
-            Alert.alert(
-                remoteMessage.notification?.title || 'Nueva Notificación',
-                remoteMessage.notification?.body
-            );
+        // 2. Foreground Listener
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            setNotification(notification);
+            console.log("🔔 Notificación en Primer Plano:", notification);
+        });
+
+        // 3. Background/Interaction Listener (Tap on notification)
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+            console.log("👆 Usuario tocó la notificación:", response);
+            // Here you can handle navigation based on response.notification.request.content.data
         });
 
         return () => {
-            unsubscribeTokenRefresh();
-            unsubscribeForeground();
+            if (notificationListener.current) Notifications.removeNotificationSubscription(notificationListener.current);
+            if (responseListener.current) Notifications.removeNotificationSubscription(responseListener.current);
         };
     }, []);
 
-    return { permissionStatus };
+    return { expoPushToken, notification };
 };
+

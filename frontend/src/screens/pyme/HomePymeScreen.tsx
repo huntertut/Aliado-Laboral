@@ -19,28 +19,35 @@ const HomePymeScreen = () => {
 
     const isPremium = user?.subscriptionLevel === 'premium' || user?.plan === 'premium';
 
+    const [liability, setLiability] = useState<any>(null);
+
     React.useEffect(() => {
-        const fetchCompliance = async () => {
+        const fetchData = async () => {
             try {
                 setIsLoading(true);
                 const token = await getAccessToken();
-                const response = await fetch(`${API_URL}/pyme-profile/compliance`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setCompliance(data);
-                } else {
-                    console.warn('Compliance fetch failed:', response.status);
-                    setCompliance(null);
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                const [complianceRes, liabilityRes] = await Promise.all([
+                    fetch(`${API_URL}/pyme-profile/compliance`, { headers }).catch(e => ({ ok: false })),
+                    fetch(`${API_URL}/pyme-profile/liability`, { headers }).catch(e => ({ ok: false }))
+                ]);
+
+                if (complianceRes?.ok) {
+                    setCompliance(await (complianceRes as Response).json());
                 }
+
+                if (liabilityRes?.ok) {
+                    setLiability(await (liabilityRes as Response).json());
+                }
+
             } catch (error) {
-                console.error('Error fetching compliance:', error);
+                console.error('Error fetching pyme dashboard:', error);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchCompliance();
+        fetchData();
     }, []);
 
     const handleFeatureAccess = (feature: string, action: () => void) => {
@@ -76,32 +83,64 @@ const HomePymeScreen = () => {
     const renderHero = () => (
         <View style={styles.blockContainer}>
             <Text style={styles.blockTitle}>Estado Laboral de tu Empresa</Text>
-            <View style={styles.heroCard}>
-                {isLoading ? (
-                    <View style={styles.heroLoading}>
-                        <ActivityIndicator color={theme.colors.secondary} />
-                        <Text style={styles.heroLoadingText}>Diagnóstico en progreso...</Text>
+            {/* Financial Risk "RED" Card */}
+            {liability && liability.totalLiability > 0 ? (
+                <View style={[styles.heroCard, { borderLeftColor: '#f44336', backgroundColor: '#fff5f5' }]}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View>
+                            <Text style={{ fontSize: 12, color: '#d32f2f', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                🚨 Riesgo Financiero Actual
+                            </Text>
+                            <Text style={{ fontSize: 32, fontWeight: '800', color: '#c0392b', marginVertical: 5 }}>
+                                ${liability.totalLiability.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                            </Text>
+                            <Text style={{ fontSize: 13, color: '#c0392b', marginBottom: 10 }}>
+                                Pasivo laboral total (Liquidación al 100%)
+                            </Text>
+                        </View>
+                        <Ionicons name="alert-circle" size={32} color="#f44336" />
                     </View>
-                ) : (
-                    <>
-                        <View style={styles.riskHeader}>
-                            <View style={styles.riskIndicator}>
-                                <Text style={styles.riskLabel}>Nivel de Riesgo:</Text>
-                                <View style={styles.riskBadge}>
-                                    <Text style={styles.riskBadgeText}>🟡 Medio</Text>
+
+                    <View style={{ height: 1, backgroundColor: '#ffcdd2', marginVertical: 10 }} />
+
+                    <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                        onPress={() => navigation.navigate('LiquidationCalculator')} // Or detailed breakdown screen
+                    >
+                        <Text style={{ color: '#d32f2f', fontWeight: '600' }}>
+                            Ver desglose por {liability.employeeBreakdown?.length || 0} empleados
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color="#d32f2f" />
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <View style={styles.heroCard}>
+                    {isLoading ? (
+                        <View style={styles.heroLoading}>
+                            <ActivityIndicator color={theme.colors.secondary} />
+                            <Text style={styles.heroLoadingText}>Calculando riesgos...</Text>
+                        </View>
+                    ) : (
+                        <>
+                            <View style={styles.riskHeader}>
+                                <View style={styles.riskIndicator}>
+                                    <Text style={styles.riskLabel}>Nivel de Riesgo:</Text>
+                                    <View style={styles.riskBadge}>
+                                        <Text style={styles.riskBadgeText}>🟡 Medio</Text>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                        <Text style={styles.heroSupportText}>Basado en información básica proporcionada.</Text>
-                        <TouchableOpacity
-                            style={styles.heroActionBtn}
-                            onPress={() => navigation.navigate('ContractReview')}
-                        >
-                            <Text style={styles.heroActionBtnText}>👉 Ver diagnóstico y riesgos</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
-            </View>
+                            <Text style={styles.heroSupportText}>Calcula tu pasivo laboral registrando empleados.</Text>
+                            <TouchableOpacity
+                                style={styles.heroActionBtn}
+                                onPress={() => navigation.navigate('ContractReview')}
+                            >
+                                <Text style={styles.heroActionBtnText}>👉 Registrar Empleados</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
+            )}
         </View>
     );
 
@@ -131,6 +170,14 @@ const HomePymeScreen = () => {
                     </View>
                     <Text style={styles.actionCardTitle}>Documentos</Text>
                     <Text style={styles.actionCardSubtitle} numberOfLines={3}>Organiza contratos y formatos básicos.</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('GenerateAct')}>
+                    <View style={[styles.iconBox, { backgroundColor: '#f3e5f5' }]}>
+                        <Ionicons name="flash-outline" size={22} color="#8e24aa" />
+                    </View>
+                    <Text style={styles.actionCardTitle}>Generar Acta (IA)</Text>
+                    <Text style={styles.actionCardSubtitle} numberOfLines={3}>Redacta defensas legales en segundos.</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>

@@ -9,6 +9,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { endpoints } from '../config/api';
 import { useAuth } from '../context/AuthContext';
+import { PRIVACY_NOTICES } from '../data/legal/privacyNotices';
 
 const CreateContactRequestScreen = () => {
     const route = useRoute();
@@ -20,6 +21,7 @@ const CreateContactRequestScreen = () => {
     const [caseType, setCaseType] = useState('despido');
     const [urgency, setUrgency] = useState('normal');
     const [loading, setLoading] = useState(false);
+    const [hasConsent, setHasConsent] = useState(false);
     const [documents, setDocuments] = useState<any[]>([]);
 
     const pickDocument = async () => {
@@ -61,6 +63,11 @@ const CreateContactRequestScreen = () => {
             return;
         }
 
+        if (!hasConsent) {
+            Alert.alert('Consentimiento Requerido', 'Debes aceptar compartir tus datos con el abogado para continuar.');
+            return;
+        }
+
         submitRequest();
     };
 
@@ -96,7 +103,8 @@ const CreateContactRequestScreen = () => {
                     caseSummary,
                     caseType,
                     urgency,
-                    documents: processedDocs
+                    documents: processedDocs,
+                    hasAcceptedDataSharing: true // Enforced by UI validation
                 })
             });
 
@@ -244,6 +252,26 @@ const CreateContactRequestScreen = () => {
                     <TouchableOpacity style={styles.attachButton} onPress={pickDocument}>
                         <Ionicons name="attach" size={20} color="#3498db" />
                         <Text style={styles.attachText}>Adjuntar archivo desde celular</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Consentimiento Legal */}
+                <View style={styles.consentContainer}>
+                    <TouchableOpacity
+                        style={styles.checkboxContainer}
+                        onPress={() => setHasConsent(!hasConsent)}
+                    >
+                        <Ionicons
+                            name={hasConsent ? "checkbox" : "square-outline"}
+                            size={24}
+                            color={hasConsent ? "#2ecc71" : "#7f8c8d"}
+                        />
+                        <Text style={styles.consentText}>
+                            Acepto compartir mis datos de contacto y el resumen de mi caso con el abogado seleccionado para fines de asesoría legal.
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => Alert.alert('Aviso de Privacidad', PRIVACY_NOTICES.WORKER.sections.map(s => `${s.heading}\n${s.content}`).join('\n\n'))}>
+                        <Text style={styles.privacyLink}>Ver Aviso de Privacidad Simplificado</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -448,6 +476,31 @@ const styles = StyleSheet.create({
         color: '#3498db',
         marginLeft: 8,
         fontWeight: '600',
+    },
+    consentContainer: {
+        marginVertical: 15,
+        backgroundColor: '#fff',
+        padding: 15,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    consentText: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 14,
+        color: '#2c3e50',
+    },
+    privacyLink: {
+        marginTop: 10,
+        color: '#3498db',
+        fontSize: 14,
+        textDecorationLine: 'underline',
+        marginLeft: 34,
     },
 });
 

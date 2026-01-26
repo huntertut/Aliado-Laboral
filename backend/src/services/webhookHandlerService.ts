@@ -141,11 +141,12 @@ async function handleStripePaymentFailure(paymentIntent: any): Promise<void> {
 }
 
 /**
- * Handle Stripe subscription payment (lawyer bimonthly $99)
+ * Handle Stripe subscription & Commission payment (lawyer bimonthly $99 or Success Fees)
  */
 async function handleStripeSubscriptionPayment(invoice: any): Promise<void> {
     const customerId = invoice.customer;
     const subscriptionId = invoice.subscription;
+    const isCommission = invoice.description && invoice.description.includes('Comisión por Éxito');
 
     // Find lawyer by Stripe customer ID
     const lawyer = await prisma.lawyer.findFirst({
@@ -153,16 +154,63 @@ async function handleStripeSubscriptionPayment(invoice: any): Promise<void> {
     });
 
     if (lawyer) {
-        // Update subscription status
-        await prisma.lawyer.update({
-            where: { id: lawyer.id },
-            data: {
-                subscriptionStatus: 'active',
-                subscriptionEndDate: new Date(invoice.period_end * 1000),
-            },
+        if (isCommission) {
+            // HANDLE COMMISSION PAYMENT
+            // Find the ContactRequest linked to this invoice (we stored invoiceId in metadata or schema)
+            // Ideally we'd query by invoiceId if we stored it
+            const request = await prisma.contactRequest.findFirst({
+                where: { commissionInvoiceId: invoice.id }
+            });
+
+            if (request) {
+                await prisma.contactRequest.update({
+                    where: { id: request.id },
+                    data: { commissionStatus: 'paid' }
+                });
+                console.log(`💰 Commission PAID for Request ${request.id}`);
+                // TODO: Notify Admin Dashboard via Socket/Push
+            }
+
+        } else {
+            // HANDLE SUBSCRIPTION RENEWAL
+            await prisma.lawyer.update({
+                where: { id: lawyer.id },
+                data: {
+                    subscriptionStatus: 'active',
+                    subscriptionEndDate: new Date(invoice.period_end * 1000),
+                },
+            });
+            console.log(`✅ Lawyer subscription renewed: ${lawyer.id}`);
+        }
+    }
+}
+
+/**
+ * Handle Invoice Payment FAILED (Subscription or Commission)
+ */
+async function handleStripeInvoicePaymentFailed(invoice: any): Promise<void> {
+    const customerId = invoice.customer;
+    const isCommission = invoice.description && invoice.description.includes('Comisión por Éxito');
+
+    // Find lawyer by Stripe customer ID
+    const lawyer = await prisma.lawyer.findFirst({
+        where: { stripeCustomerId: customerId },
+    });
+
+    if (lawyer && isCommission) {
+        // CRITICAL: MARK AS MOROSO
+        // The lawyer failed to pay the Success Fee
+        const request = await prisma.contactRequest.findFirst({
+            where: { commissionInvoiceId: invoice.id }
         });
 
-        console.log(`✅ Lawyer subscription renewed: ${lawyer.id}`);
+        if (request) {
+            await prisma.contactRequest.update({
+                where: { id: request.id },
+                data: { commissionStatus: 'overdue' }
+            });
+            console.log(`⛔ Commission FAILED for Request ${request.id}. Lawyer is now effectively blocked.`);
+        }
     }
 }
 

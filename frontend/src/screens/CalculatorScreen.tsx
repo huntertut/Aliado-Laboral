@@ -83,6 +83,20 @@ const CalculatorScreen = () => {
         const totalDaysWorked = differenceInDays(end, start);
         const daysInCurrentYear = differenceInDays(end, new Date(end.getFullYear(), 0, 1)) + 1;
 
+        // FIX: Vacations are based on days worked since LAST ANNIVERSARY, not calendar year.
+        let lastAnniversary = new Date(end.getFullYear(), start.getMonth(), start.getDate());
+        if (lastAnniversary > end) {
+            lastAnniversary = new Date(end.getFullYear() - 1, start.getMonth(), start.getDate());
+        }
+
+        // If total tenure is less than a year, days for vacation is total days.
+        // Otherwise, it's days since anniversary.
+        const daysSinceAnniversary = differenceInDays(end, lastAnniversary);
+
+        // Ensure we don't return 0 or negative for same day calc
+        const daysForVacationCalc = Math.max(1, (totalDaysWorked < 365 ? totalDaysWorked : daysSinceAnniversary));
+
+
         // Salary calculations
         const monthly = parseFloat(monthlySalary);
         const dailySalary = monthly / 30.4;
@@ -95,11 +109,11 @@ const CalculatorScreen = () => {
         // 1. Pending Salary
         const pendingSalaryAmount = hasPendingSalary ? dailySalary * parseFloat(pendingDays || '0') : 0;
 
-        // 2. Aguinaldo (Proportional)
+        // 2. Aguinaldo (Proportional to CALENDAR YEAR - Correct)
         const aguinaldoProportional = (dailySalary * parseFloat(aguinaldoDays) / 365) * daysInCurrentYear;
 
-        // 3. Vacations & Premium
-        const vacationDaysEarned = (parseFloat(vacationDays) / 365) * daysInCurrentYear;
+        // 3. Vacations & Premium (Proportional to ANNIVERSARY YEAR - Fixed)
+        const vacationDaysEarned = (parseFloat(vacationDays) / 365) * daysForVacationCalc;
         const vacationPay = dailySalary * vacationDaysEarned;
         const primaVacacional = vacationPay * (parseFloat(vacationPremium) / 100);
 
@@ -604,8 +618,8 @@ const CalculatorScreen = () => {
             >
                 {/* Header */}
                 <View style={styles.infoHeader}>
-                    <Text style={styles.infoHeaderText}>TRANSPARENCIA SALARIAL</Text>
-                    <Text style={styles.infoHeaderSub}>TUS DOS ESCENARIOS</Text>
+                    <Text style={styles.infoHeaderText}>ALIADO LABORAL</Text>
+                    <Text style={styles.infoHeaderSub}>TRANSPARENCIA SALARIAL</Text>
                 </View>
 
                 {/* Split Screen */}
@@ -614,7 +628,7 @@ const CalculatorScreen = () => {
                     <View style={styles.splitTop}>
                         <View style={styles.scenarioLabelContainer}>
                             <Text style={styles.scenarioTitle}>📄 Escenario A</Text>
-                            <Text style={styles.scenarioSubtitle}>Si tú decides renunciar (Finiquito)</Text>
+                            <Text style={styles.scenarioSubtitle}>Finiquito (Renuncia o Despido Justificado)</Text>
                         </View>
 
                         <View style={styles.amountContainer}>
@@ -623,7 +637,7 @@ const CalculatorScreen = () => {
                                 ${results ? results.finiquitoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </Text>
                         </View>
-                        <Text style={styles.scenarioContext}>Derechos proporcionales acumulados.</Text>
+                        <Text style={styles.scenarioContext}>Tus derechos irrenunciables (proporcionales).</Text>
                     </View>
 
                     <View style={styles.divider} />
@@ -632,7 +646,7 @@ const CalculatorScreen = () => {
                     <View style={styles.splitBottom}>
                         <View style={styles.scenarioLabelContainer}>
                             <Text style={styles.scenarioTitleLight}>⚖️ Escenario B</Text>
-                            <Text style={styles.scenarioSubtitleLight}>Despido Injustificado (Liquidación)</Text>
+                            <Text style={styles.scenarioSubtitleLight}>Despido Injustificado (Liquidación Total)</Text>
                         </View>
 
                         <View style={styles.amountContainer}>
@@ -641,13 +655,13 @@ const CalculatorScreen = () => {
                                 ${results ? results.totalNet.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </Text>
                         </View>
-                        <Text style={styles.scenarioContextLight}>Indemnización constitucional completa.</Text>
+                        <Text style={styles.scenarioContextLight}>Incluye indemnización de 3 meses + antigüedad.</Text>
                     </View>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.infoFooter}>
-                    <Text style={styles.infoFooterText}>Información es poder. Calcula tu caso en Alianza Laboral App.</Text>
+                    <Text style={styles.infoFooterText}>Calcula tu caso en Aliado Laboral App.</Text>
                 </View>
             </View>
 

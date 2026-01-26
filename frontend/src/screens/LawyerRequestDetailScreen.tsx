@@ -132,6 +132,35 @@ const LawyerRequestDetailScreen = () => {
         }
     };
 
+    const updateCRMStatus = async (status: string) => {
+        try {
+            if (!user) return;
+            const token = await getAccessToken();
+
+            const response = await fetch(`${endpoints.contact.lawyerRequests}/${requestId}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status })
+            });
+
+            if (response.ok) {
+                // Update local state optimistic or refresh
+                setRequest({ ...request, crmStatus: status });
+
+                if (status === 'CLOSED_WON') {
+                    Alert.alert('🎉 ¡Felicidades!', 'Has ganado este caso. ¡Sigue así!');
+                }
+            } else {
+                Alert.alert('Error', 'No se pudo actualizar el estado');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -256,6 +285,41 @@ const LawyerRequestDetailScreen = () => {
                                 <Text style={styles.contactButtonText}>WhatsApp</Text>
                             </TouchableOpacity>
                         )}
+                    </View>
+                )}
+
+                {/* CRM MANAGEMENT SECTION */}
+                {request.status === 'accepted' && (
+                    <View style={[styles.section, { borderLeftWidth: 4, borderLeftColor: '#f1c40f' }]}>
+                        <Text style={styles.sectionTitle}>Gestión del Lead (CRM)</Text>
+                        <Text style={styles.crmSubtitle}>Estado actual del prospecto:</Text>
+
+                        <View style={styles.crmGrid}>
+                            {[
+                                { id: 'NEW', label: 'Nuevo', color: '#3498db' },
+                                { id: 'CONTACTED', label: 'Contactado', color: '#9b59b6' },
+                                { id: 'NEGOTIATING', label: 'Negociando', color: '#e67e22' },
+                                { id: 'CLOSED_WON', label: 'Ganado 🎉', color: '#2ecc71' },
+                                { id: 'CLOSED_LOST', label: 'Perdido', color: '#95a5a6' },
+                            ].map((status) => (
+                                <TouchableOpacity
+                                    key={status.id}
+                                    style={[
+                                        styles.crmChip,
+                                        (request.crmStatus === status.id || (!request.crmStatus && status.id === 'NEW')) && { backgroundColor: status.color },
+                                        (request.crmStatus !== status.id && (request.crmStatus || status.id !== 'NEW')) && { borderColor: status.color, borderWidth: 1 }
+                                    ]}
+                                    onPress={() => updateCRMStatus(status.id)}
+                                >
+                                    <Text style={[
+                                        styles.crmChipText,
+                                        (request.crmStatus === status.id || (!request.crmStatus && status.id === 'NEW')) ? { color: '#fff' } : { color: status.color }
+                                    ]}>
+                                        {status.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
                 )}
 
@@ -397,6 +461,18 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
     },
     acceptButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginLeft: 8 },
+
+    // CRM Styles
+    crmSubtitle: { fontSize: 13, color: '#95a5a6', marginBottom: 12 },
+    crmGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    crmChip: {
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 8,
+        marginRight: 8,
+    },
+    crmChipText: { fontSize: 12, fontWeight: 'bold' }
 });
 
 export default LawyerRequestDetailScreen;

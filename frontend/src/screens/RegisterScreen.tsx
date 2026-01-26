@@ -425,7 +425,7 @@ const RegisterScreen = () => {
                                     navigation.navigate('PrivacyPolicy' as never, { type: policyType } as never);
                                 }}
                             >
-                                Aviso de Privacidad
+                                Términos y Condiciones y Aviso de Privacidad
                             </Text>
                         </Text>
                     </View>

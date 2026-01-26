@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPymeProfile, updatePymeProfile, getCompliance, calculateLiquidation, getEmployees, addEmployee } from '../controllers/pymeController';
+import { getPymeProfile, updatePymeProfile, getCompliance, calculateLiquidation, getEmployees, addEmployee, getPymeLiability, generateAdministrativeAct } from '../controllers/pymeController';
 import pymeDocumentController from '../controllers/pymeDocumentController';
 import { authMiddleware } from '../middleware/auth';
 
@@ -16,5 +16,9 @@ router.post('/employees', authMiddleware, addEmployee);
 router.get('/documents', authMiddleware, pymeDocumentController.getDocuments);
 router.post('/documents/upload', authMiddleware, pymeDocumentController.uploadDocument);
 router.post('/documents/analyze-contract', authMiddleware, pymeDocumentController.analyzeContract);
+
+// Value Added Services (Pro)
+router.get('/liability', authMiddleware, getPymeLiability);
+router.post('/generate-acta', authMiddleware, generateAdministrativeAct);
 
 export default router;

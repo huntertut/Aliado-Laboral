@@ -14,14 +14,21 @@ const AdminDashboardScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [stats, setStats] = useState<any>(null);
+    const [analytics, setAnalytics] = useState<any>(null);
 
     const fetchStats = async () => {
         try {
             const token = await AsyncStorage.getItem('authToken');
-            const response = await axios.get(`${API_URL}/admin/dashboard`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setStats(response.data);
+            const headers = { Authorization: `Bearer ${token}` };
+
+            const [dashboardRes, analyticsRes] = await Promise.all([
+                axios.get(`${API_URL}/admin/dashboard`, { headers }).catch(e => ({ data: null })),
+                axios.get(`${API_URL}/analytics/metrics`, { headers }).catch(e => ({ data: null }))
+            ]);
+
+            if (dashboardRes?.data) setStats(dashboardRes.data);
+            if (analyticsRes?.data) setAnalytics(analyticsRes.data);
+
         } catch (error) {
             console.error('Error fetching admin stats:', error);
         } finally {
@@ -117,6 +124,37 @@ const AdminDashboardScreen = ({ navigation }: any) => {
                         <Text style={styles.kpiValue}>{stats?.kpis?.conversionRate || 0}%</Text>
                     </View>
                 </View>
+
+                {/* LIVE ANALYTICS (THE EYES) */}
+                {analytics && (
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>Monitor de Negocio (En Vivo)</Text>
+                        <View style={styles.analyticsGrid}>
+                            {/* Conversion Card */}
+                            <View style={[styles.analyticsCard, { borderLeftColor: '#7b1fa2' }]}>
+                                <Text style={styles.analyticsLabel}>Tasa de Conversión</Text>
+                                <Text style={styles.analyticsValue}>{analytics.monetization?.conversionRate || '0%'}</Text>
+                                <Text style={styles.analyticsSub}>
+                                    {analytics.monetization?.unlockAttempts} pagos / {analytics.monetization?.lockedViews} vistas
+                                </Text>
+                            </View>
+
+                            {/* Viral Card */}
+                            <View style={[styles.analyticsCard, { borderLeftColor: '#e91e63' }]}>
+                                <Text style={styles.analyticsLabel}>Alcance Viral</Text>
+                                <Text style={styles.analyticsValue}>{analytics.growth?.salaryThermometerUses || 0}</Text>
+                                <Text style={styles.analyticsSub}>Usos del Termómetro</Text>
+                            </View>
+
+                            {/* Vault Card */}
+                            <View style={[styles.analyticsCard, { borderLeftColor: '#2e7d32' }]}>
+                                <Text style={styles.analyticsLabel}>Retención (Bóveda)</Text>
+                                <Text style={styles.analyticsValue}>{analytics.growth?.vaultUploads || 0}</Text>
+                                <Text style={styles.analyticsSub}>Archivos subidos</Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
 
                 {/* Action Items */}
                 <TouchableOpacity
@@ -436,6 +474,43 @@ const styles = StyleSheet.create({
     barLabel: {
         fontSize: 10,
         color: '#999'
+    },
+    // ANALYTICS STYLES
+    sectionContainer: {
+        marginBottom: 20,
+    },
+    analyticsGrid: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+    },
+    analyticsCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 15,
+        width: '31%', // 3 cards in row
+        borderLeftWidth: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    analyticsLabel: {
+        fontSize: 11,
+        color: '#7f8c8d',
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    analyticsValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#2c3e50',
+    },
+    analyticsSub: {
+        fontSize: 9,
+        color: '#95a5a6',
+        marginTop: 4,
     }
 });
 

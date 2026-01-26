@@ -7,6 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/constants';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import PaywallModal from '../../components/PaywallModal';
 
 interface PymeDocument {
@@ -23,6 +25,7 @@ const LaborDocumentsScreen = () => {
     const [documents, setDocuments] = useState<PymeDocument[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [paywallVisible, setPaywallVisible] = useState(false);
 
     const isBasic = !user?.subscriptionLevel || user.subscriptionLevel === 'basic';
@@ -97,6 +100,83 @@ const LaborDocumentsScreen = () => {
         }
     };
 
+    const generateAgreement = async () => {
+        if (isBasic) {
+            setPaywallVisible(true);
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const htmlContent = `
+                <html>
+                <head>
+                    <style>
+                        body { font-family: 'Helvetica', sans-serif; padding: 40px; line-height: 1.6; }
+                        h1 { text-align: center; font-size: 18px; margin-bottom: 20px; text-transform: uppercase; }
+                        .header { text-align: right; margin-bottom: 30px; font-size: 12px; }
+                        .clause { margin-bottom: 15px; text-align: justify; }
+                        .signatures { margin-top: 60px; display: flex; justify-content: space-between; }
+                        .sig-block { width: 45%; border-top: 1px solid #000; text-align: center; padding-top: 10px; }
+                        .bold { font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        Asunto: Convenio de Terminación de Relación Laboral<br/>
+                        Lugar: Ciudad de México<br/>
+                        Fecha: ${new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+
+                    <h1>CONVENIO DE TERMINACIÓN DE RELACIÓN DE TRABAJO FUERA DE JUICIO</h1>
+
+                    <p class="clause">
+                        EN LA CIUDAD DE MÉXICO, SIENDO LAS 12:00 HORAS DEL DÍA DE HOY, COMPARECEN POR UNA PARTE LA EMPRESA <span class="bold">"LA EMPRESA S.A. DE C.V."</span> (EL PATRÓN), Y POR LA OTRA PARTE EL C. <span class="bold">TRABAJADOR EJEMPLO</span> (EL TRABAJADOR), QUIENES VIENEN A CELEBRAR EL PRESENTE CONVENIO AL TENOR DE LAS SIGUIENTES:
+                    </p>
+
+                    <h1>CLÁUSULAS</h1>
+
+                    <p class="clause">
+                        <span class="bold">PRIMERA.-</span> AMBAS PARTES SE RECONOCEN MUTUAMENTE LA PERSONALIDAD CON LA QUE COMPARECEN Y MANIFIESTAN QUE DAN POR TERMINADA LA RELACIÓN LABORAL QUE LOS UNÍA, CON FECHA DE HOY, DE MANERA VOLUNTARIA Y POR ASÍ CONVENIR A SUS INTERESES, CON FUNDAMENTO EN LA FRACCIÓN I DEL ARTÍCULO 53 DE LA LEY FEDERAL DEL TRABAJO.
+                    </p>
+
+                    <p class="clause">
+                        <span class="bold">SEGUNDA.-</span> EL PATRÓN PAGA EN ESTE ACTO AL TRABAJADOR LA CANTIDAD DE <span class="bold">$15,000.00 M.N.</span> (QUINCE MIL PESOS 00/100 M.N.) MEDIANTE TRANSFERENCIA BANCARIA, CUBRIENDO CON ELLO TODAS Y CADA UNA DE LAS PRESTACIONES A LAS QUE TUVO DERECHO (VACACIONES, PRIMA VACACIONAL, AGUINALDO PROPORCIONAL Y PRIMA DE ANTIGÜEDAD).
+                    </p>
+
+                    <p class="clause">
+                        <span class="bold">TERCERA.-</span> EL TRABAJADOR MANIFIESTA QUE NO SE LE ADEUDA CANTIDAD ALGUNA POR NINGÚN CONCEPTO Y OTORGA AL PATRÓN EL FINIQUITO MÁS AMPLIO QUE EN DERECHO PROCEDA, NO RESERVÁNDOSE ACCIÓN NI DERECHO ALGUNO QUE EJERCITAR EN SU CONTRA.
+                    </p>
+
+                    <p class="clause">
+                        LEÍDO QUE FUE EL PRESENTE CONVENIO Y ENTERADAS LAS PARTES DE SU CONTENIDO Y ALCANCE LEGAL, LO FIRMAN AL MARGEN Y AL CALCE PARA CONSTANCIA CONFORME A DERECHO.
+                    </p>
+
+                    <div class="signatures">
+                        <div class="sig-block">
+                            EL PATRÓN<br/>
+                            REP. LEGAL
+                        </div>
+                        <div class="sig-block">
+                            EL TRABAJADOR<br/>
+                            C. TRABAJADOR EJEMPLO
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+            await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            Alert.alert('Error', 'No se pudo generar el convenio.');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const renderDocItem = ({ item }: { item: PymeDocument }) => (
         <View style={styles.docCard}>
             <View style={styles.iconContainer}>
@@ -130,6 +210,17 @@ const LaborDocumentsScreen = () => {
                         <Text style={styles.basicBadgeText}>BASIC</Text>
                     </View>
                 )}
+            </View>
+
+            <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity
+                    style={[styles.actionButton, styles.generateButton]}
+                    onPress={generateAgreement}
+                    disabled={isGenerating}
+                >
+                    {isGenerating ? <ActivityIndicator color="#fff" /> : <Ionicons name="print-outline" size={20} color="#fff" />}
+                    <Text style={styles.actionButtonText}>Generar Convenio (STPS)</Text>
+                </TouchableOpacity>
             </View>
 
             {isLoading ? (
@@ -235,6 +326,28 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 3,
+    },
+    actionButtonsContainer: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 10,
+        elevation: 2,
+    },
+    generateButton: {
+        backgroundColor: '#673ab7', // Deep Purple
+    },
+    actionButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        marginLeft: 8,
+        fontSize: 14,
     },
 });
 

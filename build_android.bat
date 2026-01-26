@@ -61,6 +61,7 @@ node --print "require.resolve('@react-native/gradle-plugin/package.json', { path
 
 echo.
 echo 4. Starting Gradle Build...
+set "ANDROID_HOME=C:\Users\Save Company\AppData\Local\Android\Sdk"
 cd android
 
 echo [INFO] Resolving dependencies (Extracting AARs)...

@@ -207,6 +207,11 @@ const AdminUsersScreen = () => {
                     </Text>
                 </View>
             </View>
+            <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                <View style={{ backgroundColor: '#f3e5f5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginRight: 8 }}>
+                    <Text style={{ fontSize: 11, color: '#8e24aa' }}>🤖 IA: {item.dailyTokenCount || 0} tokens</Text>
+                </View>
+            </View>
             <View style={styles.cardFooter}>
                 <Text style={styles.date}>Sol: {item.contactRequests || 0}</Text>
                 <TouchableOpacity

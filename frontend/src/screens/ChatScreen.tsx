@@ -158,6 +158,31 @@ const ChatScreen = () => {
         );
     }
 
+    const renderTrafficLight = () => {
+        // Calculate status based on last message
+        const lastMsg = messages[messages.length - 1];
+        const lastDate = lastMsg ? new Date(lastMsg.timestamp) : new Date();
+        const diffDays = Math.floor((new Date().getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+
+        let statusColor = '#2ecc71'; // Green
+        let statusText = 'Tu abogado está trabajando en tu caso.';
+
+        if (diffDays >= 5) {
+            statusColor = '#e74c3c'; // Red
+            statusText = 'Tu caso requiere atención. Estamos contactando al despacho.';
+        } else if (diffDays >= 3) {
+            statusColor = '#f1c40f'; // Yellow
+            statusText = 'Esperando actualización. Recordatorio enviado.';
+        }
+
+        return (
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 8, marginHorizontal: 15, marginTop: 10, borderRadius: 8, elevation: 2 }}>
+                <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: statusColor, marginRight: 8 }} />
+                <Text style={{ fontSize: 13, color: '#555', flex: 1 }}>{statusText}</Text>
+            </View>
+        );
+    };
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -174,6 +199,9 @@ const ChatScreen = () => {
                 </View>
                 <Ionicons name={persona === 'elias' ? "calculator" : "chatbubbles"} size={24} color="rgba(255,255,255,0.8)" />
             </View>
+
+            {/* TRAFFIC LIGHT INDICATOR */}
+            {renderTrafficLight()}
 
             <FlatList
                 ref={flatListRef}
@@ -194,10 +222,10 @@ const ChatScreen = () => {
                         {item.requiresLawyer && (
                             <TouchableOpacity
                                 style={styles.lawyerButton}
-                                onPress={() => navigation.navigate('Lawyers' as never)}
+                                onPress={() => navigation.navigate('SubscriptionManagement' as never)}
                             >
-                                <Ionicons name="briefcase" size={20} color="#fff" />
-                                <Text style={styles.lawyerButtonText}>Ver Abogados Certificados</Text>
+                                <Ionicons name="star" size={20} color="#fff" />
+                                <Text style={styles.lawyerButtonText}>Hablar con Abogado (Versión Pro)</Text>
                                 <Ionicons name="arrow-forward" size={16} color="#fff" />
                             </TouchableOpacity>
                         )}

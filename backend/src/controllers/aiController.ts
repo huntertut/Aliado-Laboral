@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import dotenv from 'dotenv';
+import OpenAI from 'openai';
+import { PrismaClient } from '@prisma/client';
+
 dotenv.config();
 
-// System prompts actualizados
+const prisma = new PrismaClient();
+
+// PROMPTS (Preserved)
 const PROMPTS = {
     elias: `Eres Elías, un asistente de inteligencia artificial orientado a la orientación laboral clara, empática y práctica.
 Operas usando el modelo Llama 3 en Groq.
@@ -52,111 +57,151 @@ PERSONALIDAD ESPECÍFICA (VERÓNICA):
 - Muy cuidadosa con no afirmar hechos legales definitivos. Usa frases como "según la Ley Federal del Trabajo..." o "generalmente...".`
 };
 
-// Detección de casos complejos
-const detectComplexCase = (message: string, response: string): boolean => {
-    const lowerMsg = message.toLowerCase();
-    const lowerResp = response.toLowerCase();
+// 1. CONFIGURACIÓN DE MODELOS
+const MODEL_FAST = 'llama3-8b-8192';
+const MODEL_SMART = 'llama3-70b-8192';
 
-    const complexKeywords = [
-        'demandar', 'demanda', 'tribunal', 'juzgado', 'juicio',
-        'acoso', 'hostigamiento', 'discriminación', 'violencia',
-        'accidente grave', 'incapacidad permanente',
-        'embarazo', 'despido injustificado', 'fraude',
-        'amenaza', 'cárcel', 'penal'
+// 3. LIMITADOR DE HISTORIAL (Context Sanitizer)
+const trimHistory = (messages: any[], systemPrompt: string) => {
+    // Siempre mantenemos el System Prompt (se construirá nuevo, así que no asumimos que viene en messages)
+    // Messages viene del frontend como [{role, content}...]
+
+    // Si el historial es muy largo, nos quedamos con los últimos 5
+    let trimmed = messages;
+    if (messages.length > 5) {
+        trimmed = messages.slice(-5);
+    }
+
+    // Construimos el array final para Groq
+    return [
+        { role: 'system', content: systemPrompt },
+        ...trimmed
     ];
-
-    if (complexKeywords.some(keyword => lowerMsg.includes(keyword))) return true;
-    if (lowerResp.includes('abogado') || lowerResp.includes('profesional') || lowerResp.includes('versión pro')) return true;
-
-    return false;
 };
 
-// Rate Limiter
-const RATE_LIMIT_CONFIG = {
-    maxRequestsPerMinute: 20, // Groq is fast, we can allow more
-    windowMs: 60 * 1000
-};
+// 4. RATE LIMITING & QUOTA (Database Driven)
+const checkAndTrackQuota = async (userId: string | undefined): Promise<boolean> => {
+    // Si no hay usuario (guest), aplicamos un límite simple en memoria o permitimos poco (MVP: Allow)
+    // Pero idealmente requerimos Auth. Asumiremos Auth es opcional en chat básico? 
+    // Si es ruta protegida, req.user existe.
+    if (!userId) return true;
 
-class SimpleRateLimiter {
-    private timestamps: number[] = [];
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return false;
 
-    canProcced(): boolean {
-        const now = Date.now();
-        const windowStart = now - RATE_LIMIT_CONFIG.windowMs;
-        this.timestamps = this.timestamps.filter(t => t > windowStart);
-        if (this.timestamps.length >= RATE_LIMIT_CONFIG.maxRequestsPerMinute) return false;
-        this.timestamps.push(now);
+    // Reset diario
+    const now = new Date();
+    const lastReset = new Date(user.lastTokenReset);
+    const isNewDay = now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth();
+
+    if (isNewDay) {
+        await prisma.user.update({
+            where: { id: userId },
+            data: { dailyTokenCount: 0, lastTokenReset: now }
+        });
         return true;
     }
-}
 
-const rateLimiter = new SimpleRateLimiter();
+    // Reglas de Negocio
+    const LIMIT_FREE = 5000;
+    const isFreeWorker = user.role === 'worker' && user.plan === 'free';
 
-export const chatWithAI = async (req: Request, res: Response) => {
+    if (isFreeWorker && user.dailyTokenCount >= LIMIT_FREE) {
+        return false;
+    }
+
+    return true;
+};
+
+const updateTokenUsage = async (userId: string | undefined, usage: number) => {
+    if (!userId) return;
     try {
-        const { message, persona } = req.body;
+        await prisma.user.update({
+            where: { id: userId },
+            data: { dailyTokenCount: { increment: usage } }
+        });
+    } catch (e) {
+        console.error('Failed to update token usage', e);
+    }
+};
 
-        if (!message || !persona) {
-            return res.status(400).json({ error: 'Message and persona are required' });
-        }
+export const chatWithAI = async (req: any, res: Response) => {
+    try {
+        const { message, messages, persona, complexity = 'CHAT_BASIC' } = req.body;
+        const userId = req.user?.id;
 
-        if (!rateLimiter.canProcced()) {
+        // Validar Quota
+        const canProceed = await checkAndTrackQuota(userId);
+        if (!canProceed) {
             return res.status(429).json({
-                error: 'Servicio en alta demanda',
-                message: 'El asistente está atendiendo muchas consultas. Por favor intenta en unos segundos.',
-                requiresLawyer: false
-            });
-        }
-
-        const apiKey = process.env.GROQ_API_KEY;
-        if (!apiKey) {
-            console.error('GROQ_API_KEY missing');
-            return res.status(500).json({
-                error: 'Configuration Error',
-                message: 'El asistente no tiene su llave de activación (GROQ_API_KEY faltante).'
+                error: 'Límite diario excedido 🛑',
+                message: 'Has alcanzado tu límite diario de consultas gratuitas. Suscríbete a Premium para continuar ilimitadamente.',
+                requiresLawyer: false,
+                isQuotaError: true
             });
         }
 
         const systemPrompt = PROMPTS[persona as 'elias' | 'veronica'] || PROMPTS.elias;
 
-        // Call Groq API using native fetch
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: message }
-                ],
-                model: 'llama-3.3-70b-versatile', // High intelligence model (Updated 2025)
-                temperature: 0.7,
-                max_tokens: 800
-            })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Groq API Error:', response.status, errorText);
-            throw new Error(`Groq API returned ${response.status}: ${errorText}`);
+        // Normalizar entrada: Support both single 'message' and history 'messages'
+        let conversationHistory: any[] = [];
+        if (messages && Array.isArray(messages)) {
+            conversationHistory = messages;
+        } else if (message) {
+            conversationHistory = [{ role: 'user', content: message }];
+        } else {
+            return res.status(400).json({ error: 'Message or messages array required' });
         }
 
-        const data: any = await response.json();
-        const responseText = data.choices[0]?.message?.content || "Lo siento, no pude procesar tu respuesta.";
-        const requiresLawyer = detectComplexCase(message, responseText);
+        // 3. Trim History
+        const finalMessages = trimHistory(conversationHistory, systemPrompt);
+
+        // 2. Routing Logic
+        let selectedModel = MODEL_FAST;
+        let maxTokens = 250;
+
+        if (complexity === 'LEGAL_DRAFTING') {
+            selectedModel = MODEL_SMART;
+            maxTokens = 2048;
+        }
+
+        // Init Groq (OpenAI SDK)
+        const groq = new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
+
+        const completion = await groq.chat.completions.create({
+            messages: finalMessages,
+            model: selectedModel,
+            temperature: 0.5,
+            max_tokens: maxTokens,
+        });
+
+        const responseText = completion.choices[0]?.message?.content || "Lo siento, hubo un error de conexión.";
+        const totalTokens = completion.usage?.total_tokens || 0;
+
+        // Actualizar consumo
+        await updateTokenUsage(userId, totalTokens);
+
+        // Detect complex case (Simple keyword match)
+        const complexKeywords = ['demandar', 'juzgado', 'despido injustificado', 'violencia', 'amenaza'];
+        const requiresLawyer = complexKeywords.some(kw => responseText.toLowerCase().includes(kw));
+
+        // LEGAL ARMOR: DISCLAIMER INJECTION
+        const legalDisclaimer = `\n\n> ⚖️ *Aviso Legal*: Esta respuesta es informativa y generada por IA. No constituye asesoría legal vinculante. Para casos reales, contacta a un abogado verificado en la sección "Solicitar Abogado".`;
 
         res.json({
-            response: responseText,
-            requiresLawyer
+            response: responseText + legalDisclaimer,
+            requiresLawyer,
+            usage: totalTokens
         });
 
     } catch (error: any) {
-        console.error('AI Controller Error:', error);
+        console.error('AI Error:', error);
         res.status(500).json({
             error: 'Error interno de IA',
-            message: 'Hubo un problema conectando con el asistente. Intenta de nuevo.',
+            message: 'El servicio está experimentando alta demanda.',
             details: error.message
         });
     }

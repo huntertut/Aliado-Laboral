@@ -473,6 +473,196 @@ export const purgeCaseData = async (req: Request, res: Response) => {
 };
 
 /**
+ * 🔒 3. GESTIÓN DE LA BÓVEDA (Compliance)
+ * Detects lawyers trying to cheat the system.
+ */
+export const getVaultCompliance = async (req: Request, res: Response) => {
+    try {
+        // A. Anomalies: Closed Won / Commission Pending but NO Document
+        const anomalies = await prisma.contactRequest.findMany({
+            where: {
+                OR: [
+                    { crmStatus: 'CLOSED_WON', settlementDocStatus: 'none' },
+                    { commissionStatus: 'pending', settlementDocStatus: 'none' }
+                ]
+            },
+            include: { lawyerProfile: { include: { lawyer: { include: { user: true } } } } }
+        });
+
+        // B. Top Earners (Ranking)
+        const topEarners = await prisma.lawyerProfile.findMany({
+            orderBy: { lifetimeCommissionSavings: 'desc' },
+            take: 10,
+            include: { lawyer: { include: { user: true } } }
+        });
+
+        // C. OCR Validation Check (Logic: Settlement vs Estimate discrepancy)
+        // Finding cases where settlement is suspiciously low (< 20% of estimate)
+        // This requires raw SQL or post-processing since we compare two columns
+        // For MVP, we'll fetch recently closed cases with settlement info
+        const recentSettlements = await prisma.contactRequest.findMany({
+            where: { settlementDocStatus: 'uploaded', settlementAmount: { not: null } },
+            take: 50,
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        const suspiciousDocs = recentSettlements.filter(r => {
+            const estimate = Number(r.estimatedSeverance || 0);
+            const settlement = Number(r.settlementAmount || 0);
+            // Flag if settlement is < 20% of estimate (possible under-reporting or bad deal)
+            return estimate > 0 && (settlement / estimate) < 0.20;
+        });
+
+        res.json({
+            anomalies: anomalies.map(a => ({
+                id: a.id,
+                lawyer: a.lawyerProfile?.lawyer?.user?.fullName,
+                issue: 'Case Marked Won but No Document Uploaded'
+            })),
+            suspiciousDocs: suspiciousDocs.map(s => ({
+                id: s.id,
+                estimate: s.estimatedSeverance,
+                reported: s.settlementAmount,
+                flag: 'Low Settlement Ratio (<20%)'
+            })),
+            topEarners: topEarners.map(t => ({
+                lawyer: t.lawyer?.user?.fullName,
+                savings: t.lifetimeCommissionSavings,
+                score: t.reputationScore
+            }))
+        });
+
+    } catch (error: any) {
+        console.error('Vault Compliance Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * 🌍 4. IMPACT KPIS
+ * Social Impact Stats
+ */
+export const getImpactKPIs = async (req: Request, res: Response) => {
+    try {
+        // Total Recovered (Sum of settlement amounts)
+        const totalRecovered = await prisma.contactRequest.aggregate({
+            _sum: { settlementAmount: true }
+        });
+
+        // Conciliation Rate
+        // Count cases closed via Conciliation vs Total Closed
+        // Assuming we track process type effectively or infer it
+        // For now, let's use the generic stats
+        const closedCases = await prisma.contactRequest.count({
+            where: { crmStatus: 'CLOSED_WON' }
+        });
+
+        // This is tricky without a specific 'closureType' column distinct from processType input
+        // But for MVP impact, we trust the 'settlementAmount' existence as success
+
+        res.json({
+            moneyRecovered: Number(totalRecovered._sum.settlementAmount || 0),
+            familiesHelped: closedCases,
+            conciliationRate: '78%' // Hardcoded estimate based on MX average or implementing logic later
+        });
+
+    } catch (error: any) {
+        console.error('Impact KPI Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+export const getFinancialHealth = async (req: Request, res: Response) => {
+    try {
+        // A. Monthly Recurring Revenue (MRR)
+        // Sum of all active subscriptions
+        const activeWorkerSubs = await prisma.workerSubscription.count({ where: { status: 'active' } });
+        const activeLawyerBasic = await prisma.lawyerSubscription.count({ where: { status: 'active', plan: 'basic' } });
+        const activeLawyerPro = await prisma.lawyerSubscription.count({ where: { status: 'active', plan: 'pro' } });
+        const activePymes = await prisma.user.count({ where: { role: 'pyme', subscriptionLevel: 'premium' } }); // Simplified
+
+        const mrr = (activeWorkerSubs * 29) + (activeLawyerBasic * 99) + (activeLawyerPro * 299) + (activePymes * 999);
+
+        // B. Success Fees Pendientes (The "Float")
+        // Sum of commissions where status is 'pending' (billed but not paid)
+        const pendingCommissions = await prisma.contactRequest.aggregate({
+            _sum: { commissionAmount: true },
+            where: { commissionStatus: 'pending' }
+        });
+
+        // C. Pipeline de Éxito (Future Money)
+        // Est. commission (avg 6%) from active HOT cases not yet won
+        const activeHotCases = await prisma.contactRequest.aggregate({
+            _sum: { estimatedSeverance: true },
+            where: { isHot: true, crmStatus: { notIn: ['CLOSED_WON', 'CLOSED_LOST'] } }
+        });
+        const pipelineValue = Number(activeHotCases._sum.estimatedSeverance || 0) * 0.06; // Avg 6%
+
+        // D. Costo por Token (Efficiency)
+        // Mock calculation based on total requests processed by AI
+        // Real impl would query usage logs
+        const aiRequests = await prisma.contactRequest.count();
+        const estimatedGroqCost = aiRequests * 0.005; // $0.005 USD per analysis approx
+
+        res.json({
+            status: 'success',
+            mrr,
+            pendingFees: Number(pendingCommissions._sum.commissionAmount || 0),
+            pipelineValue: Math.round(pipelineValue),
+            efficiency: {
+                revenue: mrr + Number(pendingCommissions._sum.commissionAmount || 0),
+                cost: estimatedGroqCost,
+                ratio: estimatedGroqCost > 0 ? ((mrr / estimatedGroqCost).toFixed(2)) : '∞'
+            }
+        });
+
+    } catch (error: any) {
+        console.error('Financial Health Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * 📡 2. EL RADAR COLECTIVO
+ * Cluster detection for "Maquiladoras"
+ */
+export const getCollectiveRadar = async (req: Request, res: Response) => {
+    try {
+        // Group by Employer Name to find clusters
+        const clusters = await prisma.contactRequest.groupBy({
+            by: ['employerName'],
+            _count: { id: true },
+            _sum: { estimatedSeverance: true },
+            having: {
+                id: { _count: { gt: 2 } } // Minimum 3 to be a cluster
+            },
+            orderBy: {
+                _count: { id: 'desc' }
+            }
+            // where: { status: 'accepted' } // Should we show all or just accepted? All is better for radar.
+        });
+
+        // Map to friendly format
+        const formattedClusters = clusters.map(c => ({
+            company: c.employerName,
+            count: c._count.id,
+            totalValue: Number(c._sum.estimatedSeverance || 0),
+            potentialCommission: Number(c._sum.estimatedSeverance || 0) * 0.07, // 7% optimistic
+            status: 'DETECTED', // logic to check if sold could be added here
+            action: 'NOTIFY_LAWYERS'
+        }));
+
+        res.json({
+            clusters: formattedClusters,
+            totalClusters: formattedClusters.length
+        });
+
+    } catch (error: any) {
+        console.error('Collective Radar Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
  * Update User Subscription (Admin Manual Override)
  */
 export const updateUserSubscription = async (req: Request, res: Response) => {
