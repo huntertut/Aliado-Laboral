@@ -376,6 +376,7 @@ model ContactRequest {
   
   // Mensajes/notas
   rejectionReason     String?
+  closedAt            DateTime?      // NEW: When case was successfully closed/won
   
   // Business Model SLA Tracking
   lastWorkerActivityAt  DateTime?      @default(now())
