@@ -71,6 +71,7 @@ model ContactRequest {
   // Contenido de la solicitud
   caseSummary         String
   caseType            String?        // 'despido', 'acoso', 'discriminacion', 'otro' (Legal Category)
+  employerName        String?        // NEW: For 'Collective Radar' clustering
   urgency             String         @default("normal") // 'low', 'normal', 'high'
   estimatedSeverance  Decimal?       // NEW: For 'Hot Case' logic (>150k)
   
