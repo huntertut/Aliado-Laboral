@@ -721,6 +721,68 @@ export const updateCRMStatus = async (req: Request, res: Response) => {
     }
 };
 
+/**
+ * 💰 CLOSE CASE & CALCULATE COMMISSION (The "Rate Hike" Enforcement)
+ * Logic: Checks ACTIVE plan at moment of closing.
+ * PRO -> 7%
+ * BASIC -> 10%
+ */
+export const closeCaseWithCommission = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { settlementAmount, evidenceUrl } = req.body; // e.g., 100000
+        const userId = (req as any).user?.id;
+
+        const lawyer = await prisma.lawyer.findUnique({
+            where: { userId },
+            include: { profile: true, subscription: true }
+        });
+
+        if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
+
+        // 1. Determine Rate based on CURRENT Plan
+        const isPro = lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active';
+        const commissionRate = isPro ? 0.07 : 0.10; // 7% vs 10%
+
+        const amount = Number(settlementAmount);
+        const commissionFee = amount * commissionRate;
+
+        // 2. Close Case & Record Debt
+        const updatedRequest = await prisma.contactRequest.update({
+            where: { id },
+            data: {
+                crmStatus: 'CLOSED_WON',
+                finalSettlementAmount: amount,
+                commissionRate: commissionRate,
+                commissionAmount: commissionFee,
+                commissionStatus: 'pending', // Needs invoice
+                closedAt: new Date(),
+                evidenceUrl: evidenceUrl
+            }
+        });
+
+        // 3. Notify (Mock Invoice)
+        const savingsMsg = isPro
+            ? `✅ Ahorraste $${(amount * 0.03).toFixed(2)} por ser PRO.`
+            : `⚠️ Tarifa 10% aplicada. (Si fueras PRO pagarías $${(amount * 0.07).toFixed(2)})`;
+
+        res.json({
+            success: true,
+            message: 'Caso cerrado con éxito.',
+            financials: {
+                settlement: amount,
+                rateApplied: `${(commissionRate * 100)}%`,
+                commissionDue: commissionFee,
+                note: savingsMsg
+            }
+        });
+
+    } catch (error) {
+        console.error('Error closing case:', error);
+        res.status(500).json({ error: 'Error al cerrar caso' });
+    }
+};
+
 // --- HELPER: ASYNC AI TRIGGER ---
 import OpenAI from 'openai';
 

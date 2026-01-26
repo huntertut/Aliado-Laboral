@@ -15,8 +15,18 @@ const SalaryThermometerScreen = () => {
     const navigation = useNavigation();
     const viewShotRef = useRef(null);
 
-    const initialFederalEntity = user?.workerData?.laborData?.federalEntity || '';
-    const initialOccupation = user?.workerData?.laborData?.occupation || '';
+    // Auto-fill logic with fallbacks for different user structure shapes
+    const initialFederalEntity =
+        user?.workerData?.laborData?.federalEntity ||
+        user?.workerProfile?.federalEntity ||
+        user?.federalEntity ||
+        '';
+
+    const initialOccupation =
+        user?.workerData?.laborData?.occupation ||
+        user?.workerProfile?.occupation ||
+        user?.occupation ||
+        '';
 
     const [occupation, setOccupation] = useState(initialOccupation);
     const [federalEntity, setFederalEntity] = useState(initialFederalEntity);
