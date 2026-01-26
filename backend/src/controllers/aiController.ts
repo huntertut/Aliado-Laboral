@@ -91,7 +91,7 @@ const checkAndTrackQuota = async (userId: string | undefined): Promise<boolean> 
 
     // Reset diario
     const now = new Date();
-    const lastReset = new Date(user.lastTokenReset);
+    const lastReset = user.lastTokenReset ? new Date(user.lastTokenReset) : new Date(0); // Safe Date conversion
     const isNewDay = now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth();
 
     if (isNewDay) {

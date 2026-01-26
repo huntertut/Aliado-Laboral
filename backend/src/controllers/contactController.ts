@@ -755,10 +755,10 @@ export const closeCaseWithCommission = async (req: Request, res: Response) => {
                 settlementAmount: amount, // Corrected field name
                 commissionRate: commissionRate,
                 commissionAmount: commissionFee,
-                commissionStatus: 'pending', // Needs invoice
-                closedAt: new Date(),
-                evidenceUrl: evidenceUrl
-            }
+                settlementDocUrl: evidenceUrl, // Mapped to Correct Schema Field
+                closedAt: new Date()
+            },
+            include: { worker: true } // REQUIRED to access request.worker later
         });
 
         // 3. Notify (Mock Invoice)
