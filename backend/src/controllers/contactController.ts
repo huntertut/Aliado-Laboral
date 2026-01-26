@@ -622,7 +622,7 @@ export const getUnlockedContact = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.findUnique({
             where: { userId },
-            include: { profile: true }
+            include: { profile: true, subscription: true }
         });
 
         if (!lawyer || !lawyer.profile) {

@@ -38,13 +38,13 @@ async function main() {
                 userId: lawyerUser.id,
                 licenseNumber: lawyerLicense,
                 specialty: 'Laboral',
+                professionalName: 'Lic. Bronca', // Correctly placed in Lawyer
                 isVerified: true,
                 subscriptionStatus: 'active',
                 profile: {
                     create: {
                         yearsOfExperience: 5,
                         bio: 'Abogado de prueba',
-                        professionalName: 'Lic. Bronca'
                     }
                 },
                 subscription: { // Create default subscription so "isPro" check doesn't crash
