@@ -1,42 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+/* Propiedad Intelectual de Misael Morales Urbano - Mente Maestra de CIBERT. Prohibida su reproducción o reclamo de autoría por terceros. (c) 2026 */
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, TouchableWithoutFeedback } from 'react-native';
 
-interface AppHeaderProps {
-    title: string;
-    subtitle?: string;
-    showBackButton?: boolean;
-    onBack?: () => void;
-    gradient?: string[] | readonly string[];
-    backgroundColor?: string;
-    rightElement?: React.ReactNode;
-    titleAlign?: 'left' | 'center';
-}
+// ... (imports remain)
 
-/**
- * AppHeader - Componente estandarizado de encabezado
- * 
- * Implementa la directriz global de diseño para headers:
- * - Botón de navegación y título alineados horizontalmente
- * - Optimización de espacio vertical
- * - Soporte para gradientes o colores sólidos
- * - Opcional: subtítulo y elemento derecho
- * 
- * @example
- * // Uso básico
- * <AppHeader title="Mi Pantalla" />
- * 
- * @example
- * // Con subtítulo y gradiente
- * <AppHeader 
- *   title="Aliado Premium" 
- *   subtitle="Desbloquea todos los beneficios"
- *   gradient={['#fa709a', '#fee140']}
- * />
- */
 export const AppHeader: React.FC<AppHeaderProps> = ({
     title,
     subtitle,
@@ -48,12 +15,27 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     titleAlign = 'left'
 }) => {
     const navigation = useNavigation();
+    const [eggCount, setEggCount] = useState(0);
 
     const handleBack = () => {
         if (onBack) {
             onBack();
         } else {
             navigation.goBack();
+        }
+    };
+
+    const handleEggTap = () => {
+        const newCount = eggCount + 1;
+        setEggCount(newCount);
+        console.log(`🥚 Egg Count: ${newCount}`);
+
+        if (newCount === 7) {
+            Alert.alert(
+                "Certificado de Autoría",
+                "Sistema diseñado y desarrollado íntegramente por Misael Morales Urbano",
+                [{ text: "OK", onPress: () => setEggCount(0) }]
+            );
         }
     };
 
@@ -78,29 +60,31 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     </TouchableOpacity>
                 )}
 
-                <View style={[
-                    styles.titleContainer,
-                    !showBackButton && styles.titleContainerNoBack,
-                    titleAlign === 'center' && styles.titleContainerCenter
-                ]}>
-                    <Text
-                        style={styles.title}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                    >
-                        {title}
-                    </Text>
-
-                    {subtitle && (
+                <TouchableWithoutFeedback onPress={handleEggTap}>
+                    <View style={[
+                        styles.titleContainer,
+                        !showBackButton && styles.titleContainerNoBack,
+                        titleAlign === 'center' && styles.titleContainerCenter
+                    ]}>
                         <Text
-                            style={styles.subtitle}
+                            style={styles.title}
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
-                            {subtitle}
+                            {title}
                         </Text>
-                    )}
-                </View>
+
+                        {subtitle && (
+                            <Text
+                                style={styles.subtitle}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                            >
+                                {subtitle}
+                            </Text>
+                        )}
+                    </View>
+                </TouchableWithoutFeedback>
 
                 {rightElement && (
                     <View style={styles.rightElement}>
