@@ -99,14 +99,10 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 lawyerProfile: {
                     include: { subscription: true }
                 },
-                include: {
-                    lawyerProfile: {
-                        include: { subscription: true }
-                    },
-                    pymeProfile: true,
-                    workerProfile: true // ADDED: Fetch worker profile
-                }
-            });
+                pymeProfile: true,
+                workerProfile: true
+            }
+        });
 
         if (user) {
             // ... (keep existing logging logic) ...
