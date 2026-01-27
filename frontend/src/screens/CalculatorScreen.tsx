@@ -578,7 +578,7 @@ const CalculatorScreen = () => {
                         onPress={() => navigation.navigate('Lawyers' as never)}
                     >
                         <Ionicons name="briefcase" size={20} color="#fff" />
-                        <Text style={styles.lawyerButtonText}>Contactar Abogado</Text>
+                        <Text style={styles.lawyerButtonText}>Ver Directorio de Abogados</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -610,59 +610,72 @@ const CalculatorScreen = () => {
                 {currentStep === 4 && renderStep4()}
             </ScrollView>
 
-            {/* Hidden Infographic Template for Sharing */}
+            {/* Hidden Infographic Template for Sharing (Certificate Style) */}
             <View
                 style={[styles.infographicContainer, { position: 'absolute', zIndex: -10, opacity: 1, left: -9999 }]}
                 collapsable={false}
                 ref={resultsRef}
             >
-                {/* Header */}
-                <View style={styles.infoHeader}>
-                    <Text style={styles.infoHeaderText}>ALIADO LABORAL</Text>
-                    <Text style={styles.infoHeaderSub}>TRANSPARENCIA SALARIAL</Text>
-                </View>
+                <LinearGradient
+                    colors={['#1e3799', '#0c2461']}
+                    style={{ flex: 1, padding: 30, justifyContent: 'space-between' }}
+                >
+                    {/* Header */}
+                    <View style={{ alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.2)', paddingBottom: 20 }}>
+                        <Ionicons name="ribbon" size={60} color="#f1c40f" />
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#f1c40f', marginTop: 10, letterSpacing: 2 }}>
+                            CERTIFICADO DE DERECHOS
+                        </Text>
+                        <Text style={{ fontSize: 14, color: '#fff', opacity: 0.8, marginTop: 5 }}>
+                            CÁLCULO LEGAL ESTIMADO
+                        </Text>
+                    </View>
 
-                {/* Split Screen */}
-                <View style={styles.splitContainer}>
-                    {/* Scenario A: Resignation (Top) */}
-                    <View style={styles.splitTop}>
-                        <View style={styles.scenarioLabelContainer}>
-                            <Text style={styles.scenarioTitle}>📄 Escenario A</Text>
-                            <Text style={styles.scenarioSubtitle}>Finiquito (Renuncia o Despido Justificado)</Text>
+                    {/* Content */}
+                    <View style={{ flex: 1, justifyContent: 'center' }}>
+
+                        {/* Row 1: Tenure */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 }}>
+                            <View>
+                                <Text style={{ color: '#a4b0be', fontSize: 14 }}>ANTIGÜEDAD</Text>
+                                <Text style={{ color: '#fff', fontSize: 28, fontWeight: 'bold' }}>{results ? results.yearsWorked : 0} Años</Text>
+                            </View>
+                            <View style={{ alignItems: 'flex-end' }}>
+                                <Text style={{ color: '#a4b0be', fontSize: 14 }}>SUELDO DIARIO</Text>
+                                <Text style={{ color: '#fff', fontSize: 28, fontWeight: 'bold' }}>${results ? results.dailySalary.toFixed(2) : '0.00'}</Text>
+                            </View>
                         </View>
 
-                        <View style={styles.amountContainer}>
-                            <Ionicons name="document-text-outline" size={40} color="#7f8c8d" />
-                            <Text style={styles.amountTextSmall}>
+                        {/* Main Result: Finiquito */}
+                        <View style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: 20, borderRadius: 15, marginBottom: 20 }}>
+                            <Text style={{ color: '#f1c40f', fontSize: 16, fontWeight: 'bold', marginBottom: 5 }}>DERECHOS IRRENUNCIABLES (FINIQUITO)</Text>
+                            <Text style={{ color: '#fff', fontSize: 40, fontWeight: 'bold' }}>
                                 ${results ? results.finiquitoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </Text>
+                            <Text style={{ color: '#ecf0f1', fontSize: 12, marginTop: 5 }}>*Aguinaldo, Vacaciones y Prima Vacacional proporcionales.</Text>
                         </View>
-                        <Text style={styles.scenarioContext}>Tus derechos irrenunciables (proporcionales).</Text>
+
+                        {/* Secondary Result: Liquidación */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                            <Ionicons name="shield-checkmark" size={40} color="#2ecc71" />
+                            <View>
+                                <Text style={{ color: '#2ecc71', fontSize: 14, fontWeight: 'bold' }}>EN CASO DE DESPIDO INJUSTIFICADO</Text>
+                                <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
+                                    SUMAR: ${results ? results.liquidacionTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                                </Text>
+                            </View>
+                        </View>
                     </View>
 
-                    <View style={styles.divider} />
-
-                    {/* Scenario B: Unjustified Dismissal (Bottom) */}
-                    <View style={styles.splitBottom}>
-                        <View style={styles.scenarioLabelContainer}>
-                            <Text style={styles.scenarioTitleLight}>⚖️ Escenario B</Text>
-                            <Text style={styles.scenarioSubtitleLight}>Despido Injustificado (Liquidación Total)</Text>
+                    {/* Footer */}
+                    <View style={{ alignItems: 'center', marginTop: 20 }}>
+                        <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10 }}>Generado por Aliado Laboral App • {new Date().toLocaleDateString()}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, opacity: 0.7 }}>
+                            <Ionicons name="lock-closed" size={12} color="#fff" />
+                            <Text style={{ color: '#fff', fontSize: 10, marginLeft: 5 }}>Cálculo privado y seguro</Text>
                         </View>
-
-                        <View style={styles.amountContainer}>
-                            <Ionicons name="scale-outline" size={50} color="#1dd1a1" />
-                            <Text style={styles.amountTextLarge}>
-                                ${results ? results.totalNet.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                            </Text>
-                        </View>
-                        <Text style={styles.scenarioContextLight}>Incluye indemnización de 3 meses + antigüedad.</Text>
                     </View>
-                </View>
-
-                {/* Footer */}
-                <View style={styles.infoFooter}>
-                    <Text style={styles.infoFooterText}>Calcula tu caso en Aliado Laboral App.</Text>
-                </View>
+                </LinearGradient>
             </View>
 
             <DatePickerModal
