@@ -115,6 +115,14 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
 
         // ...
 
+        // Determine final plan
+        let finalPlan = user?.plan || 'free';
+        if (userRole.role === 'lawyer' && user?.lawyerProfile?.subscription) {
+            finalPlan = user.lawyerProfile.subscription.plan;
+        }
+
+        console.log(`[verifyFirebaseToken] Final Result -> Email: ${userRole.email}, Role: ${userRole.role}, Resolved Plan: ${finalPlan}`);
+
         // Return user data with plan
         res.json({
             user: {
