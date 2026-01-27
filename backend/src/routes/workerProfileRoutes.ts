@@ -11,4 +11,7 @@ router.get('/', authMiddleware, workerProfileController.getProfile);
 // Update My Profile
 router.put('/', authMiddleware, workerProfileController.updateProfile);
 
+// Salary Thermometer Benchmark
+router.get('/benchmark', authMiddleware, workerProfileController.getSalaryBenchmark);
+
 export default router;
