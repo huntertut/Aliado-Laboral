@@ -622,7 +622,11 @@ const CalculatorScreen = () => {
                 >
                     {/* Header */}
                     <View style={{ alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.2)', paddingBottom: 20 }}>
-                        <Ionicons name="ribbon" size={60} color="#f1c40f" />
+                        {/* ADDED: Use actual logo instead of icon */}
+                        <Image
+                            source={require('../../assets/images/logo.png')}
+                            style={{ width: 80, height: 80, resizeMode: 'contain' }}
+                        />
                         <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#f1c40f', marginTop: 10, letterSpacing: 2 }}>
                             CERTIFICADO DE DERECHOS
                         </Text>
