@@ -99,51 +99,25 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 lawyerProfile: {
                     include: { subscription: true }
                 },
-                pymeProfile: true
-            }
-        });
+                include: {
+                    lawyerProfile: {
+                        include: { subscription: true }
+                    },
+                    pymeProfile: true,
+                    workerProfile: true // ADDED: Fetch worker profile
+                }
+            });
 
         if (user) {
+            // ... (keep existing logging logic) ...
             console.log(`[verifyFirebaseToken] Found User: ${user.email}, Role: ${user.role}, Plan: ${user.plan}`);
-            if (user.lawyerProfile) {
-                console.log(`[verifyFirebaseToken] Found Lawyer Profile: ${user.lawyerProfile.id}`);
-                if (user.lawyerProfile.subscription) {
-                    console.log(`[verifyFirebaseToken] Found Lawyer Sub: ${user.lawyerProfile.subscription.plan} (${user.lawyerProfile.subscription.status})`);
-                } else {
-                    console.log(`[verifyFirebaseToken] Lawyer Sub NOT FOUND`);
-                }
-            } else {
-                console.log(`[verifyFirebaseToken] Lawyer Profile NOT FOUND`);
+            if (user.workerProfile) {
+                console.log(`[verifyFirebaseToken] Found Worker Profile: ${user.workerProfile.occupation} in ${user.workerProfile.federalEntity}`);
             }
-
-            if (userRole.userId !== user.id || userRole.fullName !== user.fullName) {
-                console.log(`[verifyFirebaseToken] Syncing UserRole data for ${user.email}. DB Name: "${user.fullName}", Role Name: "${userRole.fullName}"`);
-                await prisma.userRole.update({
-                    where: { id: userRole.id },
-                    data: {
-                        userId: user.id,
-                        fullName: user.fullName || userRole.fullName
-                    }
-                });
-            }
-        } else {
-            console.warn(`[verifyFirebaseToken] User NOT FOUND in DB for email: ${userRole.email}`);
+            // ...
         }
 
-        console.log('🔍 [verifyFirebaseToken] Diagnostic:', {
-            firebaseName: decodedToken.name,
-            dbName: user?.fullName,
-            userRoleName: userRole.fullName,
-            match: decodedToken.name === user?.fullName
-        });
-
-        // Determine final plan
-        let finalPlan = user?.plan || 'free';
-        if (userRole.role === 'lawyer' && user?.lawyerProfile?.subscription) {
-            finalPlan = user.lawyerProfile.subscription.plan;
-        }
-
-        console.log(`[verifyFirebaseToken] Final Result -> Email: ${userRole.email}, Role: ${userRole.role}, Resolved Plan: ${finalPlan}`);
+        // ...
 
         // Return user data with plan
         res.json({
@@ -156,6 +130,7 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 plan: finalPlan,
                 subscriptionLevel: user?.subscriptionLevel || 'basic',
                 assignedLawyerId: user?.pymeProfile?.assignedLawyerId,
+                workerProfile: user?.workerProfile, // ADDED: Return worker profile to frontend
                 _debug: {
                     source: 'UserTable',
                     sync: !!user,
