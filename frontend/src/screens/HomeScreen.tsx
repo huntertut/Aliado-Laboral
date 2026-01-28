@@ -130,7 +130,7 @@ const HomeScreen = () => {
                         <Image
                             source={isPro
                                 ? require('../../assets/images/logo_m_pro.jpg')
-                                : require('../../assets/images/logo.jpg')
+                                : require('../../assets/images/logo.png')
                             }
                             style={styles.headerLogo}
                             resizeMode="contain"
