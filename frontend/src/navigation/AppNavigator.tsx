@@ -25,7 +25,7 @@ import ProfileWizardScreen from '../screens/ProfileWizardScreen';
 import WelcomeScreen from '../screens/WelcomeScreen'; // Added import for WelcomeScreen
 import PrivacyPolicyScreen from '../screens/legal/PrivacyPolicyScreen';
 import { useAuth } from '../context/AuthContext';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const Stack = createStackNavigator();
 
@@ -35,7 +35,7 @@ const AppNavigator = () => {
     if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme?.colors?.primary || '#0000ff'} />
             </View>
         );
     }
@@ -56,11 +56,11 @@ const AppNavigator = () => {
             <Stack.Navigator
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: theme.colors.primary,
+                        backgroundColor: AppTheme?.colors?.primary || '#1e3799',
                         elevation: 0,
                         shadowOpacity: 0,
                     },
-                    headerTintColor: theme.colors.white,
+                    headerTintColor: AppTheme?.colors?.white || '#ffffff',
                     headerTitleStyle: {
                         fontWeight: '600',
                     },

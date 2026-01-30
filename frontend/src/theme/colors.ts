@@ -42,3 +42,6 @@ export const theme = {
         }
     }
 };
+
+export const AppTheme = theme;
+console.log('🎨 Theme/Colors module loaded');

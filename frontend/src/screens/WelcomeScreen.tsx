@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,7 +22,7 @@ const WelcomeScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme?.colors?.primary || '#1e3799', '#3742fa']}
                 style={styles.header}
             >
                 <View style={styles.logoContainer}>
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     loginLink: {
-        color: theme.colors.primary,
+        color: AppTheme?.colors?.primary || '#1e3799',
         fontWeight: '800',
         fontSize: 16,
     },

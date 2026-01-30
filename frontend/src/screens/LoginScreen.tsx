@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { BiometricAuthService } from '../services/BiometricAuthService';
 
@@ -139,7 +139,7 @@ const LoginScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme?.colors?.primary || '#1e3799', '#3742fa']}
                 style={styles.header}
             >
                 <View style={styles.logoContainer}>
@@ -203,7 +203,7 @@ const LoginScreen = () => {
                     disabled={localLoading}
                 >
                     <LinearGradient
-                        colors={[theme.colors.secondary, '#f9ca24']}
+                        colors={[AppTheme?.colors?.secondary || '#f6b93b', '#f9ca24']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.gradientButton}
@@ -248,7 +248,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: AppTheme?.colors?.background || '#f1f2f6',
     },
     header: {
         paddingTop: 80,
@@ -320,14 +320,14 @@ const styles = StyleSheet.create({
     },
     forgotPassword: {
         alignSelf: 'flex-end',
-        color: theme.colors.primary,
+        color: AppTheme?.colors?.primary || '#1e3799',
         marginBottom: 20,
     },
     loginButton: {
         borderRadius: 10,
         overflow: 'hidden',
         marginBottom: 30,
-        shadowColor: theme.colors.secondary,
+        shadowColor: AppTheme?.colors?.secondary || '#f6b93b',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 5,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     registerLink: {
-        color: theme.colors.primary,
+        color: AppTheme?.colors?.primary || '#1e3799',
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     biometricText: {
         marginLeft: 10,
         fontSize: 16,
-        color: theme.colors.primary,
+        color: AppTheme?.colors?.primary || '#1e3799',
         fontWeight: '600',
     },
 });
