@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BENEFITS_DATA, PrestacionDeLey } from '../data/benefits';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import AppHeader from '../components/common/AppHeader';
 
@@ -31,7 +31,7 @@ const BenefitsScreen = () => {
             <AppHeader
                 title="Prestaciones de Ley"
                 subtitle="Tus 10 derechos laborales básicos"
-                gradient={[theme.colors.primary, '#3742fa']}
+                gradient={[AppTheme.colors.primary, '#3742fa']}
             />
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -45,7 +45,7 @@ const BenefitsScreen = () => {
                             >
                                 <View style={styles.cardHeader}>
                                     <View style={[styles.iconContainer]}>
-                                        <Ionicons name={benefit.icon as any} size={28} color={theme.colors.primary} />
+                                        <Ionicons name={benefit.icon as any} size={28} color={AppTheme.colors.primary} />
                                     </View>
                                     <View style={styles.headerText}>
                                         <Text style={styles.cardTitle}>{benefit.title}</Text>
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         padding: 20,
         marginBottom: 15,
-        ...theme.shadows.default
+        ...AppTheme.shadows.default
     },
     cardHeader: {
         flexDirection: 'row',
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
         lineHeight: 18
     },
     actionButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 8,

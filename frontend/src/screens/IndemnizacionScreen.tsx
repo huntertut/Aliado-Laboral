@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 
 type Section = 'main' | 'types' | 'calc' | 'examples' | 'simulator' | 'pro_form' | 'pro_confirm';
@@ -23,7 +23,7 @@ const IndemnizacionScreen = () => {
     });
 
     const renderHeader = (title: string) => (
-        <LinearGradient colors={[theme.colors.primary, '#3742fa']} style={styles.header}>
+        <LinearGradient colors={[AppTheme.colors.primary, '#3742fa']} style={styles.header}>
             <TouchableOpacity onPress={() => currentSection === 'main' ? navigation.goBack() : setCurrentSection('main')} style={styles.backButton}>
                 <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     // Content Pages
     pageTitle: { fontSize: 22, fontWeight: 'bold', color: '#333', marginBottom: 20 },
     infoCard: { backgroundColor: '#fff', padding: 20, borderRadius: 15, marginBottom: 15, elevation: 2 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', color: theme.colors.primary, marginBottom: 5 },
+    cardTitle: { fontSize: 18, fontWeight: 'bold', color: AppTheme.colors.primary, marginBottom: 5 },
     cardText: { fontSize: 15, color: '#555', marginBottom: 10 },
     cardHighlight: { fontSize: 14, color: '#27ae60', fontWeight: '600' },
 
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
 
     // Steps
     stepCard: { flexDirection: 'row', marginBottom: 20, alignItems: 'flex-start' },
-    stepCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    stepCircle: { width: 30, height: 30, borderRadius: 15, backgroundColor: AppTheme.colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
     stepNum: { color: '#fff', fontWeight: 'bold' },
     stepTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
     stepText: { fontSize: 14, color: '#666' },
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     input: { backgroundColor: '#fff', padding: 15, borderRadius: 10, fontSize: 16, borderWidth: 1, borderColor: '#ddd' },
     scenarioContainer: { flexDirection: 'row', justifyContent: 'space-between' },
     scenarioBtn: { flex: 1, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, marginHorizontal: 2 },
-    scenarioBtnActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+    scenarioBtnActive: { backgroundColor: AppTheme.colors.primary, borderColor: AppTheme.colors.primary },
     scenarioText: { color: '#666' },
     scenarioTextActive: { color: '#fff', fontWeight: 'bold' },
     resultBox: { backgroundColor: '#e8f6f3', padding: 20, borderRadius: 15, marginTop: 20, alignItems: 'center' },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     // Form
     pickerContainer: { flexDirection: 'row', flexWrap: 'wrap' },
     pickerOption: { padding: 10, borderWidth: 1, borderColor: '#ddd', borderRadius: 20, marginRight: 10, marginBottom: 10 },
-    pickerOptionActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+    pickerOptionActive: { backgroundColor: AppTheme.colors.primary, borderColor: AppTheme.colors.primary },
     pickerText: { color: '#666' },
     pickerTextActive: { color: '#fff' },
     submitButton: { backgroundColor: '#27ae60', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 30 },
@@ -439,3 +439,4 @@ const styles = StyleSheet.create({
 });
 
 export default IndemnizacionScreen;
+

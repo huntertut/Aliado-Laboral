@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 
 import { useRoute } from '@react-navigation/native';
@@ -184,7 +184,7 @@ const RegisterScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[role === 'lawyer' ? '#e65100' : theme.colors.primary, role === 'lawyer' ? '#f57c00' : '#3742fa']}
+                colors={[role === 'lawyer' ? '#e65100' : AppTheme.colors.primary, role === 'lawyer' ? '#f57c00' : '#3742fa']}
                 style={styles.header}
             >
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -267,7 +267,7 @@ const RegisterScreen = () => {
                         <Text style={styles.label}>Abogado Asignado</Text>
                         <View style={styles.lawyerSelector}>
                             {isFetchingLawyers ? (
-                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                                <ActivityIndicator size="small" color={AppTheme.colors.primary} />
                             ) : availableLawyers.length > 0 ? (
                                 availableLawyers.map((lawyer) => (
                                     <TouchableOpacity
@@ -409,7 +409,7 @@ const RegisterScreen = () => {
                         <Ionicons
                             name={privacyAccepted ? "checkbox" : "square-outline"}
                             size={24}
-                            color={privacyAccepted ? theme.colors.primary : "#666"}
+                            color={privacyAccepted ? AppTheme.colors.primary : "#666"}
                         />
                     </TouchableOpacity>
                     <View style={styles.privacyTextContainer}>
@@ -437,7 +437,7 @@ const RegisterScreen = () => {
                     disabled={isLoading}
                 >
                     <LinearGradient
-                        colors={[role === 'lawyer' ? '#e65100' : theme.colors.secondary, role === 'lawyer' ? '#ff9800' : '#f9ca24']}
+                        colors={[role === 'lawyer' ? '#e65100' : AppTheme.colors.secondary, role === 'lawyer' ? '#ff9800' : '#f9ca24']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.gradientButton}
@@ -527,7 +527,7 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: AppTheme.colors.background,
     },
     header: {
         paddingTop: 60,
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginTop: 10,
         marginBottom: 30,
-        shadowColor: theme.colors.secondary,
+        shadowColor: AppTheme.colors.secondary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 5,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     loginLink: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     lawyerCardSelected: {
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
         backgroundColor: '#f0f4ff',
     },
     lawyerName: {
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     lawyerNameSelected: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     lawyerSpecialty: {
         fontSize: 13,
@@ -774,10 +774,11 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     privacyLink: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
         textDecorationLine: 'underline',
     },
 });
 
 export default RegisterScreen;
+

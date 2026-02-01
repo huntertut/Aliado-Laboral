@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, FlatList } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
@@ -130,7 +130,7 @@ const ForumDetailScreen = () => {
                         <Ionicons
                             name={isLawyer ? "briefcase" : "person"}
                             size={14}
-                            color={isLawyer ? theme.colors.primary : "#666"}
+                            color={isLawyer ? AppTheme.colors.primary : "#666"}
                         />
                         <Text style={[styles.authorName, isLawyer && styles.lawyerName]}>
                             {authorName}
@@ -195,7 +195,7 @@ const ForumDetailScreen = () => {
     };
 
     if (loading) {
-        return <View style={styles.center}><ActivityIndicator size="large" color={theme.colors.primary} /></View>;
+        return <View style={styles.center}><ActivityIndicator size="large" color={AppTheme.colors.primary} /></View>;
     }
 
     if (!post) return <View style={styles.center}><Text>No encontrado</Text></View>;
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f4f6f8' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingTop: 50,
         paddingBottom: 15,
         paddingHorizontal: 20,
@@ -316,13 +316,13 @@ const styles = StyleSheet.create({
     answerHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
     authorBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     authorName: { fontSize: 13, fontWeight: '600', color: '#555' },
-    lawyerName: { color: theme.colors.primary },
+    lawyerName: { color: AppTheme.colors.primary },
     answerContent: { fontSize: 14, color: '#444', lineHeight: 20, marginBottom: 8 },
     answerFooter: { flexDirection: 'row', justifyContent: 'flex-start' },
     actionRow: { flexDirection: 'row', gap: 15 },
     actionButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     actionText: { fontSize: 12, color: '#666' },
-    replyLink: { fontSize: 12, color: theme.colors.primary, fontWeight: '600' },
+    replyLink: { fontSize: 12, color: AppTheme.colors.primary, fontWeight: '600' },
 
     inputContainer: {
         backgroundColor: '#fff',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     sendButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         width: 40,
         height: 40,
         borderRadius: 20,
@@ -355,3 +355,4 @@ const styles = StyleSheet.create({
 });
 
 export default ForumDetailScreen;
+

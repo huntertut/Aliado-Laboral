@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, Share } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
@@ -326,3 +326,4 @@ const styles = StyleSheet.create({
 });
 
 export default SalaryThermometerScreen;
+

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 
 interface Props {
     lawyer: {
@@ -36,7 +36,7 @@ const AssignedLawyerCard = ({ lawyer }: Props) => {
             <Text style={styles.sectionTitle}>Abogado Asignado</Text>
             <View style={styles.card}>
                 <View style={styles.info}>
-                    <Ionicons name="person-circle" size={40} color={theme.colors.primary} />
+                    <Ionicons name="person-circle" size={40} color={AppTheme.colors.primary} />
                     <View style={styles.textContainer}>
                         <Text style={styles.name}>{lawyer.user.fullName}</Text>
                         <Text style={styles.specialty}>{lawyer.specialty || 'Generalista'}</Text>
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     specialty: {
         fontSize: 12,
@@ -118,3 +118,4 @@ const styles = StyleSheet.create({
 });
 
 export default AssignedLawyerCard;
+

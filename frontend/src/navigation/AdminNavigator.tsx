@@ -8,7 +8,7 @@ import AdminCasesScreen from '../screens/admin/AdminCasesScreen';
 import AdminSecurityScreen from '../screens/admin/AdminSecurityScreen';
 import AdminPromotionsScreen from '../screens/admin/AdminPromotionsScreen';
 import { SupervisorDashboard } from '../modules/supervisor/dashboard/SupervisorDashboard';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 import AdminForumScreen from '../screens/admin/AdminForumScreen';
 
@@ -41,7 +41,7 @@ const AdminNavigator = () => {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: theme.colors.primary,
+                tabBarActiveTintColor: AppTheme.colors.primary,
                 tabBarInactiveTintColor: 'gray',
                 headerShown: false,
             })}

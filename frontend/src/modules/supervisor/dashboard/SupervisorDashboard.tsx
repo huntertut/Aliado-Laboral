@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 import { API_URL } from '../../../config/constants';
 import { useAuth } from '../../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,7 +111,7 @@ export const SupervisorDashboard = () => {
     const renderItem = ({ item }: { item: PendingLawyer }) => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
-                <Ionicons name="person-circle-outline" size={40} color={theme.colors.primary} />
+                <Ionicons name="person-circle-outline" size={40} color={AppTheme.colors.primary} />
                 <View style={{ marginLeft: 10, flex: 1 }}>
                     <Text style={styles.name}>{item.professionalName || item.user.fullName || 'Sin nombre'}</Text>
                     <Text style={styles.email}>{item.user.email}</Text>
@@ -192,12 +192,12 @@ export const SupervisorDashboard = () => {
         </View>
     );
 
-    if (loading) return <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} />;
+    if (loading) return <ActivityIndicator size="large" color={AppTheme.colors.primary} style={{ marginTop: 50 }} />;
 
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme.colors.primary, '#3742fa']}
                 style={styles.gradientHeader}
             >
                 <View style={styles.headerContent}>
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     verifyButton: {
-        backgroundColor: theme.colors.success,
+        backgroundColor: AppTheme.colors.success,
     },
     rejectButton: {
         backgroundColor: '#e74c3c',
@@ -450,3 +450,4 @@ const styles = StyleSheet.create({
         marginTop: 10,
     }
 });
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { PRIVACY_NOTICES } from '../../data/legal/privacyNotices';
 
 type PrivacyType = 'WORKER' | 'LAWYER' | 'PYME' | 'GENERAL';
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     activeTabText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
     content: {
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginBottom: 8,
         textAlign: 'center',
     },
@@ -203,9 +203,10 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     link: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
 });
 
 export default PrivacyPolicyScreen;
+

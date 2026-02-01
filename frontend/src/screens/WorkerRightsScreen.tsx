@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RIGHTS_CALCULATORS, RIGHTS_CHECKLIST, RIGHTS_GUIDES, DerechoPanelGuide } from '../data/rightsPanelData';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import Markdown from 'react-native-markdown-display';
 
 const WorkerRightsScreen = () => {
@@ -156,14 +156,14 @@ const WorkerRightsScreen = () => {
                         {(selectedGuide?.id === 'guia-rapida-infonavit' || selectedGuide?.id === 'guia-rapida-fonacot') && (
                             <TouchableOpacity
                                 style={{
-                                    backgroundColor: theme.colors.primary,
+                                    backgroundColor: AppTheme.colors.primary,
                                     borderRadius: 12,
                                     padding: 18,
                                     flexDirection: 'row',
                                     justifyContent: 'center',
                                     alignItems: 'center',
                                     marginTop: 20,
-                                    ...theme.shadows.default
+                                    ...AppTheme.shadows.default
                                 }}
                                 onPress={() => {
                                     const calcId = selectedGuide.id === 'guia-rapida-infonavit'
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        ...theme.shadows.default,
+        ...AppTheme.shadows.default,
     },
     calculatorCard: {
         borderLeftWidth: 4,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         borderRadius: 12,
         overflow: 'hidden',
-        ...theme.shadows.default,
+        ...AppTheme.shadows.default,
     },
     guideGradient: {
         flex: 1,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 10,
-        ...theme.shadows.default,
+        ...AppTheme.shadows.default,
     },
     checklistItem: {
         flexDirection: 'row',
@@ -344,3 +344,4 @@ const markdownStyles = StyleSheet.create({
 });
 
 export default WorkerRightsScreen;
+

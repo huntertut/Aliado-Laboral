@@ -3,7 +3,7 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { useLawyerProfile } from './hooks/useLawyerProfile';
 import { LawyerProfile as LawyerProfileUI } from './components/LawyerProfile';
 import { useAuth } from '../../../context/AuthContext';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 
 export const LawyerProfileModule = () => {
     const { user } = useAuth();
@@ -22,7 +22,7 @@ export const LawyerProfileModule = () => {
     if (isLoading && !profileData) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 <Text style={{ marginTop: 10, color: '#666' }}>Cargando perfil...</Text>
             </View>
         );
@@ -38,3 +38,4 @@ export const LawyerProfileModule = () => {
         />
     );
 };
+

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 import { API_URL } from '../../../config/constants';
 import { useAuth } from '../../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,7 +85,7 @@ export const AccountantDashboard = () => {
         return (
             <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                    <Ionicons name="cash-outline" size={30} color={theme.colors.secondary} />
+                    <Ionicons name="cash-outline" size={30} color={AppTheme.colors.secondary} />
                     <View style={{ marginLeft: 10 }}>
                         <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                         <Text style={styles.id}>ID: ...{item.id.slice(-6)}</Text>
@@ -100,9 +100,9 @@ export const AccountantDashboard = () => {
                             <Ionicons
                                 name={item.workerPaid ? "checkmark-circle" : "time"}
                                 size={16}
-                                color={item.workerPaid ? theme.colors.success : '#f39c12'}
+                                color={item.workerPaid ? AppTheme.colors.success : '#f39c12'}
                             />
-                            <Text style={{ marginLeft: 5, color: item.workerPaid ? theme.colors.success : '#f39c12' }}>
+                            <Text style={{ marginLeft: 5, color: item.workerPaid ? AppTheme.colors.success : '#f39c12' }}>
                                 {item.workerPaid ? 'Pagado' : 'Pendiente ($50)'}
                             </Text>
                         </View>
@@ -122,9 +122,9 @@ export const AccountantDashboard = () => {
                             <Ionicons
                                 name={item.lawyerPaid ? "checkmark-circle" : "time"}
                                 size={16}
-                                color={item.lawyerPaid ? theme.colors.success : '#f39c12'}
+                                color={item.lawyerPaid ? AppTheme.colors.success : '#f39c12'}
                             />
-                            <Text style={{ marginLeft: 5, color: item.lawyerPaid ? theme.colors.success : '#f39c12' }}>
+                            <Text style={{ marginLeft: 5, color: item.lawyerPaid ? AppTheme.colors.success : '#f39c12' }}>
                                 {item.lawyerPaid ? 'Pagado' : 'Pendiente ($150)'}
                             </Text>
                         </View>
@@ -139,7 +139,7 @@ export const AccountantDashboard = () => {
         );
     };
 
-    if (loading) return <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 50 }} />;
+    if (loading) return <ActivityIndicator size="large" color={AppTheme.colors.primary} style={{ marginTop: 50 }} />;
 
     return (
         <View style={styles.container}>
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     subtitle: {
         fontSize: 14,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
         borderColor: '#bbdefb',
     },
     verifyButtonText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 12,
         fontWeight: 'bold',
     },
@@ -267,3 +267,4 @@ const styles = StyleSheet.create({
         marginTop: 10,
     }
 });
+

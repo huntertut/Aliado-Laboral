@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/constants';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const NewsFeedScreen = () => {
     const navigation = useNavigation();
@@ -75,7 +75,7 @@ const NewsFeedScreen = () => {
 
                 <View style={styles.readMoreRow}>
                     <Text style={styles.readMoreText}>Leer noticia completa</Text>
-                    <Ionicons name="arrow-forward" size={16} color={theme.colors.primary} />
+                    <Ionicons name="arrow-forward" size={16} color={AppTheme.colors.primary} />
                 </View>
             </View>
         </TouchableOpacity>
@@ -134,7 +134,7 @@ const NewsFeedScreen = () => {
                             {selectedNews?.quiz && (
                                 <View style={styles.quizSection}>
                                     <View style={styles.quizHeader}>
-                                        <Ionicons name="bulb-outline" size={24} color={theme.colors.primary} />
+                                        <Ionicons name="bulb-outline" size={24} color={AppTheme.colors.primary} />
                                         <Text style={styles.quizTitle}>Quiz Rápido</Text>
                                     </View>
                                     <Text style={styles.quizText}>{selectedNews.quiz}</Text>
@@ -150,7 +150,7 @@ const NewsFeedScreen = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             </View>
         );
     }
@@ -158,7 +158,7 @@ const NewsFeedScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#2c3e50']}
+                colors={[AppTheme.colors.primary, '#2c3e50']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -250,13 +250,13 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     tag: {
-        backgroundColor: theme.colors.primary + '15',
+        backgroundColor: AppTheme.colors.primary + '15',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
     },
     tagText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 10,
         fontWeight: 'bold',
     },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     readMoreText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 13,
         fontWeight: '600',
         marginRight: 4,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 12,
         borderLeftWidth: 4,
-        borderLeftColor: theme.colors.primary,
+        borderLeftColor: AppTheme.colors.primary,
     },
     quizHeader: {
         flexDirection: 'row',
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     quizTitle: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginLeft: 8,
     },
     quizText: {
@@ -406,3 +406,4 @@ const styles = StyleSheet.create({
 });
 
 export default NewsFeedScreen;
+

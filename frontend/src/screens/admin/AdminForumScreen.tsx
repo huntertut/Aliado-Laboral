@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -97,8 +97,8 @@ const AdminForumScreen = () => {
     const renderItem = ({ item }: { item: any }) => (
         <View style={[styles.card, item.status === 'hidden' && styles.hiddenCard]}>
             <View style={styles.cardHeader}>
-                <View style={[styles.badge, { backgroundColor: theme.colors.primary + '20' }]}>
-                    <Text style={[styles.badgeText, { color: theme.colors.primary }]}>{item.topic}</Text>
+                <View style={[styles.badge, { backgroundColor: AppTheme.colors.primary + '20' }]}>
+                    <Text style={[styles.badgeText, { color: AppTheme.colors.primary }]}>{item.topic}</Text>
                 </View>
                 <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString()}</Text>
             </View>
@@ -148,7 +148,7 @@ const AdminForumScreen = () => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -293,3 +293,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminForumScreen;
+

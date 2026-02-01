@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
@@ -132,7 +132,7 @@ const LawyerCasesScreen = () => {
                             </View>
                         )}
                         <View style={[styles.badge, { backgroundColor: '#E3F2FD' }]}>
-                            <Text style={[styles.badgeText, { color: theme.colors.primary }]}>{item.caseType || 'Laboral'}</Text>
+                            <Text style={[styles.badgeText, { color: AppTheme.colors.primary }]}>{item.caseType || 'Laboral'}</Text>
                         </View>
                     </View>
                     {isUnread && (
@@ -192,7 +192,7 @@ const LawyerCasesScreen = () => {
 
             {loading ? (
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
         borderColor: '#F0F0F0',
     },
     unreadCard: {
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
         backgroundColor: '#F8FAFF',
     },
     cardHeader: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     avatarText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
         fontSize: 16,
     },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     unreadBadge: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         minWidth: 20,
         height: 20,
         borderRadius: 10,
@@ -434,3 +434,4 @@ const styles = StyleSheet.create({
 });
 
 export default LawyerCasesScreen;
+

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 
 interface Props {
     score: number;
@@ -142,3 +142,4 @@ const styles = StyleSheet.create({
 });
 
 export default ComplianceWidget;
+

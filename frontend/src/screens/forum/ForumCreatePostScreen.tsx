@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 // import AsyncStorage from '@react-native-async-storage/async-storage'; // No longer needed directly
@@ -94,7 +94,7 @@ const ForumCreatePostScreen = () => {
                     disabled={loading || !title.trim() || !content.trim()}
                 >
                     {loading ? (
-                        <ActivityIndicator color={theme.colors.primary} size="small" />
+                        <ActivityIndicator color={AppTheme.colors.primary} size="small" />
                     ) : (
                         <Text style={[styles.postButtonText, (loading || !title.trim() || !content.trim()) && styles.disabledText]}>
                             Publicar
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         paddingBottom: 15,
         paddingHorizontal: 20,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
     },
     backButton: {
         padding: 5,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.5)',
     },
     postButtonText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
         fontSize: 14,
     },
@@ -234,8 +234,8 @@ const styles = StyleSheet.create({
         borderColor: '#e1e4e8',
     },
     selectedTopicChip: {
-        backgroundColor: theme.colors.primary,
-        borderColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
+        borderColor: AppTheme.colors.primary,
     },
     topicText: {
         color: '#666',
@@ -282,3 +282,4 @@ const styles = StyleSheet.create({
 });
 
 export default ForumCreatePostScreen;
+

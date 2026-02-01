@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -113,7 +113,7 @@ const AdminSecurityScreen = () => {
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeTab: {
-        borderBottomColor: theme.colors.primary,
+        borderBottomColor: AppTheme.colors.primary,
     },
     tabText: {
         fontSize: 16,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     activeTabText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     loadingContainer: {
         flex: 1,
@@ -259,3 +259,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminSecurityScreen;
+

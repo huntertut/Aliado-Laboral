@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 import { useAuth } from '../../../../context/AuthContext';
 
 interface Props {
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
     warningButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 25,
@@ -177,3 +177,4 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
+

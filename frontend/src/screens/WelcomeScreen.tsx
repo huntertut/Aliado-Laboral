@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { AppTheme } from '../theme/colors';
+// import { AppTheme } from '../theme/colors'; // DISABLED FOR DEBUG
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,12 +22,12 @@ const WelcomeScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[AppTheme?.colors?.primary || '#1e3799', '#3742fa']}
+                colors={['#1e3799', '#3742fa']}
                 style={styles.header}
             >
                 <View style={styles.logoContainer}>
                     <Image
-                        source={require('../../assets/images/logo.png')}
+                        source={require('../../assets/images/app_logo.png')}
                         style={styles.logo}
                         resizeMode="contain"
                     />
@@ -35,6 +35,7 @@ const WelcomeScreen = () => {
                 <Text style={styles.title}>Bienvenido</Text>
                 <Text style={styles.subtitle}>¿Cómo quieres usar nuestra app?</Text>
             </LinearGradient>
+
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Worker Card */}
@@ -264,7 +265,8 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     loginLink: {
-        color: AppTheme?.colors?.primary || '#1e3799',
+        color: '#1e3799',
+
         fontWeight: '800',
         fontSize: 16,
     },

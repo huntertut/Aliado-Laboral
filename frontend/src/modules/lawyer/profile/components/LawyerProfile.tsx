@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { LawyerProfessionalDataSection } from './LawyerProfessionalDataSection';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 
 interface Props {
     data: any;
@@ -132,7 +132,7 @@ export const LawyerProfile = ({ data, onUpdate, isSaving }: Props) => {
                         )}
                         {!localData.isPhotoLocked && (
                             <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-                                <Ionicons name="camera" size={20} color={theme.colors.primary} />
+                                <Ionicons name="camera" size={20} color={AppTheme.colors.primary} />
                                 <Text style={styles.uploadButtonText}>Subir desde celular</Text>
                             </TouchableOpacity>
                         )}
@@ -272,11 +272,11 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: theme.colors.primary,
-        backgroundColor: `${theme.colors.primary}05`,
+        borderColor: AppTheme.colors.primary,
+        backgroundColor: `${AppTheme.colors.primary}05`,
     },
     uploadButtonText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: '600',
         marginLeft: 8,
     },
@@ -296,3 +296,4 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
 });
+

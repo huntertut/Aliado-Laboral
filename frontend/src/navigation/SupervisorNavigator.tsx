@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileScreen from '../screens/ProfileScreen';
 import { SupervisorDashboard } from '../modules/supervisor/dashboard/SupervisorDashboard';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
 
@@ -11,7 +11,7 @@ const SupervisorNavigator = () => {
     return (
         <Tab.Navigator
             screenOptions={{
-                tabBarActiveTintColor: theme.colors.primary,
+                tabBarActiveTintColor: AppTheme.colors.primary,
                 tabBarInactiveTintColor: '#999',
                 headerShown: false,
                 tabBarStyle: {

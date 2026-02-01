@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/constants';
 import * as DocumentPicker from 'expo-document-picker';
@@ -180,7 +180,7 @@ const LaborDocumentsScreen = () => {
     const renderDocItem = ({ item }: { item: PymeDocument }) => (
         <View style={styles.docCard}>
             <View style={styles.iconContainer}>
-                <Ionicons name="document-text" size={24} color={theme.colors.primary} />
+                <Ionicons name="document-text" size={24} color={AppTheme.colors.primary} />
             </View>
             <View style={styles.docInfo}>
                 <Text style={styles.docName} numberOfLines={1}>{item.name}</Text>
@@ -224,7 +224,7 @@ const LaborDocumentsScreen = () => {
             </View>
 
             {isLoading ? (
-                <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} style={{ marginTop: 20 }} />
             ) : (
                 <FlatList
                     data={documents}
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 5,
@@ -352,3 +352,4 @@ const styles = StyleSheet.create({
 });
 
 export default LaborDocumentsScreen;
+

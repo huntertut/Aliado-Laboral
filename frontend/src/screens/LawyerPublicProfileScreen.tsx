@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -380,3 +380,4 @@ const styles = StyleSheet.create({
 });
 
 export default LawyerPublicProfileScreen;
+

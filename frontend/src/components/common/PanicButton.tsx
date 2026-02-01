@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, ActivityIndicat
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const PanicButton = () => {
     const navigation = useNavigation();
@@ -279,3 +279,4 @@ const styles = StyleSheet.create({
 });
 
 export default PanicButton;
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -463,3 +463,4 @@ const styles = StyleSheet.create({
 });
 
 export default MyContactRequestsScreen;
+

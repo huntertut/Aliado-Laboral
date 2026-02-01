@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityInd
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 // This screen is shown when user.profileStatus === 'incomplete'
 const ProfileWizardScreen = () => {
@@ -117,7 +117,7 @@ const ProfileWizardScreen = () => {
     return (
         <View style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme.colors.primary, '#3742fa']}
                 style={styles.header}
             >
                 <Text style={styles.title}>Completar Perfil</Text>
@@ -155,10 +155,11 @@ const styles = StyleSheet.create({
     inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 15, marginBottom: 15 },
     inputIcon: { marginRight: 10 },
     input: { flex: 1, fontSize: 16 },
-    submitBtn: { backgroundColor: theme.colors.primary, padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 20 },
+    submitBtn: { backgroundColor: AppTheme.colors.primary, padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 20 },
     submitText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
     logoutBtn: { marginTop: 20, alignItems: 'center' },
     logoutText: { color: '#888' }
 });
 
 export default ProfileWizardScreen;
+

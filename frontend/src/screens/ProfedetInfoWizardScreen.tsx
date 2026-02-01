@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
 import AppHeader from '../components/common/AppHeader';
@@ -117,7 +117,7 @@ const ProfedetInfoWizardScreen = () => {
                                 <Ionicons
                                     name={profedetStage === stage ? "radio-button-on" : "radio-button-off"}
                                     size={24}
-                                    color={profedetStage === stage ? theme.colors.primary : '#666'}
+                                    color={profedetStage === stage ? AppTheme.colors.primary : '#666'}
                                 />
                                 <Text style={[styles.optionText, profedetStage === stage && styles.optionTextSelected]}>{stage}</Text>
                             </TouchableOpacity>
@@ -196,7 +196,7 @@ const ProfedetInfoWizardScreen = () => {
                                 <Ionicons
                                     name={documents.includes(doc) ? "checkbox" : "square-outline"}
                                     size={24}
-                                    color={documents.includes(doc) ? theme.colors.primary : '#ccc'}
+                                    color={documents.includes(doc) ? AppTheme.colors.primary : '#ccc'}
                                 />
                                 <Text style={styles.checkboxText}>{doc}</Text>
                             </TouchableOpacity>
@@ -219,7 +219,7 @@ const ProfedetInfoWizardScreen = () => {
         <View style={styles.container}>
             <AppHeader
                 title="Asistente PROFEDET"
-                gradient={[theme.colors.primary, '#3742fa']}
+                gradient={[AppTheme.colors.primary, '#3742fa']}
                 onBack={handleBack}
             />
             {/* Native Header is used. Sub-content: */}
@@ -227,8 +227,8 @@ const ProfedetInfoWizardScreen = () => {
                 <View style={styles.progressBar}>
                     {STEPS.map((step, index) => (
                         <View key={step} style={styles.progressStep}>
-                            <View style={[styles.dot, index <= currentStep && { backgroundColor: theme.colors.primary }] as any} />
-                            {index < STEPS.length - 1 && <View style={[styles.line, index < currentStep && { backgroundColor: theme.colors.primary }] as any} />}
+                            <View style={[styles.dot, index <= currentStep && { backgroundColor: AppTheme.colors.primary }] as any} />
+                            {index < STEPS.length - 1 && <View style={[styles.line, index < currentStep && { backgroundColor: AppTheme.colors.primary }] as any} />}
                         </View>
                     ))}
                 </View>
@@ -261,16 +261,16 @@ const styles = StyleSheet.create({
     progressBar: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
     progressStep: { flexDirection: 'row', alignItems: 'center' },
     dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#e0e0e0' },
-    activeDot: { backgroundColor: theme.colors.primary },
+    activeDot: { backgroundColor: AppTheme.colors.primary },
     line: { width: 30, height: 2, backgroundColor: '#e0e0e0', marginHorizontal: 2 },
-    activeLine: { backgroundColor: theme.colors.primary },
+    activeLine: { backgroundColor: AppTheme.colors.primary },
     content: { padding: 20 },
     stepTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 8 },
     stepDesc: { fontSize: 16, color: '#666', marginBottom: 20 },
     optionCard: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#fff', borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
-    optionSelected: { borderColor: theme.colors.primary, backgroundColor: '#f0f9ff' },
+    optionSelected: { borderColor: AppTheme.colors.primary, backgroundColor: '#f0f9ff' },
     optionText: { marginLeft: 10, fontSize: 16, color: '#333' },
-    optionTextSelected: { fontWeight: 'bold', color: theme.colors.primary },
+    optionTextSelected: { fontWeight: 'bold', color: AppTheme.colors.primary },
     inputContainer: { marginBottom: 15 },
     label: { fontSize: 14, fontWeight: '600', marginBottom: 5, color: '#444' },
     input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
@@ -281,8 +281,9 @@ const styles = StyleSheet.create({
     footer: { flexDirection: 'row', padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
     backButton: { flex: 1, padding: 15, alignItems: 'center' },
     backButtonText: { color: '#666', fontSize: 16, fontWeight: '600' },
-    nextButton: { flex: 1, backgroundColor: theme.colors.primary, padding: 15, borderRadius: 12, alignItems: 'center' },
+    nextButton: { flex: 1, backgroundColor: AppTheme.colors.primary, padding: 15, borderRadius: 12, alignItems: 'center' },
     nextButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
 });
 
 export default ProfedetInfoWizardScreen;
+

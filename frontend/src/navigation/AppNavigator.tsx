@@ -67,181 +67,32 @@ const AppNavigator = () => {
                     headerBackTitleVisible: false,
                 }}
             >
+                {/* DEBUG MODE: ISOLATION TESTING */}
+                <Stack.Screen
+                    name="Welcome"
+                    component={WelcomeScreen}
+                    options={{ headerShown: false }}
+                />
+
+                {/* 
                 {user ? (
-                    <>
-                        {/* Supervisor/Accountant Navigator */}
-                        {(user.role === 'supervisor' || user.role === 'accountant') ? (
-                            <Stack.Screen
-                                name="SupervisorPanel"
-                                component={SupervisorNavigator}
-                                options={{ headerShown: false }}
-                            />
-                        ) : user.role === 'admin' ? (
-                            /* Admin Navigator */
-                            <Stack.Screen
-                                name="AdminPanel"
-                                component={AdminNavigator}
-                                options={{ headerShown: false }}
-                            />
-                        ) : user.role === 'pyme' ? (
-                            <>
-                                <Stack.Screen
-                                    name="HomePyme"
-                                    component={require('../screens/pyme/HomePymeScreen').default}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="LiquidationCalculator"
-                                    component={require('../screens/pyme/LiquidationCalculatorView').default}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="Lawyers" component={require('../screens/LawyersScreen').default} options={{ title: 'Directorio de Abogados' }} />
-                                <Stack.Screen name="LawyerDetail" component={require('../screens/LawyerDetailScreen').default} options={{ title: 'Perfil del Abogado' }} />
-                                <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
-                                <Stack.Screen name="GenerateAct" component={require('../screens/pyme/GenerateActScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="ContractReview" component={require('../screens/pyme/ContractReviewScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="LaborDocuments" component={require('../screens/pyme/LaborDocumentsScreen').default} options={{ headerShown: false }} />
-                            </>
-                        ) : (
-                            /* Worker and Lawyer Screens */
-                            <>
-                                <Stack.Screen
-                                    name="Home"
-                                    component={HomeScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="Calculator"
-                                    component={CalculatorScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="Guides"
-                                    component={GuidesScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="GuideDetail"
-                                    component={GuideDetailScreen}
-                                    options={{ title: 'Detalle de Guía' }}
-                                />
-                                <Stack.Screen
-                                    name="Lawyers"
-                                    component={LawyersScreen}
-                                    options={{ title: 'Directorio de Abogados' }}
-                                />
-                                <Stack.Screen
-                                    name="LawyerDetail"
-                                    component={LawyerDetailScreen}
-                                    options={{ title: 'Perfil del Abogado' }}
-                                />
-                                <Stack.Screen
-                                    name="History"
-                                    component={HistoryScreen}
-                                    options={{ title: 'Mi Bitácora' }}
-                                />
-                                <Stack.Screen
-                                    name="ImssNom"
-                                    component={ImssNomScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="Indemnizacion"
-                                    component={IndemnizacionScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                <Stack.Screen
-                                    name="AddIncident"
-                                    component={AddIncidentScreen}
-                                    options={{ title: 'Registrar Incidente' }}
-                                />
-                                <Stack.Screen
-                                    name="Chat"
-                                    component={ChatScreen}
-                                    options={{ title: 'Asesor Virtual' }}
-                                />
-                                <Stack.Screen
-                                    name="Problems"
-                                    component={ProblemsScreen}
-                                    options={{ title: 'Problemas Comunes' }}
-                                />
-                                <Stack.Screen
-                                    name="ProblemDetail"
-                                    component={ProblemDetailScreen}
-                                    options={{ title: 'Detalle del Problema' }}
-                                />
-                                <Stack.Screen
-                                    name="Profile"
-                                    component={ProfileScreen}
-                                    options={{ headerShown: false }}
-                                />
-                                {/* New Contact System Screens */}
-                                <Stack.Screen name="LawyerPublicProfile" component={require('../screens/LawyerPublicProfileScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="CreateContactRequest" component={require('../screens/CreateContactRequestScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="MyContactRequests" component={require('../screens/MyContactRequestsScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="LawyerDashboard" component={require('../modules/lawyer/dashboard/LawyerDashboardScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="LawyerRequests" component={require('../screens/LawyerRequestsScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="LawyerRequestDetail" component={require('../screens/LawyerRequestDetailScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="SubscriptionManagement" component={require('../screens/SubscriptionManagementScreen').default} options={{ headerShown: false }} />
-
-                                {/* New Content Modules */}
-                                <Stack.Screen name="LaborGuide" component={require('../screens/LaborGuideScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="MyChest" component={require('../screens/MyChestScreen').default} options={{ title: 'Mi Kit Laboral' }} />
-                                <Stack.Screen name="Benefits" component={require('../screens/BenefitsScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="ContractTypes" component={require('../screens/ContractTypesScreen').default} options={{ title: 'Tipos de Contrato' }} />
-                                <Stack.Screen name="ContractDetail" component={require('../screens/ContractDetailScreen').default} options={{ title: 'Detalles del Contrato' }} />
-                                <Stack.Screen name="WorkerRights" component={require('../screens/WorkerRightsScreen').default} options={{ title: 'Derechos del Trabajador' }} />
-                                <Stack.Screen name="RightsCalculator" component={require('../screens/RightsCalculatorScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="ProfedetInfoWizard" component={require('../screens/ProfedetInfoWizardScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="SalaryThermometer" component={require('../screens/SalaryThermometerScreen').default} options={{ headerShown: false }} />
-
-                                {/* Live Chat System */}
-                                <Stack.Screen name="LawyerCases" component={require('../screens/LawyerCasesScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="CaseChat" component={require('../screens/CaseChatScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="Vault" component={require('../screens/VaultScreen').default} options={{ headerShown: false }} />
-                                <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
-                                <Stack.Screen name="AnonymousForum" component={require('../screens/forum/AnonymousForumScreen').default} options={{ headerShown: false }} />
-                            </>
-                        )}
-                    </>
-                ) : (
+                   // ... (Commented out complex logic)
+                 (
                     // Auth Stack
                     <>
-                        <Stack.Screen
-                            name="Welcome"
-                            component={require('../screens/WelcomeScreen').default}
-                            options={{ headerShown: false }}
-                        />
                         <Stack.Screen
                             name="Login"
                             component={LoginScreen}
                             options={{ headerShown: false }}
                         />
-                        <Stack.Screen
+                         <Stack.Screen
                             name="Register"
                             component={RegisterScreen}
                             options={{ headerShown: false }}
                         />
                     </>
-                )}
-
-                {/* Global Screens (Accessible by some flows or modals) */}
-                <Stack.Screen
-                    name="PrivacyPolicy"
-                    component={PrivacyPolicyScreen}
-                    options={{ presentation: 'modal' }}
-                />
-                <Stack.Screen
-                    name="ForumCreatePost"
-                    component={require('../screens/forum/ForumCreatePostScreen').default}
-                    options={{ presentation: 'modal', headerShown: false }}
-                />
-                <Stack.Screen
-                    name="ForumDetail"
-                    component={require('../screens/forum/ForumDetailScreen').default}
-                    options={{ headerShown: false }}
-                />
+                )} 
+                */}
             </Stack.Navigator>
         </NavigationContainer>
     );

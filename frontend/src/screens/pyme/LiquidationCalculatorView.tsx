@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import moment from 'moment';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { API_URL } from '../../config/constants';
 import { useAuth } from '../../context/AuthContext';
 import DatePickerModal from '../../components/DatePickerModal';
@@ -311,4 +311,5 @@ const styles = StyleSheet.create({
 });
 
 export default LiquidationCalculatorView;
+
 

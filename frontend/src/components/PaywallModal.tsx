@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 interface Props {
     visible: boolean;
@@ -170,3 +170,4 @@ const styles = StyleSheet.create({
 });
 
 export default PaywallModal;
+

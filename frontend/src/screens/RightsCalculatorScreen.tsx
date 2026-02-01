@@ -4,7 +4,7 @@ import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { RIGHTS_CALCULATORS } from '../data/rightsPanelData';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -18,23 +18,23 @@ const styles = StyleSheet.create({
     header: { alignItems: 'center', marginBottom: 20 },
     iconContainer: {
         width: 70, height: 70, borderRadius: 35, backgroundColor: '#fff',
-        justifyContent: 'center', alignItems: 'center', marginBottom: 10, ...theme.shadows.default,
+        justifyContent: 'center', alignItems: 'center', marginBottom: 10, ...AppTheme.shadows.default,
     },
     title: { fontSize: 22, fontWeight: 'bold', color: '#2c3e50', textAlign: 'center', marginBottom: 5 },
-    subHeaderTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.primary, textAlign: 'center', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
+    subHeaderTitle: { fontSize: 16, fontWeight: '700', color: AppTheme.colors.primary, textAlign: 'center', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
     description: { fontSize: 14, color: '#7f8c8d', textAlign: 'center', lineHeight: 20 },
-    formContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 20, ...theme.shadows.default },
+    formContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 20, ...AppTheme.shadows.default },
     inputGroup: { marginBottom: 15 },
     labelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, justifyContent: 'space-between' },
     label: { fontSize: 14, fontWeight: 'bold', color: '#34495e', flex: 1 },
     input: { borderWidth: 1, borderColor: '#dfe6e9', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#f8f9fa' },
     dateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#dfe6e9', borderRadius: 8, padding: 12, backgroundColor: '#f8f9fa' },
     dateText: { fontSize: 16, color: '#333' },
-    calculateButton: { backgroundColor: theme.colors.primary, borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 10 },
+    calculateButton: { backgroundColor: AppTheme.colors.primary, borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 10 },
     calculateButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 
-    resultContainer: { marginTop: 25, backgroundColor: '#fff', borderRadius: 12, padding: 20, ...theme.shadows.default, borderWidth: 1, borderColor: theme.colors.primary },
-    resultTitle: { fontSize: 18, fontWeight: 'bold', color: theme.colors.primary, marginBottom: 15, textAlign: 'center' },
+    resultContainer: { marginTop: 25, backgroundColor: '#fff', borderRadius: 12, padding: 20, ...AppTheme.shadows.default, borderWidth: 1, borderColor: AppTheme.colors.primary },
+    resultTitle: { fontSize: 18, fontWeight: 'bold', color: AppTheme.colors.primary, marginBottom: 15, textAlign: 'center' },
     resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, borderBottomWidth: 1, borderBottomColor: '#f1f1f1', paddingBottom: 5 },
     resultLabel: { fontSize: 14, color: '#555', flex: 1 },
     resultValue: { fontSize: 14, fontWeight: 'bold', color: '#333' },
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     // Wizard Styles
     wizardContainer: { marginTop: 20 },
     wizardStepIndicator: { textAlign: 'center', color: '#999', marginBottom: 10 },
-    wizardCard: { backgroundColor: '#fff', borderRadius: 15, padding: 30, alignItems: 'center', ...theme.shadows.default, minHeight: 250, justifyContent: 'center' },
+    wizardCard: { backgroundColor: '#fff', borderRadius: 15, padding: 30, alignItems: 'center', ...AppTheme.shadows.default, minHeight: 250, justifyContent: 'center' },
     wizardTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 10, textAlign: 'center' },
     wizardDesc: { fontSize: 15, color: '#666', textAlign: 'center', marginBottom: 25, lineHeight: 22 },
     wizardBtn: { backgroundColor: '#3498db', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, flexDirection: 'row', alignItems: 'center' },
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     controlBtn: { padding: 15 },
     disabledBtn: { opacity: 0.3 },
     controlBtnText: { color: '#666' },
-    controlBtnPrimary: { backgroundColor: theme.colors.primary, paddingHorizontal: 25, paddingVertical: 12, borderRadius: 8 },
+    controlBtnPrimary: { backgroundColor: AppTheme.colors.primary, paddingHorizontal: 25, paddingVertical: 12, borderRadius: 8 },
     controlBtnTextPrimary: { color: '#fff', fontWeight: 'bold' },
 
     // Modal
@@ -363,7 +363,7 @@ const RightsCalculatorScreen = () => {
             <View style={styles.wizardContainer}>
                 <Text style={styles.wizardStepIndicator}>Paso {wizardStep + 1} de 3</Text>
                 <View style={styles.wizardCard}>
-                    <Ionicons name={wizardStep === 0 ? "card" : wizardStep === 1 ? "globe" : "book"} size={50} color={theme.colors.primary} style={{ marginBottom: 15 }} />
+                    <Ionicons name={wizardStep === 0 ? "card" : wizardStep === 1 ? "globe" : "book"} size={50} color={AppTheme.colors.primary} style={{ marginBottom: 15 }} />
                     <Text style={styles.wizardTitle}>{current.title}</Text>
                     <Text style={styles.wizardDesc}>{current.desc}</Text>
 
@@ -430,7 +430,7 @@ const RightsCalculatorScreen = () => {
             <View style={styles.wizardContainer}>
                 <Text style={styles.wizardStepIndicator}>Paso {wizardStep + 1} de {steps.length}</Text>
                 <View style={styles.wizardCard}>
-                    <Ionicons name={wizardStep === 0 ? "shield-checkmark" : wizardStep === 1 ? "calculator" : "send"} size={50} color={theme.colors.primary} style={{ marginBottom: 15 }} />
+                    <Ionicons name={wizardStep === 0 ? "shield-checkmark" : wizardStep === 1 ? "calculator" : "send"} size={50} color={AppTheme.colors.primary} style={{ marginBottom: 15 }} />
                     <Text style={styles.wizardTitle}>{current.title}</Text>
                     <Text style={styles.wizardDesc}>{current.desc}</Text>
 
@@ -476,7 +476,7 @@ const RightsCalculatorScreen = () => {
             <AppHeader
                 title="Calculadora de Finiquito"
                 subtitle="Guía paso a paso"
-                gradient={[theme.colors.primary, '#3742fa']}
+                gradient={[AppTheme.colors.primary, '#3742fa']}
             />
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={styles.content}>
@@ -599,3 +599,4 @@ const RightsCalculatorScreen = () => {
 
 
 export default RightsCalculatorScreen;
+

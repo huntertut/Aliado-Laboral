@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 
 type NomView = 'home' | 'test_intro' | 'test_questions' | 'test_results';
@@ -231,7 +231,7 @@ const ImssNomScreen = () => {
         return (
             <View style={styles.sectionContainer}>
                 <View style={styles.progressBar}>
-                    <View style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`, height: '100%', backgroundColor: theme.colors.primary, borderRadius: 5 }} />
+                    <View style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`, height: '100%', backgroundColor: AppTheme.colors.primary, borderRadius: 5 }} />
                 </View>
                 <Text style={styles.progressText}>Pregunta {currentQuestionIndex + 1} de {questions.length}</Text>
 
@@ -346,7 +346,7 @@ const ImssNomScreen = () => {
 
             <TouchableOpacity style={styles.procedureCard} onPress={() => Linking.openURL('http://www.imss.gob.mx/cita-medica')}>
                 <View style={styles.procedureHeader}>
-                    <Ionicons name="calendar" size={20} color={theme.colors.primary} />
+                    <Ionicons name="calendar" size={20} color={AppTheme.colors.primary} />
                     <Text style={styles.procedureTitle}>Agendar Cita Médica</Text>
                     <Ionicons name="open-outline" size={16} color="#999" style={{ marginLeft: 'auto' }} />
                 </View>
@@ -356,7 +356,7 @@ const ImssNomScreen = () => {
 
             <TouchableOpacity style={styles.procedureCard} onPress={() => Linking.openURL('https://www.imss.gob.mx/imssdigital')}>
                 <View style={styles.procedureHeader}>
-                    <Ionicons name="search" size={20} color={theme.colors.primary} />
+                    <Ionicons name="search" size={20} color={AppTheme.colors.primary} />
                     <Text style={styles.procedureTitle}>Asignación de NSS</Text>
                     <Ionicons name="open-outline" size={16} color="#999" style={{ marginLeft: 'auto' }} />
                 </View>
@@ -452,7 +452,7 @@ const ImssNomScreen = () => {
 
     return (
         <View style={styles.container}>
-            <LinearGradient colors={[theme.colors.primary, '#3742fa']} style={styles.header}>
+            <LinearGradient colors={[AppTheme.colors.primary, '#3742fa']} style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
         color: '#999',
     },
     activeTabText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
     content: {
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     primaryButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         padding: 18,
         borderRadius: 12,
         alignItems: 'center',
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     modalSubtitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginBottom: 10,
     },
     bulletPoint: {
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
         padding: 15,
         marginBottom: 15,
         borderLeftWidth: 4,
-        borderLeftColor: theme.colors.primary,
+        borderLeftColor: AppTheme.colors.primary,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
@@ -903,3 +903,4 @@ const styles = StyleSheet.create({
 });
 
 export default ImssNomScreen;
+

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,7 +71,7 @@ const WorkerSubscriptionModal: React.FC<SubscriptionModalProps> = ({ visible, on
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <Ionicons name="star" size={60} color={theme.colors.primary} />
+                            <Ionicons name="star" size={60} color={AppTheme.colors.primary} />
                             <Text style={styles.title}>Desbloquea el Acceso Completo</Text>
                             <Text style={styles.subtitle}>
                                 Accede a los mejores abogados de México
@@ -90,7 +90,7 @@ const WorkerSubscriptionModal: React.FC<SubscriptionModalProps> = ({ visible, on
                             {benefits.map((benefit, index) => (
                                 <View key={index} style={styles.benefitItem}>
                                     <View style={styles.benefitIcon}>
-                                        <Ionicons name={benefit.icon as any} size={24} color={theme.colors.primary} />
+                                        <Ionicons name={benefit.icon as any} size={24} color={AppTheme.colors.primary} />
                                     </View>
                                     <Text style={styles.benefitText}>{benefit.text}</Text>
                                 </View>
@@ -139,7 +139,7 @@ const WorkerSubscriptionModal: React.FC<SubscriptionModalProps> = ({ visible, on
                             disabled={loading}
                         >
                             <LinearGradient
-                                colors={[theme.colors.primary, '#3742fa']}
+                                colors={[AppTheme.colors.primary, '#3742fa']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.gradientButton}
@@ -217,13 +217,13 @@ const styles = StyleSheet.create({
     currency: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginTop: 8,
     },
     price: {
         fontSize: 56,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     period: {
         fontSize: 18,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: `${theme.colors.primary}15`,
+        backgroundColor: `${AppTheme.colors.primary}15`,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     providerButtonActive: {
-        borderColor: theme.colors.primary,
-        backgroundColor: `${theme.colors.primary}10`,
+        borderColor: AppTheme.colors.primary,
+        backgroundColor: `${AppTheme.colors.primary}10`,
     },
     providerButtonText: {
         fontSize: 14,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     providerButtonTextActive: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     subscribeButton: {
         borderRadius: 12,
@@ -309,3 +309,4 @@ const styles = StyleSheet.create({
 });
 
 export default WorkerSubscriptionModal;
+

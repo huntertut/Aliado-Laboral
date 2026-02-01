@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../config/constants';
@@ -63,7 +63,7 @@ const AdminPromotionsScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             </View>
         );
     }
@@ -71,7 +71,7 @@ const AdminPromotionsScreen = ({ navigation }: any) => {
     return (
         <ScrollView style={styles.container}>
             <LinearGradient
-                colors={[theme.colors.primary, '#2c3e50']}
+                colors={[AppTheme.colors.primary, '#2c3e50']}
                 style={styles.header}
             >
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -93,7 +93,7 @@ const AdminPromotionsScreen = ({ navigation }: any) => {
                         <Switch
                             value={promoActive}
                             onValueChange={setPromoActive}
-                            trackColor={{ false: "#767577", true: theme.colors.secondary }}
+                            trackColor={{ false: "#767577", true: AppTheme.colors.secondary }}
                             thumbColor={promoActive ? "#fff" : "#f4f3f4"}
                         />
                     </View>
@@ -268,13 +268,13 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     saveButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
         borderRadius: 12,
-        shadowColor: theme.colors.primary,
+        shadowColor: AppTheme.colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -292,3 +292,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminPromotionsScreen;
+

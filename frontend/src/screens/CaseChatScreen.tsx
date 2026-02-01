@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, StatusBar, Modal, ScrollView, Alert, Linking } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
@@ -168,7 +168,7 @@ const CaseChatScreen = () => {
                 <View style={[styles.messageContainer, isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer]}>
                     <View style={[styles.bubble, isMyMessage ? styles.myBubble : styles.theirBubble, styles.documentBubble]}>
                         <View style={styles.documentHeader}>
-                            <Ionicons name="document-text" size={32} color={isMyMessage ? '#fff' : theme.colors.primary} />
+                            <Ionicons name="document-text" size={32} color={isMyMessage ? '#fff' : AppTheme.colors.primary} />
                             <View style={styles.documentInfo}>
                                 <Text style={[styles.documentName, isMyMessage ? styles.myMessageText : styles.theirMessageText]}>
                                     {docInfo.fileName}
@@ -211,7 +211,7 @@ const CaseChatScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+            <StatusBar barStyle="light-content" backgroundColor={AppTheme.colors.primary} />
 
             {/* Header */}
             <View style={styles.header}>
@@ -229,7 +229,7 @@ const CaseChatScreen = () => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -249,7 +249,7 @@ const CaseChatScreen = () => {
             >
                 <View style={styles.inputContainer}>
                     <TouchableOpacity style={styles.attachButton} onPress={openVaultPicker}>
-                        <Ionicons name="add" size={28} color={theme.colors.primary} />
+                        <Ionicons name="add" size={28} color={AppTheme.colors.primary} />
                     </TouchableOpacity>
 
                     <TextInput
@@ -292,7 +292,7 @@ const CaseChatScreen = () => {
                         </View>
 
                         {fetchingVault ? (
-                            <ActivityIndicator size="large" color={theme.colors.primary} style={{ margin: 40 }} />
+                            <ActivityIndicator size="large" color={AppTheme.colors.primary} style={{ margin: 40 }} />
                         ) : (
                             <ScrollView contentContainerStyle={styles.vaultList}>
                                 {vaultFiles.length === 0 ? (
@@ -310,7 +310,7 @@ const CaseChatScreen = () => {
                                             <Ionicons
                                                 name={file.fileType?.includes('pdf') ? "document-text" : "image"}
                                                 size={24}
-                                                color={theme.colors.primary}
+                                                color={AppTheme.colors.primary}
                                             />
                                             <Text style={styles.vaultFileName} numberOfLines={1}>{file.fileName}</Text>
                                             <Ionicons name="share-outline" size={20} color="#999" />
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingTop: Platform.OS === 'ios' ? 10 : 40,
         paddingBottom: 16,
         paddingHorizontal: 16,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     myBubble: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderBottomRightRadius: 4,
     },
     theirBubble: {
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -538,3 +538,4 @@ const styles = StyleSheet.create({
 });
 
 export default CaseChatScreen;
+

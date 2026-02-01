@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -151,7 +151,7 @@ const AdminCasesScreen = () => {
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -302,3 +302,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminCasesScreen;
+

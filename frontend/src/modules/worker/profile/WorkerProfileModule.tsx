@@ -3,7 +3,7 @@ import { View, ActivityIndicator, Alert, Text } from 'react-native';
 import { useWorkerProfile } from './hooks/useWorkerProfile';
 import { WorkerProfile as WorkerProfileUI } from './components/WorkerProfile';
 import { useAuth } from '../../../context/AuthContext';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 
 export const WorkerProfileModule = () => {
     const { user } = useAuth();
@@ -22,7 +22,7 @@ export const WorkerProfileModule = () => {
     if (isLoading && !profileData) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 <Text style={{ marginTop: 10, color: '#666' }}>Cargando perfil...</Text>
             </View>
         );
@@ -39,3 +39,4 @@ export const WorkerProfileModule = () => {
         />
     );
 };
+

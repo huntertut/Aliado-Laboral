@@ -17,7 +17,7 @@ import { API_URL } from '../config/constants';
 import { AnalyticsService } from '../services/AnalyticsService';
 
 import { useAuth } from '../context/AuthContext';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import moment from 'moment';
 
 const VaultScreen = ({ navigation }: any) => {
@@ -152,7 +152,7 @@ const VaultScreen = ({ navigation }: any) => {
         return (
             <View style={styles.fileItem}>
                 <View style={styles.fileIconContainer}>
-                    <Ionicons name={getIcon(item.fileType)} size={24} color={theme.colors.primary} />
+                    <Ionicons name={getIcon(item.fileType)} size={24} color={AppTheme.colors.primary} />
                 </View>
                 <View style={styles.fileInfo}>
                     <Text style={styles.fileName} numberOfLines={1}>{item.fileName}</Text>
@@ -225,7 +225,7 @@ const VaultScreen = ({ navigation }: any) => {
 
             {loading ? (
                 <View style={styles.center}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         borderTopColor: '#eee',
     },
     uploadButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         flexDirection: 'row',
         padding: 16,
         borderRadius: 15,
@@ -386,3 +386,4 @@ const styles = StyleSheet.create({
 });
 
 export default VaultScreen;
+

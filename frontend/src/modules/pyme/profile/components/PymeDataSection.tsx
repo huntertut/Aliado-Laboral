@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 
 interface Props {
     data: {
@@ -35,7 +35,7 @@ const PymeDataSection = ({ data, onUpdate, isSaving }: Props) => {
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity onPress={handleSave} disabled={isSaving}>
-                        {isSaving ? <ActivityIndicator size="small" color={theme.colors.primary} /> : <Text style={styles.saveLink}>Guardar</Text>}
+                        {isSaving ? <ActivityIndicator size="small" color={AppTheme.colors.primary} /> : <Text style={styles.saveLink}>Guardar</Text>}
                     </TouchableOpacity>
                 )}
             </View>
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     editLink: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
     saveLink: {
@@ -125,3 +125,4 @@ const styles = StyleSheet.create({
 });
 
 export default PymeDataSection;
+

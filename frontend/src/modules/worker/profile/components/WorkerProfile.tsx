@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 
 import { WorkerLaborDataSection } from './WorkerLaborDataSection';
 import { ProfedetModule } from './ProfedetModule';
@@ -99,3 +99,4 @@ const styles = StyleSheet.create({
         fontWeight: '600'
     }
 });
+

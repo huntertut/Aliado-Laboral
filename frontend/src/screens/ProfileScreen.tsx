@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIn
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -162,7 +162,7 @@ const ProfileScreen = () => {
         <View style={styles.container}>
             {/* Common Header */}
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme.colors.primary, '#3742fa']}
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
@@ -242,7 +242,7 @@ const ProfileScreen = () => {
                             navigation.navigate('PrivacyPolicy' as never, { type: policyType } as never);
                         }}
                     >
-                        <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.primary} />
+                        <Ionicons name="shield-checkmark-outline" size={20} color={AppTheme.colors.primary} />
                         <Text style={{ marginLeft: 10, fontSize: 16, color: '#333', fontWeight: '500' }}>
                             Aviso de Privacidad
                         </Text>
@@ -355,3 +355,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfileScreen;
+

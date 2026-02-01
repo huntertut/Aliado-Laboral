@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, ActivityIndicator, Text, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 import { API_URL } from '../../../config/constants';
 import PymeDataSection from './components/PymeDataSection';
 import AssignedLawyerCard from './components/AssignedLawyerCard';
@@ -66,7 +66,7 @@ export const PymeProfileModule = () => {
     if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 <Text style={styles.loadingText}>Cargando perfil Pyme...</Text>
             </View>
         );
@@ -102,3 +102,4 @@ const styles = StyleSheet.create({
         color: '#666',
     }
 });
+

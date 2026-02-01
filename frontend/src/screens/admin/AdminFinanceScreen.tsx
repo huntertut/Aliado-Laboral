@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,7 +69,7 @@ const AdminFinanceScreen = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             </View>
         );
     }
@@ -152,12 +152,12 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     totalCard: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 15,
         padding: 20,
         alignItems: 'center',
         marginBottom: 15,
-        shadowColor: theme.colors.primary,
+        shadowColor: AppTheme.colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
@@ -276,3 +276,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminFinanceScreen;
+

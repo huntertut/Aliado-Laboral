@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f4f6f8',
     },
     header: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingTop: 50,
         paddingBottom: 20,
         paddingHorizontal: 20,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     },
     activeChip: {
         backgroundColor: 'rgba(46, 134, 222, 0.1)',
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
     },
     filterText: {
         color: '#666',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     activeFilterText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     alertBanner: {
         backgroundColor: '#34495e',
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 5,
@@ -335,3 +335,4 @@ const styles = StyleSheet.create({
 });
 
 export default AnonymousForumScreen;
+

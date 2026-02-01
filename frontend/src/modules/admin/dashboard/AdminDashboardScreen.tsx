@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../theme/colors';
+import { AppTheme } from '../../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,7 +54,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             </View>
         );
     }
@@ -65,7 +65,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
             <LinearGradient
-                colors={[theme.colors.primary, '#2c3e50']}
+                colors={[AppTheme.colors.primary, '#2c3e50']}
                 style={styles.header}
             >
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -162,7 +162,7 @@ const AdminDashboardScreen = ({ navigation }: any) => {
                     onPress={() => navigation.navigate('Promociones')}
                 >
                     <LinearGradient
-                        colors={[theme.colors.secondary, '#e91e63']}
+                        colors={[AppTheme.colors.secondary, '#e91e63']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.promoGradient}
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     },
     mockBar: {
         width: 8,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 4,
     },
     promoButton: {
@@ -515,3 +515,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminDashboardScreen;
+

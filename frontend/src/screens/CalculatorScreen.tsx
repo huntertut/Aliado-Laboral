@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { differenceInDays, differenceInYears, parse, isValid } from 'date-fns';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
@@ -199,7 +199,7 @@ const CalculatorScreen = () => {
                     <Text style={startDate ? styles.dateText : styles.datePlaceholder}>
                         {startDate || 'Seleccionar fecha'}
                     </Text>
-                    <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                    <Ionicons name="calendar-outline" size={20} color={AppTheme.colors.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -209,7 +209,7 @@ const CalculatorScreen = () => {
                     <Text style={endDate ? styles.dateText : styles.datePlaceholder}>
                         {endDate || 'Seleccionar fecha'}
                     </Text>
-                    <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                    <Ionicons name="calendar-outline" size={20} color={AppTheme.colors.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -294,7 +294,7 @@ const CalculatorScreen = () => {
                     <Ionicons
                         name={hasPendingSalary ? "checkbox" : "square-outline"}
                         size={24}
-                        color={theme.colors.primary}
+                        color={AppTheme.colors.primary}
                     />
                     <Text style={styles.checkboxLabel}>Tengo días de sueldo pendientes</Text>
                 </TouchableOpacity>
@@ -322,7 +322,7 @@ const CalculatorScreen = () => {
 
             <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.backButton} onPress={() => setCurrentStep(1)}>
-                    <Ionicons name="arrow-back" size={20} color={theme.colors.primary} />
+                    <Ionicons name="arrow-back" size={20} color={AppTheme.colors.primary} />
                     <Text style={styles.backButtonText}>Atrás</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -356,7 +356,7 @@ const CalculatorScreen = () => {
                         <Ionicons
                             name={separationReason === reason.id ? "radio-button-on" : "radio-button-off"}
                             size={24}
-                            color={theme.colors.primary}
+                            color={AppTheme.colors.primary}
                         />
                         <Text style={styles.radioLabel}>{reason.label}</Text>
                     </TouchableOpacity>
@@ -365,7 +365,7 @@ const CalculatorScreen = () => {
 
             {separationReason === 'despido_injustificado' && (
                 <View style={styles.infoBox}>
-                    <Ionicons name="information-circle" size={24} color={theme.colors.primary} />
+                    <Ionicons name="information-circle" size={24} color={AppTheme.colors.primary} />
                     <Text style={styles.infoText}>
                         Al seleccionar esta opción, se incluirán las indemnizaciones por ley (liquidación).
                     </Text>
@@ -374,7 +374,7 @@ const CalculatorScreen = () => {
 
             <View style={styles.buttonRow}>
                 <TouchableOpacity style={styles.backButton} onPress={() => setCurrentStep(2)}>
-                    <Ionicons name="arrow-back" size={20} color={theme.colors.primary} />
+                    <Ionicons name="arrow-back" size={20} color={AppTheme.colors.primary} />
                     <Text style={styles.backButtonText}>Atrás</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -569,7 +569,7 @@ const CalculatorScreen = () => {
                         setCurrentStep(1);
                         setResults(null);
                     }}>
-                        <Ionicons name="refresh" size={20} color={theme.colors.primary} />
+                        <Ionicons name="refresh" size={20} color={AppTheme.colors.primary} />
                         <Text style={styles.newCalculationText}>Nuevo Cálculo</Text>
                     </TouchableOpacity>
 
@@ -598,7 +598,7 @@ const CalculatorScreen = () => {
             <AppHeader
                 title="Calculadora de Finiquito"
                 subtitle="Guía paso a paso"
-                gradient={[theme.colors.primary, '#3742fa']}
+                gradient={[AppTheme.colors.primary, '#3742fa']}
             />
 
             {currentStep < 4 && renderProgressBar()}
@@ -624,7 +624,7 @@ const CalculatorScreen = () => {
                     <View style={{ alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.2)', paddingBottom: 20 }}>
                         {/* ADDED: Use actual logo instead of icon */}
                         <Image
-                            source={require('../../assets/images/logo.png')}
+                            source={require('../../assets/images/app_logo.png')}
                             style={{ width: 80, height: 80, resizeMode: 'contain' }}
                         />
                         <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#f1c40f', marginTop: 10, letterSpacing: 2 }}>
@@ -873,7 +873,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     progressCircleActive: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
     },
     progressNumber: {
         fontSize: 16,
@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 5,
     },
     progressLineActive: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
     },
     content: {
         flex: 1,
@@ -932,7 +932,7 @@ const styles = StyleSheet.create({
     },
     helper: {
         fontSize: 12,
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginTop: 5,
     },
     dateButton: {
@@ -979,7 +979,7 @@ const styles = StyleSheet.create({
         borderColor: '#e0e0e0',
     },
     radioOptionSelected: {
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
         backgroundColor: 'rgba(30, 55, 153, 0.05)',
     },
     radioLabel: {
@@ -1012,10 +1012,10 @@ const styles = StyleSheet.create({
         padding: 15,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
     },
     backButtonText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 5,
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
     nextButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         padding: 15,
         borderRadius: 10,
         flex: 1,
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
     resultsTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         textAlign: 'center',
         marginBottom: 5,
     },
@@ -1157,7 +1157,7 @@ const styles = StyleSheet.create({
     subtotalAmount: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     warningBox: {
         flexDirection: 'row',
@@ -1173,7 +1173,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     totalCard: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 15,
         padding: 25,
         alignItems: 'center',
@@ -1209,11 +1209,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
         marginBottom: 10,
     },
     newCalculationText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, RefreshControl, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -233,8 +233,8 @@ const AdminUsersScreen = () => {
                     <Text style={styles.license}>{item.email}</Text>
                     <Text style={styles.industry}>Giro: {item.industry}</Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: item.subscriptionLevel === 'premium' ? theme.colors.secondary + '20' : '#f5f5f5' }]}>
-                    <Text style={[styles.badgeText, { color: item.subscriptionLevel === 'premium' ? theme.colors.secondary : '#666' }]}>
+                <View style={[styles.badge, { backgroundColor: item.subscriptionLevel === 'premium' ? AppTheme.colors.secondary + '20' : '#f5f5f5' }]}>
+                    <Text style={[styles.badgeText, { color: item.subscriptionLevel === 'premium' ? AppTheme.colors.secondary : '#666' }]}>
                         {item.subscriptionLevel === 'premium' ? 'Premium' : 'Básico'}
                     </Text>
                 </View>
@@ -282,7 +282,7 @@ const AdminUsersScreen = () => {
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                    <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'transparent',
     },
     activeTab: {
-        borderBottomColor: theme.colors.primary,
+        borderBottomColor: AppTheme.colors.primary,
     },
     tabText: {
         fontSize: 14,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     activeTabText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     loadingContainer: {
         flex: 1,
@@ -454,3 +454,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminUsersScreen;
+

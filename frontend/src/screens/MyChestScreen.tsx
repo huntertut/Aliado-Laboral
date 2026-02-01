@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CV_EXAMPLES } from '../data/kitLaboralData';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
@@ -90,9 +90,9 @@ const MyChestScreen = () => {
                     <head>
                         <style>
                             body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.5; }
-                            h1 { color: #2c3e50; border-bottom: 2px solid ${theme.colors.primary}; padding-bottom: 10px; margin-bottom: 20px; }
-                            h2 { color: ${theme.colors.primary}; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-                            .intro { background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${theme.colors.primary}; margin-bottom: 25px; font-style: italic; }
+                            h1 { color: #2c3e50; border-bottom: 2px solid ${AppTheme.colors.primary}; padding-bottom: 10px; margin-bottom: 20px; }
+                            h2 { color: ${AppTheme.colors.primary}; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                            .intro { background-color: #f8f9fa; padding: 15px; border-left: 4px solid ${AppTheme.colors.primary}; margin-bottom: 25px; font-style: italic; }
                             .card { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 5px; }
                             .card-title { font-weight: bold; color: #2c3e50; font-size: 16px; margin-bottom: 5px; }
                             .card-desc { color: #555; margin-bottom: 8px; }
@@ -154,15 +154,15 @@ const MyChestScreen = () => {
                     <head>
                         <style>
                             body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.5; }
-                            h1 { color: #2c3e50; border-bottom: 2px solid ${theme.colors.primary}; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
-                            h2 { color: ${theme.colors.primary}; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                            h1 { color: #2c3e50; border-bottom: 2px solid ${AppTheme.colors.primary}; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+                            h2 { color: ${AppTheme.colors.primary}; margin-top: 25px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
                             .section-box { border: 1px solid #eee; padding: 15px; margin-bottom: 20px; border-radius: 10px; background-color: #fcfcfc; }
-                            .section-title { font-weight: bold; color: ${theme.colors.primary}; font-size: 18px; margin-bottom: 10px; }
+                            .section-title { font-weight: bold; color: ${AppTheme.colors.primary}; font-size: 18px; margin-bottom: 10px; }
                             .point-item { margin-bottom: 8px; }
-                            .point-bullet { color: ${theme.colors.primary}; margin-right: 10px; font-weight: bold; }
+                            .point-bullet { color: ${AppTheme.colors.primary}; margin-right: 10px; font-weight: bold; }
                             .footer-text { margin-top: 40px; font-style: italic; color: #7f8c8d; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-                            .step-box { background: #fff; border-left: 5px solid ${theme.colors.primary}; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-                            .step-num { font-weight: bold; color: ${theme.colors.primary}; font-size: 20px; }
+                            .step-box { background: #fff; border-left: 5px solid ${AppTheme.colors.primary}; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+                            .step-num { font-weight: bold; color: ${AppTheme.colors.primary}; font-size: 20px; }
                         </style>
                     </head>
                     <body>
@@ -303,7 +303,7 @@ const MyChestScreen = () => {
                 {/* CV Section */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Ionicons name="document-text" size={24} color={theme.colors.primary} style={styles.sectionIcon} />
+                        <Ionicons name="document-text" size={24} color={AppTheme.colors.primary} style={styles.sectionIcon} />
                         <View>
                             <Text style={styles.sectionTitle}>Ejemplos de Currículum (CV)</Text>
                             <Text style={styles.sectionDescription}>Plantillas modernas listas para descargar.</Text>
@@ -332,7 +332,7 @@ const MyChestScreen = () => {
                                             <Text style={styles.premiumText}>PRO</Text>
                                         </View>
                                     ) : (
-                                        <Ionicons name="cloud-download-outline" size={20} color={theme.colors.primary} />
+                                        <Ionicons name="cloud-download-outline" size={20} color={AppTheme.colors.primary} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -343,7 +343,7 @@ const MyChestScreen = () => {
                 {/* Letters Section */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Ionicons name="mail-open" size={24} color={theme.colors.primary} style={styles.sectionIcon} />
+                        <Ionicons name="mail-open" size={24} color={AppTheme.colors.primary} style={styles.sectionIcon} />
                         <View>
                             <Text style={styles.sectionTitle}>Cartas de Solicitud</Text>
                             <Text style={styles.sectionDescription}>Modelos para comunicarte formalmente.</Text>
@@ -372,7 +372,7 @@ const MyChestScreen = () => {
                                             <Text style={styles.premiumText}>PRO</Text>
                                         </View>
                                     ) : (
-                                        <Ionicons name="cloud-download-outline" size={20} color={theme.colors.primary} />
+                                        <Ionicons name="cloud-download-outline" size={20} color={AppTheme.colors.primary} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -383,7 +383,7 @@ const MyChestScreen = () => {
                 {/* Support Documents Section */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Ionicons name="information-circle" size={24} color={theme.colors.primary} style={styles.sectionIcon} />
+                        <Ionicons name="information-circle" size={24} color={AppTheme.colors.primary} style={styles.sectionIcon} />
                         <View>
                             <Text style={styles.sectionTitle}>Documentos de Apoyo</Text>
                             <Text style={styles.sectionDescription}>Guías referenciales para proteger tus derechos.</Text>
@@ -412,7 +412,7 @@ const MyChestScreen = () => {
                                             <Text style={styles.premiumText}>PRO</Text>
                                         </View>
                                     ) : (
-                                        <Ionicons name="eye-outline" size={20} color={theme.colors.primary} />
+                                        <Ionicons name="eye-outline" size={20} color={AppTheme.colors.primary} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -423,7 +423,7 @@ const MyChestScreen = () => {
                         style={styles.downloadAllGuide}
                         onPress={() => Alert.alert('Guía Completa', 'Puedes generar el PDF completo con todas las guías para consulta offline.')}
                     >
-                        <Ionicons name="download-outline" size={16} color={theme.colors.primary} />
+                        <Ionicons name="download-outline" size={16} color={AppTheme.colors.primary} />
                         <Text style={styles.downloadAllText}>Generar PDF de consulta offline</Text>
                     </TouchableOpacity>
                 </View>
@@ -431,7 +431,7 @@ const MyChestScreen = () => {
                 {/* Printable Guides Section */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Ionicons name="print" size={24} color={theme.colors.primary} style={styles.sectionIcon} />
+                        <Ionicons name="print" size={24} color={AppTheme.colors.primary} style={styles.sectionIcon} />
                         <View>
                             <Text style={styles.sectionTitle}>Guías Rápidas Imprimibles</Text>
                             <Text style={styles.sectionDescription}>Resúmenes visuales para descargar y tener siempre a la mano.</Text>
@@ -452,12 +452,12 @@ const MyChestScreen = () => {
                                     <Ionicons
                                         name="image-outline"
                                         size={20}
-                                        color={theme.colors.primary}
+                                        color={AppTheme.colors.primary}
                                     />
                                 </View>
                                 <Text style={styles.itemName}>{item.title}</Text>
                                 <View style={styles.actionContainer}>
-                                    <Ionicons name="cloud-download-outline" size={20} color={theme.colors.primary} />
+                                    <Ionicons name="cloud-download-outline" size={20} color={AppTheme.colors.primary} />
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
     },
     downloadAllText: {
         fontSize: 13,
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginLeft: 8,
         fontWeight: '500',
     },
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     footerAction: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 12,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
@@ -762,3 +762,4 @@ const styles = StyleSheet.create({
 });
 
 export default MyChestScreen;
+

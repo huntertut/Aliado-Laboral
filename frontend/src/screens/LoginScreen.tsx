@@ -144,7 +144,7 @@ const LoginScreen = () => {
             >
                 <View style={styles.logoContainer}>
                     <Image
-                        source={require('../../assets/images/logo.png')}
+                        source={require('../../assets/images/app_logo.png')}
                         style={styles.logo}
                         resizeMode="contain"
                     />
@@ -192,7 +192,7 @@ const LoginScreen = () => {
                         onPress={handleBiometricLogin}
                         disabled={localLoading}
                     >
-                        <Ionicons name="finger-print" size={32} color={theme.colors.primary} />
+                        <Ionicons name="finger-print" size={32} color={AppTheme.colors.primary} />
                         <Text style={styles.biometricText}>Ingresar con Huella/Rostro</Text>
                     </TouchableOpacity>
                 )}
@@ -438,3 +438,4 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
+

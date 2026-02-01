@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 
 const STATES = [
     'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
@@ -69,7 +69,7 @@ export const WorkerLaborDataSection = ({ data, onUpdate, isSaving }: Props) => {
                 {item}
             </Text>
             {item === selectedState && (
-                <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                <Ionicons name="checkmark" size={20} color={AppTheme.colors.primary} />
             )}
         </TouchableOpacity>
     );
@@ -118,7 +118,7 @@ export const WorkerLaborDataSection = ({ data, onUpdate, isSaving }: Props) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Text style={styles.label}>Salario Mensual Bruto ($)</Text>
                     <TouchableOpacity onPress={() => alert('El Salario Bruto es la cantidad total antes de impuestos y deducciones. El Neto es lo que realmente recibes en tu cuenta.')}>
-                        <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} style={{ marginBottom: 8 }} />
+                        <Ionicons name="information-circle-outline" size={18} color={AppTheme.colors.primary} style={{ marginBottom: 8 }} />
                     </TouchableOpacity>
                 </View>
                 <TextInput
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     selectorText: { fontSize: 16, color: '#2c3e50' },
     placeholderText: { fontSize: 16, color: '#95a5a6' },
     saveButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 10,
         padding: 15,
         alignItems: 'center',
@@ -250,5 +250,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     stateText: { fontSize: 16, color: '#333' },
-    selectedStateText: { color: theme.colors.primary, fontWeight: 'bold' },
+    selectedStateText: { color: AppTheme.colors.primary, fontWeight: 'bold' },
 });
+

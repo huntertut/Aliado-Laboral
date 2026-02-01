@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, 
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -170,7 +170,7 @@ const LawyersScreen = () => {
                 <View style={styles.actionButton}>
                     {isGated ? (
                         <View style={styles.lockIcon}>
-                            <Ionicons name="lock-closed" size={24} color={theme.colors.primary} />
+                            <Ionicons name="lock-closed" size={24} color={AppTheme.colors.primary} />
                         </View>
                     ) : (
                         <Ionicons name="chevron-forward" size={24} color="#999" />
@@ -183,7 +183,7 @@ const LawyersScreen = () => {
     if (loading) {
         return (
             <View style={styles.center}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                 <Text style={styles.loadingText}>Cargando abogados...</Text>
             </View>
         );
@@ -193,7 +193,7 @@ const LawyersScreen = () => {
         <View style={styles.container}>
             {/* Header */}
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme.colors.primary, '#3742fa']}
                 style={styles.headerGradient}
             >
                 <Text style={styles.header}>Aliado Premium</Text>
@@ -234,14 +234,14 @@ const LawyersScreen = () => {
                     style={styles.infoBanner}
                     onPress={() => setShowSubscriptionModal(true)}
                 >
-                    <Ionicons name="information-circle" size={24} color={theme.colors.primary} />
+                    <Ionicons name="information-circle" size={24} color={AppTheme.colors.primary} />
                     <View style={styles.bannerTextContainer}>
                         <Text style={styles.bannerTitle}>Acceso Completo por $29/mes</Text>
                         <Text style={styles.bannerText}>
                             Conectamos con los mejores abogados de todo México
                         </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
+                    <Ionicons name="chevron-forward" size={20} color={AppTheme.colors.primary} />
                 </TouchableOpacity>
             )}
 
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     bannerTitle: {
         fontSize: 15,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginBottom: 2,
     },
     bannerText: {
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 14,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     },
     specialty: {
         fontSize: 14,
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginTop: 2,
         fontWeight: '500',
     },
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: `${theme.colors.primary}15`,
+        backgroundColor: `${AppTheme.colors.primary}15`,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -436,8 +436,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     filterTextActive: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
 });
 
 export default LawyersScreen;
+

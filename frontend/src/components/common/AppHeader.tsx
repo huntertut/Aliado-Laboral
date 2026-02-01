@@ -2,7 +2,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert, TouchableWithoutFeedback } from 'react-native';
 
-// ... (imports remain)
+
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AppTheme } from '../../theme/colors';
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
     title,
@@ -121,7 +125,7 @@ const styles = StyleSheet.create({
         paddingTop: StatusBar.currentHeight || 40,
         paddingBottom: 16,
         paddingHorizontal: 20,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
     },
     container: {
         // Container is just for content, padding comes from wrapper
@@ -165,3 +169,4 @@ const styles = StyleSheet.create({
 });
 
 export default AppHeader;
+

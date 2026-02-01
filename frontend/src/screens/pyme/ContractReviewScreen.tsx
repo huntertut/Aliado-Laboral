@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/constants';
 import * as DocumentPicker from 'expo-document-picker';
@@ -57,7 +57,7 @@ const ContractReviewScreen = () => {
     const renderInitial = () => (
         <View style={styles.centerContent}>
             <View style={styles.iconCircle}>
-                <Ionicons name="scan-outline" size={60} color={theme.colors.primary} />
+                <Ionicons name="scan-outline" size={60} color={AppTheme.colors.primary} />
             </View>
             <Text style={styles.mainTitle}>Revisión Básica de Contratos</Text>
             <Text style={styles.subtitle}>
@@ -82,7 +82,7 @@ const ContractReviewScreen = () => {
 
     const renderAnalyzing = () => (
         <View style={styles.centerContent}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             <Text style={[styles.mainTitle, { marginTop: 20 }]}>Analizando documento...</Text>
             <Text style={styles.subtitle}>Buscando cláusulas esenciales...</Text>
         </View>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginTop: 10, lineHeight: 20 },
 
     uploadBtn: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         paddingVertical: 15, paddingHorizontal: 30, borderRadius: 25,
         marginTop: 30,
         elevation: 3
@@ -217,7 +217,8 @@ const styles = StyleSheet.create({
     proBtnText: { fontWeight: 'bold', color: '#333' },
 
     retryBtn: { padding: 15, alignItems: 'center' },
-    retryBtnText: { color: theme.colors.primary, fontWeight: 'bold' }
+    retryBtnText: { color: AppTheme.colors.primary, fontWeight: 'bold' }
 });
 
 export default ContractReviewScreen;
+

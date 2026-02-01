@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -127,7 +127,7 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
             <Modal visible={visible} animationType="fade" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.processingContainer}>
-                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                        <ActivityIndicator size="large" color={AppTheme.colors.primary} />
                         <Text style={styles.processingText}>Procesando pago...</Text>
                     </View>
                 </View>
@@ -152,14 +152,14 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                         {/* Header */}
                         <View style={styles.header}>
                             <View style={styles.iconCircle}>
-                                <Ionicons name="mail-outline" size={40} color={theme.colors.primary} />
+                                <Ionicons name="mail-outline" size={40} color={AppTheme.colors.primary} />
                             </View>
                             <Text style={styles.title}>Confirmar Contacto</Text>
                         </View>
 
                         {/* Lawyer Info */}
                         <View style={styles.lawyerCard}>
-                            <Ionicons name="person" size={20} color={theme.colors.primary} />
+                            <Ionicons name="person" size={20} color={AppTheme.colors.primary} />
                             <Text style={styles.lawyerName}>{lawyerName}</Text>
                         </View>
 
@@ -215,7 +215,7 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                                         <Text style={styles.gatewaySubtitle}>Pago inmediato con Stripe</Text>
                                     </View>
                                     {selectedGateway === 'stripe' && (
-                                        <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
+                                        <Ionicons name="checkmark-circle" size={24} color={AppTheme.colors.primary} />
                                     )}
                                 </View>
                                 {selectedGateway === 'stripe' && (
@@ -247,7 +247,7 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                                         <Text style={styles.gatewaySubtitle}>OXXO, Tarjeta, Efectivo</Text>
                                     </View>
                                     {selectedGateway === 'mercadopago' && (
-                                        <Ionicons name="checkmark-circle" size={24} color={theme.colors.primary} />
+                                        <Ionicons name="checkmark-circle" size={24} color={AppTheme.colors.primary} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -283,7 +283,7 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                             disabled={loading}
                         >
                             <LinearGradient
-                                colors={[theme.colors.secondary, '#f9ca24']}
+                                colors={[AppTheme.colors.secondary, '#f9ca24']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.gradientButton}
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: `${theme.colors.primary}15`,
+        backgroundColor: `${AppTheme.colors.primary}15`,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     lawyerCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: `${theme.colors.primary}10`,
+        backgroundColor: `${AppTheme.colors.primary}10`,
         padding: 14,
         borderRadius: 10,
         marginBottom: 20,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     lawyerName: {
         fontSize: 16,
         fontWeight: '600',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginLeft: 10,
     },
     paymentSection: {
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     price: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: theme.colors.secondary,
+        color: AppTheme.colors.secondary,
     },
     period: {
         fontSize: 14,
@@ -464,8 +464,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     gatewayCardActive: {
-        borderColor: theme.colors.primary,
-        backgroundColor: `${theme.colors.primary}05`,
+        borderColor: AppTheme.colors.primary,
+        backgroundColor: `${AppTheme.colors.primary}05`,
     },
     gatewayHeader: {
         flexDirection: 'row',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     gatewayTitleActive: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     gatewaySubtitle: {
         fontSize: 13,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
         paddingVertical: 4,
         paddingHorizontal: 12,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 12,
         alignSelf: 'flex-start',
     },
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -568,3 +568,4 @@ const styles = StyleSheet.create({
 });
 
 export default ContactPaymentModal;
+

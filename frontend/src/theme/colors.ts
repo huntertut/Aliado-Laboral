@@ -11,7 +11,7 @@ export const colors = {
     border: '#dfe4ea',
 };
 
-export const theme = {
+const _themeInternal = {
     colors,
     spacing: {
         xs: 4,
@@ -43,5 +43,13 @@ export const theme = {
     }
 };
 
-export const AppTheme = theme;
-console.log('🎨 Theme/Colors module loaded');
+// 1. Export standard AppTheme
+export const AppTheme = _themeInternal;
+
+// 2. Export legacy 'theme' for older files (Aliased to AppTheme)
+export const theme = _themeInternal;
+
+// 3. Export default for files using: import theme from '...'
+export default _themeInternal;
+
+console.log('🎨 Theme/Colors module loaded (FRESH LOAD - CACHE BUSTED)');

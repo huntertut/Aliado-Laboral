@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
-import { theme } from '../../theme/colors';
+import { AppTheme } from '../../theme/colors';
 import { API_URL } from '../../config/constants';
 import PaywallModal from '../../components/PaywallModal';
 import { AccessControlService } from '../../services/AccessControlService';
@@ -117,7 +117,7 @@ const HomePymeScreen = () => {
                 <View style={styles.heroCard}>
                     {isLoading ? (
                         <View style={styles.heroLoading}>
-                            <ActivityIndicator color={theme.colors.secondary} />
+                            <ActivityIndicator color={AppTheme.colors.secondary} />
                             <Text style={styles.heroLoadingText}>Calculando riesgos...</Text>
                         </View>
                     ) : (
@@ -219,7 +219,7 @@ const HomePymeScreen = () => {
                         style={[styles.toolItem, !isPremium && styles.toolItemLocked]}
                         onPress={() => handleFeatureAccess('Chat con Abogado', () => navigation.navigate('Lawyers'))}
                     >
-                        <Ionicons name="people-outline" size={18} color={isPremium ? theme.colors.primary : "#999"} />
+                        <Ionicons name="people-outline" size={18} color={isPremium ? AppTheme.colors.primary : "#999"} />
                         <View style={{ flex: 1 }}>
                             <Text style={[styles.toolText, !isPremium && { color: '#999' }]} numberOfLines={1}>Mis Abogados</Text>
                         </View>
@@ -403,3 +403,4 @@ const styles = StyleSheet.create({
 });
 
 export default HomePymeScreen;
+

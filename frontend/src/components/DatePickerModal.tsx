@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 interface DatePickerModalProps {
     visible: boolean;
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     selectedOption: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
     },
     optionText: {
         fontSize: 16,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     confirmButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 10,
         padding: 15,
         alignItems: 'center',
@@ -181,3 +181,4 @@ const styles = StyleSheet.create({
 });
 
 export default DatePickerModal;
+

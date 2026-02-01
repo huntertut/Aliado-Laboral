@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Modal, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -350,3 +350,4 @@ const styles = StyleSheet.create({
 });
 
 export default DonationModal;
+

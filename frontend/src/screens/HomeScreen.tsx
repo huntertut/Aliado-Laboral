@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Image,
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import DonationModal from '../components/DonationModal';
 import PanicButton from '../components/common/PanicButton';
@@ -117,11 +117,11 @@ const HomeScreen = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+            <StatusBar barStyle="light-content" backgroundColor={AppTheme.colors.primary} />
 
             {/* Hero Section with Gradient */}
             <LinearGradient
-                colors={[theme.colors.primary, '#3742fa']}
+                colors={[AppTheme.colors.primary, '#3742fa']}
                 style={styles.header}
             >
                 <View style={styles.headerTop}>
@@ -130,7 +130,7 @@ const HomeScreen = () => {
                         <Image
                             source={isPro
                                 ? require('../../assets/images/logo_m_pro.jpg')
-                                : require('../../assets/images/logo.png')
+                                : require('../../assets/images/app_logo.png')
                             }
                             style={styles.headerLogo}
                             resizeMode="contain"
@@ -249,7 +249,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        backgroundColor: AppTheme.colors.background,
     },
     header: {
         paddingTop: 60,
@@ -289,8 +289,8 @@ const styles = StyleSheet.create({
         marginRight: 12, // Added margin to replace gap
     },
     scrollContent: {
-        padding: theme.spacing.l,
-        paddingTop: theme.spacing.xl,
+        padding: AppTheme.spacing.l,
+        paddingTop: AppTheme.spacing.xl,
     },
     grid: {
         flexDirection: 'row',
@@ -299,13 +299,13 @@ const styles = StyleSheet.create({
     },
     cardContainer: {
         width: '48%',
-        marginBottom: theme.spacing.m,
-        borderRadius: theme.borderRadius.l,
-        ...theme.shadows.default,
+        marginBottom: AppTheme.spacing.m,
+        borderRadius: AppTheme.borderRadius.l,
+        ...AppTheme.shadows.default,
     },
     card: {
-        borderRadius: theme.borderRadius.l,
-        padding: theme.spacing.m,
+        borderRadius: AppTheme.borderRadius.l,
+        padding: AppTheme.spacing.m,
         alignItems: 'center',
         justifyContent: 'center',
         height: 150,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.25)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: theme.spacing.s,
+        marginBottom: AppTheme.spacing.s,
     },
     cardTitle: {
         fontSize: 14,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 3,
         borderWidth: 2,
-        borderColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
     },
     donateIcon: {
         fontSize: 24,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     donateText: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     footer: {
         alignItems: 'center',
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     creditsName: {
         fontSize: 11,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
     },
     logoImage: {
         width: 20,

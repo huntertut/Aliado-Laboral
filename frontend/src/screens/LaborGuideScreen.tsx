@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, SafeAre
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const LaborGuideScreen = () => {
     const navigation = useNavigation();
@@ -223,3 +223,4 @@ const styles = StyleSheet.create({
 });
 
 export default LaborGuideScreen;
+

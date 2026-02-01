@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../theme/colors';
+import { AppTheme } from '../../../../theme/colors';
 
 interface Props {
     data: any;
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 0,
     },
     saveButton: {
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 10,
         padding: 15,
         alignItems: 'center',
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     modalOptionActive: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
     closeBtn: {
@@ -409,7 +409,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     closeBtnText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
 });
+

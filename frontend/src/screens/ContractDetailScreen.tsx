@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { CONTRACT_TYPES } from '../data/contractTypes';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const ContractDetailScreen = () => {
     const route = useRoute();
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 20,
         marginBottom: 20,
-        ...theme.shadows.default,
+        ...AppTheme.shadows.default,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 15,
-        ...theme.shadows.default,
+        ...AppTheme.shadows.default,
     },
     subTitle: {
         fontSize: 16,
@@ -224,3 +224,4 @@ const styles = StyleSheet.create({
 });
 
 export default ContractDetailScreen;
+

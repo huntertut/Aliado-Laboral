@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { CONTRACT_TYPES } from '../data/contractTypes';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 
 const ContractTypesScreen = () => {
     const navigation = useNavigation<any>();
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         padding: 20,
         marginBottom: 20,
-        ...theme.shadows.default
+        ...AppTheme.shadows.default
     },
     typeHeader: {
         flexDirection: 'row',
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     bullet: {
         width: 8,
         height: 24,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         borderRadius: 4,
         marginRight: 10,
     },
@@ -89,10 +89,11 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     moreInfo: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
         fontSize: 14,
     }
 });
 
 export default ContractTypesScreen;
+

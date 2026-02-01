@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { useAuth } from '../context/AuthContext';
 import AppHeader from '../components/common/AppHeader';
@@ -408,7 +408,7 @@ const SubscriptionManagementScreen = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <ActivityIndicator size="large" color={AppTheme.colors.primary} />
             </View>
         );
     }
@@ -613,7 +613,7 @@ const SubscriptionManagementScreen = () => {
                             <Switch
                                 value={subscription.subscription.autoRenew}
                                 onValueChange={toggleAutoRenew}
-                                trackColor={{ false: '#e0e0e0', true: theme.colors.primary }}
+                                trackColor={{ false: '#e0e0e0', true: AppTheme.colors.primary }}
                                 thumbColor={subscription.subscription.autoRenew ? '#fff' : '#f4f3f4'}
                             />
                         </View>
@@ -978,3 +978,4 @@ const styles = StyleSheet.create({
 });
 
 export default SubscriptionManagementScreen;
+

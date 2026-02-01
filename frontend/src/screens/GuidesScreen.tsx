@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Modal, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/colors';
+import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,7 +82,7 @@ const GuidesScreen = () => {
                     <Ionicons
                         name={isExpanded ? "chevron-up" : "chevron-down"}
                         size={24}
-                        color={theme.colors.primary}
+                        color={AppTheme.colors.primary}
                     />
                 </TouchableOpacity>
                 {isExpanded && (
@@ -99,14 +99,14 @@ const GuidesScreen = () => {
             <AppHeader
                 title="PROFEDET"
                 subtitle="Tu Defensor Laboral Gratuito"
-                gradient={[theme.colors.primary, '#3742fa']}
+                gradient={[AppTheme.colors.primary, '#3742fa']}
             />
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {/* Quick Summary */}
                 <View style={styles.summaryCard}>
                     <View style={styles.summaryItem}>
-                        <Ionicons name="shield-checkmark" size={24} color={theme.colors.primary} />
+                        <Ionicons name="shield-checkmark" size={24} color={AppTheme.colors.primary} />
                         <View style={{ flex: 1, marginLeft: 12 }}>
                             <Text style={styles.summaryLabel}>¿Qué es?</Text>
                             <Text style={styles.summaryText}>
@@ -116,7 +116,7 @@ const GuidesScreen = () => {
                     </View>
 
                     <View style={styles.summaryItem}>
-                        <Ionicons name="help-buoy" size={24} color={theme.colors.primary} />
+                        <Ionicons name="help-buoy" size={24} color={AppTheme.colors.primary} />
                         <View style={{ flex: 1, marginLeft: 12 }}>
                             <Text style={styles.summaryLabel}>¿Para qué?</Text>
                             <Text style={styles.summaryText}>
@@ -145,7 +145,7 @@ const GuidesScreen = () => {
 
                         <View style={styles.delegationInfo}>
                             <View style={styles.infoRow}>
-                                <Ionicons name="location" size={20} color={theme.colors.primary} />
+                                <Ionicons name="location" size={20} color={AppTheme.colors.primary} />
                                 <View style={{ flex: 1, marginLeft: 10 }}>
                                     <Text style={styles.infoLabel}>Dirección:</Text>
                                     <Text style={styles.infoText}>{selectedLocation.address}</Text>
@@ -153,7 +153,7 @@ const GuidesScreen = () => {
                             </View>
 
                             <View style={styles.infoRow}>
-                                <Ionicons name="call" size={20} color={theme.colors.primary} />
+                                <Ionicons name="call" size={20} color={AppTheme.colors.primary} />
                                 <View style={{ flex: 1, marginLeft: 10 }}>
                                     <Text style={styles.infoLabel}>Teléfono:</Text>
                                     <TouchableOpacity onPress={() => Linking.openURL(`tel:${selectedLocation.phone}`)}>
@@ -165,7 +165,7 @@ const GuidesScreen = () => {
                             </View>
 
                             <View style={styles.infoRow}>
-                                <Ionicons name="time" size={20} color={theme.colors.primary} />
+                                <Ionicons name="time" size={20} color={AppTheme.colors.primary} />
                                 <View style={{ flex: 1, marginLeft: 10 }}>
                                     <Text style={styles.infoLabel}>Horario:</Text>
                                     <Text style={styles.infoText}>Lunes a Viernes, de 9:00 a.m. a 6:00 p.m.</Text>
@@ -177,7 +177,7 @@ const GuidesScreen = () => {
                             style={styles.changeStateButton}
                             onPress={() => setShowStateSelector(true)}
                         >
-                            <Ionicons name="location-outline" size={18} color={theme.colors.primary} />
+                            <Ionicons name="location-outline" size={18} color={AppTheme.colors.primary} />
                             <Text style={styles.changeStateText}>¿No es tu estado? Cambiar ubicación</Text>
                         </TouchableOpacity>
                     </View>
@@ -327,7 +327,7 @@ const GuidesScreen = () => {
                                         {item.state}
                                     </Text>
                                     {item.state === userState && (
-                                        <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                                        <Ionicons name="checkmark" size={20} color={AppTheme.colors.primary} />
                                     )}
                                 </TouchableOpacity>
                             )}
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     summaryLabel: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginBottom: 4,
     },
     summaryText: {
@@ -397,8 +397,8 @@ const styles = StyleSheet.create({
         padding: 20,
         marginBottom: 20,
         borderWidth: 2,
-        borderColor: theme.colors.primary,
-        shadowColor: theme.colors.primary,
+        borderColor: AppTheme.colors.primary,
+        shadowColor: AppTheme.colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     delegationTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginBottom: 15,
     },
     delegationInfo: {
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
     phoneLink: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         textDecorationLine: 'underline',
     },
     changeStateButton: {
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     },
     changeStateText: {
         fontSize: 14,
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         marginLeft: 8,
         fontWeight: '600',
     },
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 15,
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     },
     tableHeader: {
         flexDirection: 'row',
-        backgroundColor: theme.colors.primary,
+        backgroundColor: AppTheme.colors.primary,
         padding: 12,
         borderRadius: 8,
         marginBottom: 2,
@@ -649,9 +649,10 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     selectedStateItemText: {
-        color: theme.colors.primary,
+        color: AppTheme.colors.primary,
         fontWeight: 'bold',
     },
 });
 
 export default GuidesScreen;
+
