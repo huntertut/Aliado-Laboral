@@ -1,17 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import AppNavigator from './src/navigation/AppNavigator'; // ENABLED
+import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useNotifications } from './src/hooks/useNotifications';
-
-// MOCK REMOVED
 
 export default function App() {
     // Initialize notifications hook
     useNotifications();
 
-    // console.log('[DEBUG] App.tsx Rendering with Providers...');
+    console.log('[DEBUG] App.tsx Rendering...');
 
     return (
         <StripeProvider
@@ -23,22 +20,3 @@ export default function App() {
         </StripeProvider>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#2ecc71', // GREEN
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    text: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 10,
-    },
-    subtext: {
-        fontSize: 16,
-        color: 'white',
-    }
-});

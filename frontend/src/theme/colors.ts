@@ -52,4 +52,4 @@ export const theme = _themeInternal;
 // 3. Export default for files using: import theme from '...'
 export default _themeInternal;
 
-console.log('🎨 Theme/Colors module loaded (FRESH LOAD - CACHE BUSTED)');
+console.log('🎨 Theme/Colors module loaded');
