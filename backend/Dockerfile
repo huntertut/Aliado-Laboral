@@ -11,10 +11,10 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies including devDependencies for build
-# Use --ignore-scripts to prevent postinstall from failing before files are ready
-RUN npm ci --ignore-scripts
+# Scripts are now safe because prisma is copied above
+RUN npm ci
 
-# Now run prisma generate explicitly with files present
+# Now run prisma generate explicitly (redundant if postinstall runs it, but safe)
 RUN npx prisma generate
 
 # Copy source code
@@ -36,7 +36,9 @@ COPY package*.json ./
 # Need prisma schema present for postinstall or runtime usage
 COPY prisma ./prisma/
 
-RUN npm ci --only=production --ignore-scripts
+# Allow scripts to run (essential for bcrypt native bindings)
+RUN npm ci --only=production
+
 
 # Run prisma generate for production
 RUN npx prisma generate
