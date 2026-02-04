@@ -7,13 +7,13 @@ services:
     restart: always
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
-      # Conecta al servicio 'db' definido abajo
+      # Sobrescribimos esto solo si es necesario, de lo contrario lo lee del .env
       - DATABASE_URL=postgresql://user:password@db:5432/aliado_laboral?schema=public
       - NODE_ENV=production
       - PORT=3000
-      - JWT_SECRET=cambiar_esto_por_secreto_seguro
-      # Agrega aquí tus otras variables (Stripe, Firebase)
     depends_on:
       - db
 
