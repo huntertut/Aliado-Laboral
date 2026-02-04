@@ -1,5 +1,5 @@
 # Build Stage
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -8,9 +8,10 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies including devDependencies for build
-RUN npm ci
+# Use --ignore-scripts to prevent postinstall from failing before files are ready
+RUN npm ci --ignore-scripts
 
-# Generate Prisma Client
+# Now run prisma generate explicitly with files present
 RUN npx prisma generate
 
 # Copy source code
@@ -20,17 +21,19 @@ COPY . .
 RUN npm run build
 
 # Production Stage
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 # Install only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+# Need prisma schema present for postinstall or runtime usage
+COPY prisma ./prisma/
 
-# Copy built artifacts and prisma schema
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+RUN npm ci --only=production --ignore-scripts
+
+# Run prisma generate for production
+RUN npx prisma generate
 
 # Environment variables (Defaults, overridden by Digital Ocean)
 ENV PORT=3000
