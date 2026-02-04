@@ -41,6 +41,9 @@ RUN npm ci --only=production --ignore-scripts
 # Run prisma generate for production
 RUN npx prisma generate
 
+# Copy built artifacts from builder stage (FIX: This was missing!)
+COPY --from=builder /app/dist ./dist
+
 # Environment variables (Defaults, overridden by Digital Ocean)
 ENV PORT=3000
 ENV NODE_ENV=production
