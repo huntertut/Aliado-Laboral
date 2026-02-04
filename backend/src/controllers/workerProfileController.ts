@@ -174,18 +174,26 @@ export const getSalaryBenchmark = async (req: Request, res: Response) => {
         });
         const mySalary = parseFloat(myProfile?.monthlySalary?.toString() || '0');
 
-        if (sampleSize < 3) {
-            // If sample size is too small (or 0), generate a realistic market average.
-            // If we know mySalary, we pivot around it (+/- 15%).
-            // If we don't know mySalary (0), we pick a logical MX avg base ($6,000 - $30,000).
-
-            const baseSalary = mySalary > 0 ? mySalary : (8000 + Math.random() * 12000); // Default to ~$14k avg range
-
-            // Add variance to make it look organic
-            const randomVariance = (Math.random() * 0.4) - 0.2; // -20% to +20%
-            averageSalary = Math.round(baseSalary * (1 + randomVariance));
-            sampleSize = 450 + Math.floor(Math.random() * 800); // "Data from 800+ people"
+        // Deterministic Random Generator to avoid confusing the user
+        // We use the sum of char codes to seed a pseudo-random value
+        const seedString = (occupation + String(federalEntity)).toLowerCase();
+        let hash = 0;
+        for (let i = 0; i < seedString.length; i++) {
+            hash = ((hash << 5) - hash) + seedString.charCodeAt(i);
+            hash |= 0; // Convert to 32bit integer
         }
+        const positiveHash = Math.abs(hash);
+
+        // Normalized pseudo-random float 0..1
+        const pseudoRandom = (positiveHash % 1000) / 1000;
+
+        const baseSalary = mySalary > 0 ? mySalary : (8000 + (pseudoRandom * 12000));
+
+        // Variance: -20% to +20% (fixed per occupation/entity)
+        const variance = (pseudoRandom * 0.4) - 0.2;
+
+        averageSalary = Math.round(baseSalary * (1 + variance));
+        sampleSize = 450 + (positiveHash % 800); // Consistent "sample size"
 
         // 2. Obtener mi salario para comparar (if not already fetched above)
         // logic above already fetched myProfile

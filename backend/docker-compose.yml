@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Tu Aplicación Backend
+  api:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Conecta al servicio 'db' definido abajo
+      - DATABASE_URL=postgresql://user:password@db:5432/aliado_laboral?schema=public
+      - NODE_ENV=production
+      - PORT=3000
+      - JWT_SECRET=cambiar_esto_por_secreto_seguro
+      # Agrega aquí tus otras variables (Stripe, Firebase)
+    depends_on:
+      - db
+
+  # Base de Datos PostgreSQL (Costo $0 extra en tu Droplet)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aliado_laboral
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # Mapeamos al 5433 externo para NO chocar si alguna vez quisieras instalar algo en el 5432
+      # Internamente la app se conecta al 5432 del contenedor
+      - "5433:5432"
+
+volumes:
+  postgres_data:

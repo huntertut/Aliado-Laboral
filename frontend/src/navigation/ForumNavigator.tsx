@@ -26,7 +26,7 @@ const ForumNavigator = () => {
             <Stack.Screen
                 name="ForumList"
                 component={AnonymousForumScreen}
-                options={{ title: 'Foro Comunitario' }}
+                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="CreatePost"

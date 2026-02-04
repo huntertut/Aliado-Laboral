@@ -44,14 +44,14 @@ const HomeScreen = () => {
     const menuItems = [
         {
             title: 'Guía Laboral',
-            route: 'LaborGuide',
+            route: 'WorkerRights',
             icon: 'book-outline',
             gradient: ['#FF9A9E', '#FECFEF'],
             premiumGradient: ['#FF6B6B', '#EE5253']
         },
         {
             title: 'Mi Kit Laboral',
-            route: 'MyChest',
+            route: 'Vault',
             icon: 'briefcase-outline',
             gradient: ['#667eea', '#764ba2'],
             premiumGradient: ['#341f97', '#5f27cd']
@@ -107,7 +107,7 @@ const HomeScreen = () => {
         },
         {
             title: 'Foro Anónimo',
-            route: 'AnonymousForum',
+            route: 'Forum',
             icon: 'people-outline',
             gradient: ['#fab1a0', '#e17055'],
             premiumGradient: ['#d35400', '#e74c3c']

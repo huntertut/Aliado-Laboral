@@ -117,6 +117,11 @@ const ChatScreen = () => {
 
     const renderPersonaSelection = () => (
         <View style={styles.selectionContainer}>
+            {/* Added: Navigation Header for Selection Screen */}
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ position: 'absolute', top: 50, left: 20, zIndex: 10, padding: 8 }}>
+                <Ionicons name="arrow-back" size={28} color="#333" />
+            </TouchableOpacity>
+
             <Text style={styles.selectionTitle}>Elige a tu Asesor</Text>
             <Text style={styles.selectionSubtitle}>Selecciona al experto que mejor se adapte a tu necesidad actual.</Text>
 

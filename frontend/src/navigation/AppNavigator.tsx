@@ -107,32 +107,32 @@ const AppNavigator = () => {
                         )}
 
                         {/* Common Screens */}
-                        <Stack.Screen name="Calculator" component={CalculatorScreen} options={{ title: 'Calculadora' }} />
-                        <Stack.Screen name="RightsCalculator" component={RightsCalculatorScreen} options={{ title: 'Calculadora de Derechos' }} />
-                        <Stack.Screen name="Guides" component={GuidesScreen} options={{ title: 'Guías Laborales' }} />
-                        <Stack.Screen name="GuideDetail" component={GuideDetailScreen} options={{ title: 'Detalle de Guía' }} />
-                        <Stack.Screen name="Lawyers" component={LawyersScreen} options={{ title: 'Directorio de Abogados' }} />
-                        <Stack.Screen name="LawyerDetail" component={LawyerDetailScreen} options={{ title: 'Perfil del Abogado' }} />
-                        <Stack.Screen name="History" component={HistoryScreen} options={{ title: 'Historial' }} />
-                        <Stack.Screen name="AddIncident" component={AddIncidentScreen} options={{ title: 'Reportar Incidente' }} />
-                        <Stack.Screen name="Chat" component={ChatScreen} options={{ title: 'Asistente Legal IA' }} />
-                        <Stack.Screen name="Problems" component={ProblemsScreen} options={{ title: 'Problemas Comunes' }} />
-                        <Stack.Screen name="ProblemDetail" component={ProblemDetailScreen} options={{ title: 'Detalle del Problema' }} />
-                        <Stack.Screen name="ImssNom" component={ImssNomScreen} options={{ title: 'IMSS y Nómina' }} />
-                        <Stack.Screen name="Indemnizacion" component={IndemnizacionScreen} options={{ title: 'Indemnización' }} />
-                        <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ title: 'Noticias Laborales' }} />
-                        <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Mi Perfil' }} />
-                        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Política de Privacidad', headerShown: true }} />
-                        <Stack.Screen name="Forum" component={ForumNavigator} options={{ headerShown: false, title: 'Foro Comunitario' }} />
-                        <Stack.Screen name="ForumDetail" component={ForumDetailScreen} options={{ title: 'Discusi\u00f3n', headerShown: true }} />
-                        <Stack.Screen name="SubscriptionManagement" component={SubscriptionManagementScreen} options={{ title: 'Suscripciones', headerShown: true }} />
-                        <Stack.Screen name="SalaryThermometer" component={SalaryThermometerScreen} options={{ title: 'Termómetro Salarial', headerShown: true }} />
-                        <Stack.Screen name="Vault" component={VaultScreen} options={{ title: 'Bóveda de Documentos', headerShown: true }} />
-                        <Stack.Screen name="WorkerRights" component={WorkerRightsScreen} options={{ title: 'Mis Derechos', headerShown: true }} />
-                        <Stack.Screen name="ProfedetInfo" component={ProfedetInfoWizardScreen} options={{ title: 'Asesoría PROFEDET', headerShown: true }} />
-                        <Stack.Screen name="Benefits" component={BenefitsScreen} options={{ title: 'Mis Prestaciones', headerShown: true }} />
-                        <Stack.Screen name="CreateContactRequest" component={CreateContactRequestScreen} options={{ title: 'Contactar Abogado', headerShown: true }} />
-                        <Stack.Screen name="LaborDocuments" component={LaborDocumentsScreen} options={{ title: 'Generador de Documentos', headerShown: true }} />
+                        <Stack.Screen name="Calculator" component={CalculatorScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="RightsCalculator" component={RightsCalculatorScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Guides" component={GuidesScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="GuideDetail" component={GuideDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Lawyers" component={LawyersScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="LawyerDetail" component={LawyerDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="AddIncident" component={AddIncidentScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Problems" component={ProblemsScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="ProblemDetail" component={ProblemDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="ImssNom" component={ImssNomScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Indemnizacion" component={IndemnizacionScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="NewsFeed" component={NewsFeedScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Forum" component={ForumNavigator} options={{ headerShown: false }} />
+                        <Stack.Screen name="ForumDetail" component={ForumDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="SubscriptionManagement" component={SubscriptionManagementScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="SalaryThermometer" component={SalaryThermometerScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Vault" component={VaultScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="WorkerRights" component={WorkerRightsScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="ProfedetInfo" component={ProfedetInfoWizardScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Benefits" component={BenefitsScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="CreateContactRequest" component={CreateContactRequestScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="LaborDocuments" component={LaborDocumentsScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
                     // Auth Stack
