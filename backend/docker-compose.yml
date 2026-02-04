@@ -15,6 +15,8 @@ services:
       - DATABASE_URL=postgresql://user:password@127.0.0.1:5432/aliado_laboral?schema=public
       - NODE_ENV=production
       - PORT=3000
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json
     depends_on:
       - db
 
