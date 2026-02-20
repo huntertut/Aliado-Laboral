@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=file:/app/dev.db
+    volumes:
+      - ./dev.db:/app/dev.db
+    restart: always
+    network_mode: "host"
+    command: tail -f /dev/null

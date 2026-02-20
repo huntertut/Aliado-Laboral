@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "Aliado Laboral",
+    "slug": "aliado-laboral",
+    "version": "1.19.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/images/aliado_logo_new.png",
+    "splash": {
+      "image": "./assets/images/app_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e3799"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aliadolaboral.app"
+    },
+    "android": {
+      "package": "com.aliadolaboral.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/aliado_logo_new.png",
+        "backgroundColor": "#1e3799",
+        "googleServicesFile": "./google-services.json"
+      },
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/images/app_logo.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-local-authentication",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.aliadolaboral",
+          "enableGooglePay": true
+        }
+      ],
+      "expo-asset"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "edbaa94d-8deb-4e42-9eae-b9d597dcf595"
+      }
+    }
+  }
+}
