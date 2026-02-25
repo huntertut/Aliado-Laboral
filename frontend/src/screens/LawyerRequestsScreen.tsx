@@ -184,11 +184,22 @@ const LawyerRequestsScreen = () => {
             }
         };
 
+        const isNeedsAttention = item.subStatus === 'needs_attention';
+
         return (
             <TouchableOpacity
-                style={[styles.requestCard, !canAccess && styles.gatedCard]}
+                style={[
+                    styles.requestCard,
+                    !canAccess && styles.gatedCard,
+                    isNeedsAttention && { borderColor: '#e74c3c', borderWidth: 2 }
+                ]}
                 onPress={handlePress}
             >
+                {isNeedsAttention && (
+                    <View style={{ backgroundColor: '#e74c3c', padding: 4, alignItems: 'center', borderTopLeftRadius: 10, borderTopRightRadius: 10, marginHorizontal: -16, marginTop: -16, marginBottom: 12 }}>
+                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>🚨 Atención Requerida (SLA 5 días)</Text>
+                    </View>
+                )}
                 {/* Worker name */}
                 <View style={styles.workerInfo}>
                     <View style={styles.avatar}>

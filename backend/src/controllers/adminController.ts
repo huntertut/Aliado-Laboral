@@ -453,22 +453,103 @@ export const purgeCaseData = async (req: Request, res: Response) => {
             });
         }
 
-        await storageService.purgeContactRequestData(requestId);
+        // Find all legal cases associated with this contact request's worker
+        const legalCases = await prisma.legalCase.findMany({
+            where: { userId: request.workerId }
+        });
+        const caseIds = legalCases.map(lc => lc.id);
 
-        // Log admin activity
+        // Delete case history
+        await prisma.caseHistory.deleteMany({
+            where: { caseId: { in: caseIds } }
+        });
+
+        // Delete the cases themselves
+        await prisma.legalCase.deleteMany({
+            where: { userId: request.workerId }
+        });
+
+        // Finally, delete the Contact Request
+        await prisma.contactRequest.delete({
+            where: { id: requestId }
+        });
+
+        // Log the purge
         await prisma.activityLog.create({
             data: {
                 userId: (req as any).user?.id,
-                action: 'purge_case_data',
-                details: `Purged data for Request ID: ${requestId}`,
-                createdAt: new Date()
+                action: 'PURGE_CASE_DATA',
+                details: `Purged case ${requestId} and associated user data for worker ${request.workerId}`,
+                ipAddress: req.ip,
+                userAgent: req.headers['user-agent']
             }
         });
 
-        res.json({ success: true, message: 'Datos purgados correctamente por políticas de privacidad' });
-    } catch (error) {
-        console.error('Purge case data error:', error);
-        res.status(500).json({ error: 'Error al purgar los datos' });
+        res.json({ success: true, message: 'Case data purged successfully' });
+
+    } catch (error: any) {
+        console.error('Error purging case data:', error);
+        res.status(500).json({ error: 'Failed to purge case data', details: error.message });
+    }
+};
+
+/**
+ * ⚖️ SISTEMA DE STRIKES (Tolerancia Cero)
+ * Añade un strike manual a un abogado (Admin)
+ */
+export const addStrikeToLawyer = async (req: Request, res: Response) => {
+    try {
+        const { lawyerId } = req.params;
+        const { reason } = req.body;
+
+        const lawyer = await prisma.lawyer.findUnique({
+            where: { id: lawyerId }
+        });
+
+        if (!lawyer) {
+            return res.status(404).json({ error: 'Abogado no encontrado' });
+        }
+
+        const updatedLawyer = await prisma.lawyer.update({
+            where: { id: lawyerId },
+            data: { strikes: { increment: 1 } }
+        });
+
+        // Suspensión Automática al llegar a 3
+        if (updatedLawyer.strikes >= 3 && updatedLawyer.status !== 'SUSPENDED') {
+            await prisma.lawyer.update({
+                where: { id: lawyerId },
+                data: { status: 'SUSPENDED' }
+            });
+
+            await prisma.adminAlert.create({
+                data: {
+                    type: 'lawyer_suspended',
+                    message: `Abogado ${lawyerId} suspendido por alcanzar 3 strikes (Razón del último: ${reason || 'Manual'}).`,
+                    severity: 'high',
+                    relatedUserId: updatedLawyer.userId
+                }
+            });
+        }
+
+        await prisma.activityLog.create({
+            data: {
+                userId: (req as any).user?.id,
+                action: 'ADD_STRIKE',
+                details: `Strike añadido a abogado ${lawyerId}. Razón: ${reason}. Total strikes: ${updatedLawyer.strikes}`,
+                ipAddress: req.ip
+            }
+        });
+
+        res.json({
+            success: true,
+            message: `Strike añadido correctamente. Total: ${updatedLawyer.strikes}`,
+            lawyerStatus: updatedLawyer.strikes >= 3 ? 'SUSPENDED' : lawyer.status
+        });
+
+    } catch (error: any) {
+        console.error('Error adding strike:', error);
+        res.status(500).json({ error: 'Error interno del servidor al aplicar strike' });
     }
 };
 

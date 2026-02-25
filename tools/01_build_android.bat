@@ -39,6 +39,13 @@ set NODE_ENV=development
 
 echo [INFO] Running npm install...
 call npm install --legacy-peer-deps
+echo [INFO] Patching missing expo-modules-autolinking/android...
+if exist "%SOURCE_DIR%\node_modules\expo-modules-autolinking\android" (
+  mkdir "%TEMP_BUILD_DIR%\node_modules\expo-modules-autolinking\android" 2>nul
+  robocopy "%SOURCE_DIR%\node_modules\expo-modules-autolinking\android" "%TEMP_BUILD_DIR%\node_modules\expo-modules-autolinking\android" /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS
+) else (
+  echo [ERROR] Source autolinking android folder NOT FOUND. Build will likely fail.
+)
 
 echo.
 echo 3.5. Patching React Native (NDK r26 compat)...
@@ -104,4 +111,4 @@ cd /d "%ORIGINAL_DIR%"
 rmdir /s /q "%TEMP_BUILD_DIR%"
 
 echo Done.
-pause
+:: pause

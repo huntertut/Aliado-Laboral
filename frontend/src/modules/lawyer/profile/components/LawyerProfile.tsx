@@ -103,6 +103,21 @@ export const LawyerProfile = ({ data, onUpdate, isSaving }: Props) => {
 
     return (
         <View style={styles.container}>
+            {/* Strike Warning Banner */}
+            {data?.strikes > 0 && (
+                <View style={styles.strikeBanner}>
+                    <Ionicons name="warning" size={24} color="#fff" />
+                    <View style={styles.strikeTextContainer}>
+                        <Text style={styles.strikeTitle}>
+                            Tienes {data.strikes} Strike{data.strikes > 1 ? 's' : ''} Automático{data.strikes > 1 ? 's' : ''}
+                        </Text>
+                        <Text style={styles.strikeDescription}>
+                            Al juntar 3 strikes, tu cuenta será suspendida definitivamente de la plataforma. Evita malas prácticas y cumple el SLA.
+                        </Text>
+                    </View>
+                </View>
+            )}
+
             {/* Photo & Bio Section (New) */}
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Perfil Público</Text>
@@ -203,6 +218,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 10,
+    },
+    // Strike Banner
+    strikeBanner: {
+        backgroundColor: '#e74c3c',
+        flexDirection: 'row',
+        padding: 15,
+        marginHorizontal: 20,
+        borderRadius: 12,
+        marginBottom: 20,
+        marginTop: 10,
+        alignItems: 'center',
+        elevation: 3,
+    },
+    strikeTextContainer: {
+        flex: 1,
+        marginLeft: 15,
+    },
+    strikeTitle: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginBottom: 4,
+    },
+    strikeDescription: {
+        color: '#fff',
+        fontSize: 13,
+        opacity: 0.9,
     },
     // New Styles
     section: {

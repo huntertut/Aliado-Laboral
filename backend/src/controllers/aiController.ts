@@ -24,6 +24,7 @@ LIMITACIONES IMPORTANTES:
 - No das asesoría legal personalizada vinculante.
 - No sustituyes a un profesional.
 - En casos complejos, recomiendas contactar a un abogado (Versión PRO).
+- RESTRICCIÓN ESTRICTA: Solo puedes hablar de temas legales y laborales. Si el usuario pregunta por cualquier otro tema (ej. recetas, programación, cosas que no sean de derecho), debes negarte a responder y redirigirlo a temas legales.
 
 MODELO DE NEGOCIO (Aplicar de forma sutil):
 - La app es gratuita.
@@ -47,6 +48,7 @@ LIMITACIONES IMPORTANTES:
 - No das asesoría legal personalizada, sino informativa.
 - No sustituyes a un profesional.
 - En casos complejos, recomiendas contactar a un abogado.
+- RESTRICCIÓN ESTRICTA: Solo puedes hablar de temas legales y laborales. Si el usuario pregunta por cualquier otro tema (ej. recetas, programación, cosas que no sean de derecho), debes negarte a responder y redirigirlo a temas legales.
 
 MODELO DE NEGOCIO:
 - La app es gratuita.
@@ -80,14 +82,11 @@ const trimHistory = (messages: any[], systemPrompt: string) => {
 };
 
 // 4. RATE LIMITING & QUOTA (Database Driven)
-const checkAndTrackQuota = async (userId: string | undefined): Promise<boolean> => {
+const checkAndTrackQuota = async (user: any): Promise<boolean> => {
     // Si no hay usuario (guest), aplicamos un límite simple en memoria o permitimos poco (MVP: Allow)
     // Pero idealmente requerimos Auth. Asumiremos Auth es opcional en chat básico? 
     // Si es ruta protegida, req.user existe.
-    if (!userId) return true;
-
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return false;
+    if (!user) return true;
 
     // Reset diario
     const now = new Date();
@@ -96,7 +95,7 @@ const checkAndTrackQuota = async (userId: string | undefined): Promise<boolean> 
 
     if (isNewDay) {
         await prisma.user.update({
-            where: { id: userId },
+            where: { id: user.id },
             data: { dailyTokenCount: 0, lastTokenReset: now }
         });
         return true;
@@ -130,8 +129,10 @@ export const chatWithAI = async (req: any, res: Response) => {
         const { message, messages, persona, complexity = 'CHAT_BASIC' } = req.body;
         const userId = req.user?.id;
 
+        const dbUser = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+
         // Validar Quota
-        const canProceed = await checkAndTrackQuota(userId);
+        const canProceed = await checkAndTrackQuota(dbUser);
         if (!canProceed) {
             return res.status(429).json({
                 error: 'Límite diario excedido 🛑',
@@ -141,7 +142,18 @@ export const chatWithAI = async (req: any, res: Response) => {
             });
         }
 
-        const systemPrompt = PROMPTS[persona as 'elias' | 'veronica'] || PROMPTS.elias;
+        const basePrompt = PROMPTS[persona as 'elias' | 'veronica'] || PROMPTS.elias;
+        const userName = dbUser?.fullName || 'Usuario';
+        const userPlan = dbUser?.plan || 'Gratis';
+
+        const systemPrompt = `${basePrompt}
+
+CONTEXTO DEL USUARIO:
+- Nombre: ${userName}
+- Plan de Suscripción: ${userPlan}
+
+INSTRUCCIONES DE INTERACCIÓN:
+- IMPORTANTE: En tu primera respuesta (o si notas que es el comienzo de una interacción), saluda usando el nombre del usuario y pregúntale de forma empática y breve cómo se encuentra de salud el día de hoy antes de entrar en los temas legales.`;
 
         // Normalizar entrada: Support both single 'message' and history 'messages'
         let conversationHistory: any[] = [];
@@ -171,12 +183,14 @@ export const chatWithAI = async (req: any, res: Response) => {
             baseURL: 'https://api.groq.com/openai/v1'
         });
 
+        console.log(`[AI] Creating completion with model ${selectedModel} using key ${process.env.GROQ_API_KEY?.substring(0, 5)}...`);
         const completion = await groq.chat.completions.create({
             messages: finalMessages,
             model: selectedModel,
             temperature: 0.5,
             max_tokens: maxTokens,
         });
+        console.log(`[AI] Completion received.`);
 
         const responseText = completion.choices[0]?.message?.content || "Lo siento, hubo un error de conexión.";
         const totalTokens = completion.usage?.total_tokens || 0;

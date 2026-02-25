@@ -1,138 +1,138 @@
-# Propuesta de Alianza: Aliado Laboral & Su Despacho
+# Aliado Laboral: Su Socio Estratégico para Multiplicar su Facturación
 
-**Objetivo:** Multiplicar la facturación de su despacho eliminando la "talacha" de filtrar clientes curiosos.
+**Propuesta de Valor:** Transformamos la forma en que los despachos laboralistas operan, eliminando el desgaste operativo de filtrar "clientes curiosos" y entregando prospectos (leads) perfilados, calculados y listos para firmar.
 
 ---
 
-## 1. El Problema Actual del Abogado Laboralista
-¿Cuánto tiempo pierde su equipo a la semana en estas 3 cosas?
-1.  **Consultas Gratuitas:** Atender gente que "solo quiere saber cuánto le toca" y no tiene intención de demandar.
-2.  **Casos "Hueso":** Litigios de montos bajos (<$30k) que cuestan más en gasolina y tiempo de lo que dejan de honorarios.
-3.  **Cobranza:** Perseguir al cliente para que pague la cuota inicial o la comisión final.
+## 1. El Desafío Actual del Despacho Laboralista
 
-**Realidad:** El 70% del tiempo operativo se va en tareas que facturan $0 pesos.
+Sabemos que el recurso más valioso de un abogado es su **tiempo**. Actualmente, la mayoría de los despachos enfrentan tres grandes fugas de rentabilidad:
+
+1.  **El Costo de la Asesoría Gratuita:** Horas invertidas en atender a personas que solo buscan "saber cuánto les toca" sin intención real de iniciar un proceso legal.
+2.  **Litigios de Baja Rentabilidad ("Huesos"):** Asumir casos con montos esperados menores a $30,000 MXN, donde el tiempo de gestión, traslados y trámites supera los honorarios cobrados.
+3.  **Gestión y Cobranza:** Desgaste administrativo persiguiendo anticipos, cuotas o comisiones finales.
+
+> **La Realidad:** Cerca del 70% del tiempo operativo de un despacho tradicional se consume en tareas de captación y filtrado que facturan $0 pesos.
 
 ---
 
 ## 2. La Solución: Aliado Laboral como su "Filtro de Oro"
-No somos competencia; somos su **Área Comercial y de Filtrado Digital**.
 
-### El Equipo de IA que Trabaja para Usted (24/7) 🤖
-No es un "chatbot" genérico. Son dos personalidades entrenadas para filtrar y preparar al cliente:
+**Nosotros no somos su competencia; somos su brazo comercial y su filtro digital de alta precisión.**
 
-1.  **ELÍAS (El Matemático):**
-    *   *Rol:* Frío y calculador.
-    *   *Misión:* Estructura los hechos cronológicos y calcula liquidaciones exactas.
-    *   *Beneficio:* Usted recibe números fríos, no "historias tristes".
+### Un Equipo de Inteligencia Artificial que Trabaja 24/7 para Usted 🤖
 
-2.  **VERÓNICA (La Abogada Preventiva):**
-    *   *Rol:* Empática y educativa.
-    *   *Misión:* Hace la "catarsis" con el trabajador, escucha sus audios de 20 minutos y explica derechos básicos.
-    *   *Beneficio:* El cliente llega desahogado y con expectativas realistas. Ya no pierde tiempo siendo psicólogo.
+No utilizamos chatbots genéricos. Hemos desarrollado asistentes especializados impulsados por IA, diseñados para preparar y depurar al cliente antes de que llegue a su escritorio:
 
----
+*   **ELÍAS (El Analista Estratégico):**
+    *   *Función:* Estructura cronológicamente los hechos y calcula las liquidaciones/finiquitos con precisión matemática, basándose en la LFT.
+    *   *Su Beneficio:* Usted recibe datos duros, montos exactos y una línea de tiempo clara, eliminando historias confusas.
+*   **VERÓNICA (La Abogada Preventiva):**
+    *   *Función:* Escucha, empatiza y educa al trabajador mediante un chat interactivo. Procesa textos largos, realiza la "catarsis" inicial y aterriza las expectativas del cliente.
+    *   *Su Beneficio:* El prospecto llega a usted tranquilo, informado y con expectativas realistas. Su equipo deja de fungir como soporte emocional.
 
-### Su Panel de Control (Herramientas Reales) 🧰
-Le entregamos una Oficina Digital completa:
+### Su Panel de Control: La "Oficina Digital" 🧰
 
-*   **Semáforo de Atención:** El sistema le avisa en **ROJO** si un cliente lleva 5 días olvidado (evita quema de leads).
-*   **Expediente "Francotirador":** Descarga en 1 clic el PDF con la *Carta Poder* ya llena y la *Narrativa de Hechos* depurada por Elías.
-*   **CRM Legal:** Gestione sus casos por etapas ("Contactado", "Negociación", "Ganado") y dispare sus órdenes de cobro automáticamente.
+Le proporcionamos herramientas de grado empresarial para gestionar su cartera:
+
+*   **Expediente "Francotirador":** Acceda en 1 clic a un resumen estructurado que incluye la *Narrativa de Hechos* depurada y los datos base para su *Carta Poder* pre-llenada, listos para copiar o exportar.
+*   **Gestor de Oportunidades (CRM Legal):** Administre sus casos por etapas procesales de forma intuitiva ("Nuevo Lead", "En Negociación", "En Juicio", "Ganado").
+*   **Semáforo de Atención:** Alertas visuales que previenen el enfriamiento de prospectos, asegurando que ningún caso rentable se pierda por falta de seguimiento.
 
 ---
 
-## 3. Diversificación: Ingresos por Pymes (Corporativo) 🏢
-No solo vivimos de demandas. Conectamos Pymes que buscan **prevenir**, no pelear.
+## 3. Filosofía Comercial: "El Efecto Francotirador" 🎯
 
-*   **¿Qué buscan las Pymes?** Contratos laborales, Reglamentos Interiores y Asesoría Preventiva.
-*   **Modelo:** Usted cobra igualas mensuales o pago por documento.
-*   **Interacción:** La Pyme sube su plantilla de empleados -> El sistema detecta riesgos -> Usted ofrece la solución (Contrato/Reglamento).
+Con Aliado Laboral, las llamadas en frío o de sondeo desaparecen. Le brindamos la ventaja de la **Información Perfecta**.
 
----
+1.  **Cero Improvisación:** Antes de levantar el teléfono, usted ya conoce el salario real, la antigüedad, el cálculo exacto de la liquidación y la narrativa depurada.
+2.  **Autoridad Inmediata:** Aborde al cliente diciendo: *"Ya revisé tu expediente detalladamente. Te corresponden $X, y esta es la estrategia legal que ejecutaremos"*.
+3.  **Conversión Exponencial:** El cliente percibe a un experto que domina su caso desde el minuto cero, lo que acelera dramáticamente el cierre y la firma del contrato.
 
-## 4. Filosofía de Trabajo: "El Francotirador" 🎯
-¿Por qué revisar antes de llamar?
-El sistema le da una ventaja injusta: **Información Perfecta**.
-1.  **No llame "a ver qué pasa":** Revise el PDF, vea el salario real y la antigüedad.
-2.  **Prepare la Estrategia:** Cuando llame al cliente, dígale: *"Ya vi tu caso, te tocan $X, y esta es la estrategia"*.
-3.  **Cierre Rápido:** El cliente siente que habla con una autoridad que ya conoce su problema, no con un vendedor.
-
-**Resultado:** Menos llamadas, más firmas.
+**Cambiamos volumen de llamadas por calidad de cierres.**
 
 ---
 
-## 5. Modelo de Negocio (Ganar-Ganar)
+## 4. Oportunidad de Diversificación: Ingresos Corporativos (B2B) 🏢
 
-### A. Membresía de Acceso (SaaS)
-Para garantizar la calidad y el compromiso, ofrecemos dos niveles de acceso:
+El litigio no es el único camino. Facilitamos la conexión con PyMEs que buscan blindaje legal preventivo.
 
-| Plan | Inversión | Beneficios Clave |
+*   **El Mercado:** Empresas que necesitan Contratos Laborales, Reglamentos Interiores, Actas Administrativas y Asesoría Preventiva Continua.
+*   **El Modelo:** Usted genera ingresos recurrentes mediante igualas mensuales o pago por proyecto documental.
+*   **La Dinámica:** El sistema de Aliado Laboral audita plantillas de empleados detectando riesgos; usted interviene directamente ofreciendo la solución correctiva.
+
+---
+
+## 5. Modelo de Negocio (Alianza Ganar-Ganar)
+
+Nuestro éxito está condicionado al suyo.
+
+### A. Membresías de Acceso (SaaS)
+Garantizamos la exclusividad y el compromiso mediante dos niveles de acceso:
+
+| Plan | Inversión Mensual | Beneficios Estratégicos |
 | :--- | :--- | :--- |
-| **BÁSICO** | **$99 MXN** / mes | • Perfil Público en Directorio<br>• Acceso a Calculadora LFT<br>• Recepción de Leads Estándar |
-| **PRO** | **$299 MXN** / mes | • **Acceso a Casos "HOT"** (> $150k)<br>• Distintivo "Verificado"<br>• Prioridad en Algoritmo de Asignación<br>• CRM Legal Completo |
+| **BÁSICO** | **$99 MXN** | • Perfil Público en el Directorio Nacional.<br>• Recepción de Leads Estándar.<br>• Acceso a la Calculadora LFT con IA. |
+| **PRO** | **$299 MXN** | • **Acceso Exclusivo a Casos "HOT"** (Cuantías > $150k MXN).<br>• Distintivo "Despacho Verificado" (Mayor conversión).<br>• Prioridad Top en el Algoritmo de Asignación.<br>• Acceso total al CRM Legal. |
 
-**Nota:** Solo los miembros PRO pueden tomar los casos de mayor cuantía (donde la comisión es más alta).
+*(Nota: Los casos de alta cuantía son exclusivos para miembros PRO).*
 
-### B. Adquisición de Clientes (Leads)
-Usted decide qué casos tomar. No le enviamos basura.
+### B. Inversión por Adquisición de Cliente (Lead Validado)
+Usted tiene el control total de qué casos acepta. No enviamos "basura", solo prospectos perfilados.
+
 *   **Costo por Lead Validado:** $150 - $300 MXN.
-*   **ROI (Retorno de Inversión):**
-    *   Invierte: $300 pesos en un Lead "HOT".
-    *   Cierra un caso de: $100,000 pesos.
-    *   Su honorario (30%): $30,000 pesos.
-    *   **Retorno:** 100x sobre lo invertido.
+*   **Proyección de ROI (Retorno de Inversión):**
+    *   *Inversión:* $300 MXN en un Lead "HOT".
+    *   *Resolución de Caso:* $100,000 MXN.
+    *   *Honorarios Promedio (30%):* $30,000 MXN.
+    *   **Retorno:** 100 veces el valor de su inversión inicial en marketing.
 
-### C. "El Puente" (Comisión por Éxito) 🌉
-Solo ganamos si usted gana. Gestionamos la transparencia mediante nuestra pasarela.
+### C. Comisión por Éxito Comercial 🌉
+Colaboramos bajo un esquema de resultado. Solo generamos comisión cuando usted cobra.
 
-| Escenario | Comisión Aliado Laboral |
-| :--- | :--- |
-| **Juicio Ganado (Abogado PRO)** | **5%** del monto recuperado |
-| **Conciliación (Abogado PRO)** | **7%** del monto recuperado |
-| **Juicio Ganado (Abogado Básico)** | **8%** del monto recuperado |
-| **Conciliación (Abogado Básico)** | **10%** del monto recuperado |
+| Tipo de Resolución | Comisión Aliado Laboral (PRO) | Comisión Aliado Laboral (Básico) |
+| :--- | :--- | :--- |
+| **Conciliación Exitosa** | **7%** del monto recuperado | **10%** del monto recuperado |
+| **Juicio Ganado/Laudo** | **5%** del monto recuperado | **8%** del monto recuperado |
 
-#### 💸 Ejemplo de Flujo del Dinero:
-1.  Usted gana un juicio de **$100,000 MXN**.
-2.  Recibe el pago completo de su cliente.
-3.  La plataforma genera una orden de pago por **$5,000 MXN** (5%).
-4.  Usted tiene **48 horas** para cubrirla y liberar su siguiente lote de casos.
+**Mecánica de Transparencia:** Al cambiar el estatus del caso a "Ganado" o "Conciliado" en su CRM, la plataforma notifica a nuestra administración y emite una orden de pago por la comisión correspondiente, con un plazo de 48 horas para su liquidación vía enlace de pago manual, manteniendo así el flujo continuo de nuevos casos.
 
 ---
 
-## 6. Reglas del Juego (Calidad y Compromiso) ⚖️
-Para mantener la calidad "Filtro de Oro", exigimos estándares altos tanto a abogados como a usuarios.
+## 6. Estándares de Excelencia y Reglas de Operación ⚖️
 
-### 🕒 Horarios de Atención
-*   **Expectativa:** Primer contacto con el Lead en **menos de 4 horas hábiles**.
-*   **Horario Laboral:** Lunes a Viernes (9:00 AM - 7:00 PM).
-*   *Nota:* Si no contacta al cliente en 24h, el sistema reasigna el caso a otro abogado automáticamente.
+Para preservar el prestigio de nuestra red "Filtro de Oro", mantenemos políticas estrictas de calidad, tanto para los despachos como para los usuarios.
 
-### A. Si el Abogado Incumple (Sistema de "3 Strikes")
-Buscamos socios, no oportunistas.
-1.  **Strike 1 (Advertencia):** No contactar leads a tiempo o recibir queja validada de mal servicio.
-2.  **Strike 2 (Suspensión Temporal):** Bloqueo de nuevos leads por 15 días.
-3.  **Strike 3 (Baja Definitiva):** Se cancela su cuenta y se boletina en la red.
-    *   **Fraude:** Reportar "Juicio Perdido" cuando se ganó para evadir comisión = **Baja Inmediata y Legal**.
+### Expectativas de Servicio (SLA)
+*   **Tiempo de Respuesta:** Contacto inicial con el Lead validado en **menos de 4 horas hábiles**.
+*   **Reasignación Automática:** Si un lead no es contactado en 24 horas, el sistema lo reasigna para proteger la experiencia del usuario.
 
-### B. Si el Usuario Incumple
-Protegemos su tiempo.
-*   **Información Falsa:** Si el trabajador miente en sus datos (Sueldo/Hechos) para inflar la demanda, se le **bloquea permanentemente** de Aliado Laboral y Profedet.
-*   **No Asistencia:** Si agenda cita con usted y no llega (sin aviso), se le marca como "Cliente No Confiable" en la red compartida.
+### Política de "Tolerancia Cero" (Sistema de 3 Strikes)
+Buscamos socios estratégicos a largo plazo.
+1.  **Strike 1 (Advertencia):** Incumplimiento sistemático de tiempos de respuesta o queja validada de un usuario.
+2.  **Strike 2 (Suspensión):** Bloqueo de recepción de nuevos prospectos por 15 días.
+3.  **Strike 3 (Baja Definitiva):** Cancelación de cuenta y exclusión de la red de alianzas.
+    *   *Nota Crítica:* Reportar falsamente un "Juicio Perdido" para evadir comisiones resulta en **baja inmediata e irrevocable**.
 
----
-
-## 7. ¿Por qué unirse hoy como Socio Fundador?
-Estamos lanzando en su región y limitaremos el número de abogados por zona para garantizar volumen de casos a nuestros socios.
-
-**Beneficios Exclusivos de Lanzamiento:**
-1.  **Primer mes de Membresía PRO GRATIS.**
-2.  **Paquete de 10 Leads de prueba** (pagando solo éxito).
-3.  **Distintivo "Abogado Verificado"** en el directorio (aumenta 40% la confianza del cliente).
+### Protección al Abogado (Reglas para Usuarios)
+Valoramos profundamente su tiempo:
+*   **Cero Tolerancia a la Falsedad:** Si el sistema detecta o usted reporta que el usuario falseó información (salarios irrealistas, fechas alteradas), es bloqueado permanentemente de Aliado Laboral.
+*   **Compromiso de Asistencia:** Usuarios que agendan y no asisten (sin cancelación previa) son marcados en el buró interno como "No Confiables".
 
 ---
 
-**Siguientes Pasos:**
-1.  Descargue la App **Aliado Laboral Abogados**.
-2.  Suba su Cédula Profesional para validación (24h).
-3.  Empiece a recibir notificaciones de casos en su zona mañana mismo.
+## 7. Únase Hoy como Socio Fundador
+
+Estamos aperturando operaciones en su región. Para garantizar un alto volumen de casos a cada despacho, el **número de plazas es estrictamente limitado por zona geográfica.**
+
+**Incentivos Exclusivos de Lanzamiento:**
+1.  **Primer mes de Membresía PRO Bonificado (Costo $0).**
+2.  **Distintivo "Abogado Verificado"** vitalicio en el directorio (Incrementa la confianza del prospecto en un +40%).
+3.  **Asignación Prioritaria** del primer bloque de casos "HOT" en su ciudad.
+
+### Próximos Pasos para la Afiliación:
+1.  Descargue la aplicación **Aliado Laboral Abogados**.
+2.  Complete su perfil profesional y cargue su Cédula Profesional para el proceso de validación (resolución en 24h).
+3.  Active sus notificaciones y comience a recibir los mejores casos de su zona a partir de mañana.
+
+**Aliado Laboral:** *Usted dedíquese a litigar y ganar; nosotros le traemos los clientes.*

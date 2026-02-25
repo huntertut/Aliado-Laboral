@@ -67,7 +67,7 @@ const LawyersScreen = () => {
     const [activeFilter, setActiveFilter] = useState<'all' | 'nearest' | 'popular'>('all');
 
     // Check if user is Premium plan or Admin
-    const hasActiveSubscription = user?.plan === 'premium' || user?.role === 'admin';
+    const hasActiveSubscription = user?.plan === 'premium' || user?.plan === 'worker_premium' || user?.role === 'admin';
 
     useEffect(() => {
         fetchLawyers();
@@ -105,7 +105,7 @@ const LawyersScreen = () => {
 
     const handleLawyerPress = (lawyer: any) => {
         if (hasActiveSubscription) {
-            navigation.navigate('LawyerDetail' as never, { lawyerId: lawyer.id } as never);
+            navigation.navigate('LawyerDetail' as never, { lawyer } as never);
         } else {
             setShowSubscriptionModal(true);
         }
@@ -153,13 +153,13 @@ const LawyersScreen = () => {
             >
                 {/* Avatar */}
                 <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{getInitials(item.user?.fullName || 'AB')}</Text>
+                    <Text style={styles.avatarText}>{getInitials(item.name || item.user?.fullName || 'AB')}</Text>
                 </View>
 
                 {/* Info */}
                 <View style={styles.info}>
                     <Text style={styles.name}>
-                        {isGated ? getAbbreviatedName(item.user?.fullName) : item.user?.fullName}
+                        {isGated ? getAbbreviatedName(item.name || item.user?.fullName) : (item.name || item.user?.fullName)}
                     </Text>
                     <View style={styles.locationRow}>
                         <Ionicons name="location-outline" size={14} color="#666" />

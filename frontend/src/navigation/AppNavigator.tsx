@@ -46,6 +46,9 @@ import HomePymeScreen from '../screens/pyme/HomePymeScreen';
 import LawyerRequestsScreen from '../screens/LawyerRequestsScreen';
 import LawyerCasesScreen from '../screens/LawyerCasesScreen';
 import LawyerRequestDetailScreen from '../screens/LawyerRequestDetailScreen';
+import ContractReviewScreen from '../screens/pyme/ContractReviewScreen';
+import LiquidationCalculatorView from '../screens/pyme/LiquidationCalculatorView';
+import GenerateActScreen from '../screens/pyme/GenerateActScreen';
 
 const Stack = createStackNavigator();
 
@@ -150,6 +153,9 @@ const AppNavigator = () => {
                         {/* Missing Dashboard Routes */}
                         <Stack.Screen name="LawyerDashboard" component={LawyerDashboardScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="HomePyme" component={HomePymeScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="ContractReview" component={ContractReviewScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="LiquidationCalculator" component={LiquidationCalculatorView} options={{ headerShown: false }} />
+                        <Stack.Screen name="GenerateAct" component={GenerateActScreen} options={{ headerShown: false }} />
 
                         {/* Lawyer Specific Routes */}
                         <Stack.Screen name="LawyerRequests" component={LawyerRequestsScreen} options={{ headerShown: false }} />

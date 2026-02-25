@@ -690,7 +690,7 @@ export const updateCRMStatus = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.findUnique({
             where: { userId },
-            include: { profile: true }
+            include: { profile: true, subscription: true }
         });
 
         if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
@@ -712,6 +712,21 @@ export const updateCRMStatus = async (req: Request, res: Response) => {
             where: { id },
             data: { crmStatus: status }
         });
+
+        // NOTIFICACIÓN AL ADMIN SI ES GANADO (El Puente)
+        if (status === 'CLOSED_WON' || status === 'CLOSED_LOST') { // Podría ser conciliado también pero con CLOSED_WON abarcamos éxito
+            if (status === 'CLOSED_WON') {
+                const rate = lawyer.subscription?.plan === 'pro' ? '5% o 7%' : '8% o 10%';
+                await prisma.adminAlert.create({
+                    data: {
+                        type: 'success_fee_pending',
+                        message: `El abogado ${lawyer.id} marcó el caso ${id} como GANADO/CONCILIADO. Es necesario contactarlo para el cobro manual de la comisión por éxito (${rate}).`,
+                        severity: 'high',
+                        relatedUserId: lawyer.userId
+                    }
+                });
+            }
+        }
 
         res.json({ success: true, crmStatus: updatedRequest.crmStatus });
 

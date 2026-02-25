@@ -25,8 +25,12 @@ import forumRoutes from './routes/forumRoutes';
 import devRoutes from './routes/devRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import documentRoutes from './routes/documentRoutes';
+import jurisdictionRoutes from './routes/jurisdictionRoutes';
 
 // ... (imports)
+
+// Iniciar servicios en segundo plano (Cronjobs)
+import './services/cronService';
 
 // ... (middleware)
 
@@ -96,6 +100,7 @@ app.use('/system', systemRoutes);
 app.use('/forum', forumRoutes); // Forum Routes
 app.use('/analytics', analyticsRoutes);
 app.use('/documents', documentRoutes);
+app.use('/jurisdiction', jurisdictionRoutes);
 
 import reportRoutes from './routes/reportRoutes';
 app.use('/reports', reportRoutes);

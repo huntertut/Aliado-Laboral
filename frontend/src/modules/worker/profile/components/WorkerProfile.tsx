@@ -7,6 +7,7 @@ import { AppTheme } from '../../../theme/colors';
 import { WorkerLaborDataSection } from './WorkerLaborDataSection';
 import { ProfedetModule } from './ProfedetModule';
 import { ContactLawyerButton } from './ContactLawyerButton';
+import { JurisdictionFinderModule } from './JurisdictionFinderModule';
 
 interface Props {
     data: any;
@@ -45,6 +46,8 @@ export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
+
+            <JurisdictionFinderModule />
 
             <ProfedetModule isActive={!!profedetData.isActive} />
 

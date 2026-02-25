@@ -255,11 +255,9 @@ const MyChestScreen = () => {
     const supportItems = CV_EXAMPLES.filter(item => item.category === 'SUPPORT');
     const printableItems = CV_EXAMPLES.filter(item => item.category === 'GUIDE');
 
-    const [isPremiumUser, setIsPremiumUser] = useState(false); // Mock premium state
+    const hasPremium = user?.plan === 'PRO' || user?.plan === 'PREMIUM' || user?.plan === 'premium' || user?.subscriptionLevel === 'premium';
 
     const handleVaultPress = () => {
-        const hasPremium = user?.plan === 'PRO' || user?.plan === 'PREMIUM' || (user as any).isPremiumMock;
-
         if (!hasPremium) {
             Alert.alert(
                 "Mi Baúl Personal (Premium)",
@@ -298,7 +296,7 @@ const MyChestScreen = () => {
                         <Text style={styles.vaultTitle}>Mi Baúl Personal</Text>
                         <Text style={styles.vaultSubtitle}>Sube tus evidencias y documentos seguros.</Text>
                     </View>
-                    {!isPremiumUser && (
+                    {!hasPremium && (
                         <View style={styles.vaultPremiumTag}>
                             <Text style={styles.vaultPremiumText}>PRO</Text>
                         </View>
@@ -332,7 +330,7 @@ const MyChestScreen = () => {
                                 </View>
                                 <Text style={styles.itemName}>{item.title}</Text>
                                 <View style={styles.actionContainer}>
-                                    {item.isPremium ? (
+                                    {item.isPremium && !hasPremium ? (
                                         <View style={styles.premiumTag}>
                                             <Ionicons name="lock-closed" size={14} color="#e67e22" />
                                             <Text style={styles.premiumText}>PRO</Text>
@@ -372,7 +370,7 @@ const MyChestScreen = () => {
                                 </View>
                                 <Text style={styles.itemName}>{item.title}</Text>
                                 <View style={styles.actionContainer}>
-                                    {item.isPremium ? (
+                                    {item.isPremium && !hasPremium ? (
                                         <View style={styles.premiumTag}>
                                             <Ionicons name="lock-closed" size={14} color="#e67e22" />
                                             <Text style={styles.premiumText}>PRO</Text>
@@ -412,7 +410,7 @@ const MyChestScreen = () => {
                                 </View>
                                 <Text style={styles.itemName}>{item.title}</Text>
                                 <View style={styles.actionContainer}>
-                                    {item.isPremium ? (
+                                    {item.isPremium && !hasPremium ? (
                                         <View style={styles.premiumTag}>
                                             <Ionicons name="lock-closed" size={14} color="#e67e22" />
                                             <Text style={styles.premiumText}>PRO</Text>

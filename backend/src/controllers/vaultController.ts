@@ -79,7 +79,6 @@ export const getVaultFiles = async (req: any, res: Response) => {
 
         const snapshot = await db.collection('vaultFiles')
             .where('userId', '==', userId)
-            .orderBy('uploadedAt', 'desc')
             .get();
 
         const files = snapshot.docs.map(doc => ({
@@ -87,7 +86,11 @@ export const getVaultFiles = async (req: any, res: Response) => {
             ...doc.data(),
             // Firestore timestamps need to be converted for JSON
             uploadedAt: (doc.data() as any).uploadedAt?.toDate() || null
-        }));
+        })).sort((a: any, b: any) => {
+            const timeA = a.uploadedAt ? a.uploadedAt.getTime() : 0;
+            const timeB = b.uploadedAt ? b.uploadedAt.getTime() : 0;
+            return timeB - timeA;
+        });
 
         res.json(files);
     } catch (error) {

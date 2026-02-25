@@ -36,7 +36,10 @@ const LiquidationCalculatorView = () => {
     const [paywallVisible, setPaywallVisible] = useState(false);
 
     const { user } = useAuth();
-    const isBasic = !user?.subscriptionLevel || user.subscriptionLevel === 'basic';
+    // Correctly identify premium users by checking both subscriptionLevel and plan
+    const isPremium = user?.subscriptionLevel === 'premium' || user?.plan === 'premium' || user?.plan === 'pro';
+    const isBasic = !isPremium;
+    console.log('[LiquidationCalculator] MOUNTED. user.subscriptionLevel:', user?.subscriptionLevel, 'user.plan:', user?.plan, 'isPremium:', isPremium, 'isBasic:', isBasic, 'paywallVisible:', paywallVisible);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-MX', {
@@ -244,7 +247,7 @@ const LiquidationCalculatorView = () => {
                 )}
             </ScrollView>
 
-            <PaywallModal isOpen={paywallVisible} onClose={() => setPaywallVisible(false)} featureName="Respaldo Legal de Cálculos" />
+            <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} featureName="Respaldo Legal de Cálculos" />
 
             <DatePickerModal
                 visible={showStartPicker}

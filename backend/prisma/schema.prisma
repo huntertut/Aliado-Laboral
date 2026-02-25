@@ -672,3 +672,32 @@ model AnalyticsEvent {
   timestamp DateTime @default(now())
   createdAt DateTime @default(now())
 }
+
+// ==========================================
+// SECCIÓN DE JURISDICCIÓN Y COMPETENCIAS
+// ==========================================
+
+model StateDirectory {
+  id                        Int      @id @default(autoincrement())
+  stateName                 String   @unique
+  profedetAddress           String?
+  localProcuraduriaAddress  String?
+  federalConciliationAddress String?
+  localConciliationAddress   String?
+  federalTribunalAddress    String?
+  localTribunalAddress      String?
+  
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model IndustryCompetence {
+  id            Int      @id @default(autoincrement())
+  sector        String
+  competence    String   // 'FEDERAL' or 'LOCAL'
+  baseInstance  String   // e.g. 'PROFEDET', 'Procuraduría Estatal...'
+  keywords      String   // Comma-separated keywords for fuzzy search e.g. "mesero, restaurante, bar"
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

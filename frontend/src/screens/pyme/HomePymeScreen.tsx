@@ -251,27 +251,31 @@ const HomePymeScreen = () => {
         </View>
     );
 
-    const renderPremiumCTA = () => (
-        <TouchableOpacity style={styles.premiumCTA} onPress={() => setPaywallVisible(true)}>
-            <LinearGradient
-                colors={['#1a237e', '#311b92']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.premiumGradient}
-            >
-                <View style={styles.premiumHeader}>
-                    <Ionicons name="shield" size={24} color="#ffd700" />
-                    <View style={{ marginLeft: 10, flex: 1 }}>
-                        <Text style={styles.premiumTitle}>🛡️ Blindaje Pro</Text>
-                        <Text style={styles.premiumSubtitle}>Evita demandas y multas</Text>
+    const renderPremiumCTA = () => {
+        if (isPremium) return null;
+
+        return (
+            <TouchableOpacity style={styles.premiumCTA} onPress={() => setPaywallVisible(true)}>
+                <LinearGradient
+                    colors={['#1a237e', '#311b92']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.premiumGradient}
+                >
+                    <View style={styles.premiumHeader}>
+                        <Ionicons name="shield" size={24} color="#ffd700" />
+                        <View style={{ marginLeft: 10, flex: 1 }}>
+                            <Text style={styles.premiumTitle}>🛡️ Blindaje Pro</Text>
+                            <Text style={styles.premiumSubtitle}>Evita demandas y multas</Text>
+                        </View>
                     </View>
-                </View>
-                <View style={styles.premiumBtn}>
-                    <Text style={styles.premiumBtnText}>👉 Desbloquear protección</Text>
-                </View>
-            </LinearGradient>
-        </TouchableOpacity>
-    );
+                    <View style={styles.premiumBtn}>
+                        <Text style={styles.premiumBtnText}>👉 Desbloquear protección</Text>
+                    </View>
+                </LinearGradient>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={styles.container}>

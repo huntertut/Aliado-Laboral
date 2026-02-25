@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             freshUser.plan = undefined;
                         } else if (demoEmail === 'worker_premium@test.com') {
                             freshUser.role = 'worker';
-                            freshUser.plan = 'worker_premium';
+                            freshUser.plan = 'premium';
                         } else if (demoEmail === 'lawyer_basic@test.com') {
                             freshUser.role = 'lawyer';
                             freshUser.plan = 'basic';
@@ -244,7 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else if (demoEmail === 'worker_premium@test.com') {
                 console.log('🚧 [AuthContext] DEMO MODE: Forcing Premium Worker');
                 userData.role = 'worker';
-                userData.plan = 'worker_premium';
+                userData.plan = 'premium';
             } else if (demoEmail === 'lawyer_basic@test.com') {
                 console.log('🚧 [AuthContext] DEMO MODE: Forcing Basic Lawyer');
                 userData.role = 'lawyer';
@@ -257,7 +257,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('🚧 [AuthContext] DEMO MODE: Forcing Basic Pyme');
                 userData.role = 'pyme';
                 userData.subscriptionLevel = 'basic';
-            } else if (demoEmail === 'pyme_pro@test.com') {
+            } else if (demoEmail === 'pyme_premium@test.com') {
                 console.log('🚧 [AuthContext] DEMO MODE: Forcing Premium Pyme');
                 userData.role = 'pyme';
                 userData.subscriptionLevel = 'premium';

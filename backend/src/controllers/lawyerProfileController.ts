@@ -10,16 +10,13 @@ export const getPublicLawyers = async (req: Request, res: Response) => {
         const { specialty, state, caseType } = req.query;
 
         const whereClause: any = {
-            // Solo mostrar abogados con suscripción activa y verificados
+            // Solo mostrar abogados verificados con suscripción activa
             lawyer: {
                 subscription: {
                     status: 'active'
                 },
                 isVerified: true
-            },
-            // Debe tener al menos 2 casos ganados
-            wonCase1Summary: { not: null },
-            wonCase2Summary: { not: null }
+            }
         };
 
         // Filtro por Especialidad
@@ -436,7 +433,6 @@ export const getMyProfile = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Perfil no encontrado' });
         }
 
-        // Return flattened structure or structured?
         // Let's return structured properly
         res.json({
             lawyerId: lawyer.id,
@@ -444,6 +440,8 @@ export const getMyProfile = async (req: Request, res: Response) => {
             specialty: lawyer.specialty,
             professionalName: lawyer.user.fullName,
             email: lawyer.user.email,
+            strikes: lawyer.strikes,
+            status: lawyer.status,
             // Profile data (might be null if new)
             experienceYears: lawyer.profile?.yearsOfExperience || 0,
             bio: lawyer.profile?.bio || '',

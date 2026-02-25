@@ -59,7 +59,8 @@ export const ImageGeneratorService = {
                 }
             );
 
-            const imageUrl = response.data?.image_url;
+            // Extraer URL de la respuesta
+            const imageUrl = (response.data as any)?.image_url;
             console.log('✅ [ImageGenerator] Image created:', imageUrl);
             return imageUrl;
 
