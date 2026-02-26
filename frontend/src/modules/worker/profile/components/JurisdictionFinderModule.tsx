@@ -6,13 +6,19 @@ import { API_URL } from '../../../../config/constants';
 import { useAuth } from '../../../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export const JurisdictionFinderModule = () => {
+export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => {
     const { getAccessToken } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
-    const [sector, setSector] = useState('');
-    const [estado, setEstado] = useState('');
+    const [sector, setSector] = useState(laborData?.occupation || '');
+    const [estado, setEstado] = useState(laborData?.federalEntity || '');
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+
+    // Auto-fill form if data arrives late
+    React.useEffect(() => {
+        if (laborData?.occupation && !sector) setSector(laborData.occupation);
+        if (laborData?.federalEntity && !estado) setEstado(laborData.federalEntity);
+    }, [laborData]);
 
     const handleSearch = async () => {
         if (!sector.trim() || !estado.trim()) {

@@ -76,10 +76,12 @@ export const getJurisdiction = async (req: Request, res: Response) => {
         let matchedState = states.find((s: any) => normalizeString(s.stateName).includes(stateNormalized) || stateNormalized.includes(normalizeString(s.stateName)));
 
         if (!matchedState) {
-            return res.status(404).json({
-                error: "Estado no encontrado en el directorio.",
-                details: "Asegúrate de escribir el nombre del estado completo (ej. 'Ciudad de México', 'Jalisco')."
-            });
+            // Emular un estado genérico si no lo tenemos en DB para no bloquear la experiencia
+            matchedState = {
+                stateName: estado_usuario,
+                profedetAddress: `Dirección no registrada. Busca "PROFEDET ${estado_usuario}" en Google para ver la oficina más cercana.`,
+                localProcuraduriaAddress: `Direcciòn no registrada. Busca "Procuraduría de la Defensa del Trabajo en ${estado_usuario}" en Google.`
+            } as any;
         }
 
         // 5. Determinar la dirección exacta basada en competencia
@@ -89,11 +91,11 @@ export const getJurisdiction = async (req: Request, res: Response) => {
 
         if (matchedCompetence.competence === 'FEDERAL') {
             officialInstanceName = matchedCompetence.baseInstance || "PROFEDET (Federal)";
-            officialAddress = matchedState.profedetAddress || "Dirección no registrada. Consulta en línea para PROFEDET de tu estado.";
+            officialAddress = matchedState?.profedetAddress || "Dirección no registrada. Consulta en línea para PROFEDET de tu estado.";
             instructions = "Dirígete a la instancia Federal (PROFEDET). Dado el sector en el que trabajas, tu asunto es de jurisdicción federal.";
         } else {
             officialInstanceName = matchedCompetence.baseInstance || "Procuraduría de la Defensa del Trabajo (Local)";
-            officialAddress = matchedState.localProcuraduriaAddress || "Dirección no registrada. Consulta la Procuraduría Local de tu estado.";
+            officialAddress = matchedState?.localProcuraduriaAddress || "Dirección no registrada. Consulta la Procuraduría Local de tu estado.";
             instructions = "Dirígete a la instancia Local. Tu asunto se resuelve en el fuero común del Estado correspondiente.";
         }
 

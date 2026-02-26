@@ -3,11 +3,11 @@
 // ============================================
 
 // DIGITAL OCEAN DROPLET URL (LIVE)
-// export const API_URL = 'http://142.93.186.75:3001';
+export const API_URL = 'http://142.93.186.75:3001';
 
 // LOCAL URL FOR ANDROID EMULATOR DEBUGGING
 // 10.0.2.2 siempre apunta al 'localhost' de la computadora desde el emulador Android
-export const API_URL = `http://10.0.2.2:3001`;
+// export const API_URL = `http://10.0.2.2:3001`;
 
 // Para verificar qué IP estás usando, descomenta la siguiente línea:
 // console.log('🌐 Conectando a:', API_URL);

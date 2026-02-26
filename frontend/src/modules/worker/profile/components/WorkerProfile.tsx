@@ -47,7 +47,7 @@ export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
                 <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
 
-            <JurisdictionFinderModule />
+            <JurisdictionFinderModule laborData={laborData} />
 
             <ProfedetModule isActive={!!profedetData.isActive} />
 
