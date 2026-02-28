@@ -4,7 +4,7 @@ import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
 
-// Ruta protegida para buscar jurisdicción
-router.post('/find', authMiddleware, getJurisdiction);
+// Ruta abierta para buscar jurisdicción (No requiere auth porque es info pública general)
+router.post('/find', getJurisdiction);
 
 export default router;
