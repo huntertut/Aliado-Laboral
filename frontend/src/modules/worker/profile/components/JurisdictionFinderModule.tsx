@@ -5,6 +5,76 @@ import { AppTheme } from '../../../../theme/colors';
 import { API_URL } from '../../../../config/constants';
 import { useAuth } from '../../../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Picker } from '@react-native-picker/picker';
+
+const SECTORS = [
+    "Otra Ocupación (No enlistada)",
+    "Industria Textil",
+    "Industria Eléctrica",
+    "Industria Cinematográfica",
+    "Industria del Caucho",
+    "Industria Azucarera",
+    "Industria Minera y Metalúrgica",
+    "Industria de Hidrocarburos y Petroquímica",
+    "Industria del Cemento y Cal",
+    "Industria Automotriz y Autopartes",
+    "Industria Química",
+    "Industria de Celulosa y Papel",
+    "Industria de Aceites y Grasas Vegetales",
+    "Industria de Alimentos Procesados",
+    "Industria de Bebidas Embotelladas",
+    "Ferrocarriles",
+    "Industria de la Madera Básica",
+    "Industria del Vidrio",
+    "Industria del Tabaco",
+    "Servicios de Banca y Crédito",
+    "Empresas con Contrato o Concesión Federal",
+    "Comercio al por Menor (Tiendas/Comercios)",
+    "Restaurantes y Servicios de Alimentos",
+    "Hoteles y Servicios de Hospedaje",
+    "Servicios de Limpieza y Mantenimiento",
+    "Talleres Mecánicos y Autoservicio",
+    "Educación Privada",
+    "Servicios de Salud Privados",
+    "Entretenimiento y Cultura (No industrial)",
+    "Servicios Profesionales y Oficinas",
+    "Construcción de Obra Privada"
+];
+
+const STATES = [
+    "Aguascalientes",
+    "Baja California",
+    "Baja California Sur",
+    "Campeche",
+    "Chiapas",
+    "Chihuahua",
+    "Ciudad de México",
+    "Coahuila de Zaragoza",
+    "Colima",
+    "Durango",
+    "Guanajuato",
+    "Guerrero",
+    "Hidalgo",
+    "Jalisco",
+    "Michoacán de Ocampo",
+    "Morelos",
+    "México",
+    "Nayarit",
+    "Nuevo León",
+    "Oaxaca",
+    "Puebla",
+    "Querétaro",
+    "Quintana Roo",
+    "San Luis Potosí",
+    "Sinaloa",
+    "Sonora",
+    "Tabasco",
+    "Tamaulipas",
+    "Tlaxcala",
+    "Veracruz de Ignacio de la Llave",
+    "Yucatán",
+    "Zacatecas"
+];
 
 export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => {
     const { getAccessToken } = useAuth();
@@ -22,7 +92,7 @@ export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => 
 
     const handleSearch = async () => {
         if (!sector.trim() || !estado.trim()) {
-            Alert.alert('Datos incompletos', 'Por favor ingresa tu sector de trabajo y el estado donde vives.');
+            Alert.alert('Datos incompletos', 'Por favor selecciona tu sector de trabajo y el estado donde vives.');
             return;
         }
 
@@ -51,6 +121,7 @@ export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => 
                 Alert.alert('Aviso', data.error || data.details || 'No se pudo encontrar información.');
             }
         } catch (error) {
+            console.error('=== ERROR AL BUSCAR JURISDICCIÓN ===:', error);
             Alert.alert('Error', 'Problema de conexión al buscar jurisdicción.');
         } finally {
             setIsLoading(false);
@@ -94,21 +165,33 @@ export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => 
                             Ingresa a qué te dedicas y en qué estado trabajas, y te diremos si tu asunto es Local o Federal.
                         </Text>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Ej. mesero, textil, chofer, maestro..."
-                            value={sector}
-                            onChangeText={setSector}
-                            placeholderTextColor="#95a5a6"
-                        />
+                        <View style={styles.pickerContainer}>
+                            <Text style={styles.pickerLabel}>¿A qué sector te dedicas?</Text>
+                            <Picker
+                                selectedValue={sector}
+                                onValueChange={(itemValue) => setSector(itemValue)}
+                                style={styles.picker}
+                            >
+                                <Picker.Item label="Selecciona un sector..." value="" color="#95a5a6" />
+                                {SECTORS.map((s) => (
+                                    <Picker.Item key={s} label={s} value={s} color="#2c3e50" />
+                                ))}
+                            </Picker>
+                        </View>
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Tu Estado (Ej. Ciudad de México, Jalisco)"
-                            value={estado}
-                            onChangeText={setEstado}
-                            placeholderTextColor="#95a5a6"
-                        />
+                        <View style={styles.pickerContainer}>
+                            <Text style={styles.pickerLabel}>¿En qué estado trabajas?</Text>
+                            <Picker
+                                selectedValue={estado}
+                                onValueChange={(itemValue) => setEstado(itemValue)}
+                                style={styles.picker}
+                            >
+                                <Picker.Item label="Selecciona tu estado..." value="" color="#95a5a6" />
+                                {STATES.map((s) => (
+                                    <Picker.Item key={s} label={s} value={s} color="#2c3e50" />
+                                ))}
+                            </Picker>
+                        </View>
 
                         <TouchableOpacity
                             style={styles.searchButton}
@@ -233,6 +316,26 @@ const styles = StyleSheet.create({
         padding: 15,
         fontSize: 16,
         marginBottom: 15,
+        color: '#2c3e50',
+    },
+    pickerContainer: {
+        backgroundColor: '#f8f9fa',
+        borderWidth: 1,
+        borderColor: '#e9ecef',
+        borderRadius: 10,
+        marginBottom: 15,
+        overflow: 'hidden',
+    },
+    pickerLabel: {
+        fontSize: 12,
+        color: '#7f8c8d',
+        paddingHorizontal: 15,
+        paddingTop: 10,
+        fontWeight: 'bold',
+    },
+    picker: {
+        height: 50,
+        width: '100%',
         color: '#2c3e50',
     },
     searchButton: {
