@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView, Switch, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Switch, Modal } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -198,7 +199,12 @@ const RegisterScreen = () => {
                 </Text>
             </LinearGradient>
 
-            <ScrollView contentContainerStyle={styles.formContainer}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={styles.formContainer}
+                enableOnAndroid={true}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+            >
                 <View style={styles.inputContainer}>
                     <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
                     <TextInput
@@ -458,7 +464,7 @@ const RegisterScreen = () => {
                         <Text style={styles.loginLink}>Inicia Sesión</Text>
                     </TouchableOpacity>
                 </View>
-            </ScrollView>
+            </KeyboardAwareScrollView>
 
 
             {/* Modal de Registro Exitoso para Abogados */}

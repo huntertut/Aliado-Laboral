@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -127,7 +128,12 @@ const ProfileWizardScreen = () => {
                 </Text>
             </LinearGradient>
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={styles.content}
+                enableOnAndroid={true}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+            >
                 {user?.role === 'lawyer' && renderLawyerForm()}
                 {user?.role === 'pyme' && renderPymeForm()}
                 {user?.role === 'worker' && <Text>Todo listo. Confirma para continuar.</Text>}
@@ -139,7 +145,7 @@ const ProfileWizardScreen = () => {
                 <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
                     <Text style={styles.logoutText}>Cancelar / Cerrar Sesión</Text>
                 </TouchableOpacity>
-            </ScrollView>
+            </KeyboardAwareScrollView>
         </View>
     );
 };

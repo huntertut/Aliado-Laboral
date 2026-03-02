@@ -3,7 +3,7 @@
 // ============================================
 
 // DIGITAL OCEAN DROPLET URL (LIVE)
-export const API_URL = 'http://142.93.186.75:3001';
+export const API_URL = 'https://api.cibertmx.org';
 
 // LOCAL URL FOR ANDROID EMULATOR DEBUGGING
 // 10.0.2.2 siempre apunta al 'localhost' de la computadora desde el emulador Android

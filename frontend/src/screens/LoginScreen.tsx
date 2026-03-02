@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Image } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -154,7 +155,13 @@ const LoginScreen = () => {
                 <Text style={styles.versionTextHeader}>v1.19.1</Text>
             </LinearGradient>
 
-            <View style={styles.formContainer}>
+            <KeyboardAwareScrollView
+                contentContainerStyle={styles.formContainer}
+                enableOnAndroid={true}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+                extraScrollHeight={20}
+            >
                 <View style={styles.inputContainer}>
                     <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
                     <TextInput
@@ -292,7 +299,7 @@ const LoginScreen = () => {
                         </View>
                     </View>
                 )}
-            </View>
+            </KeyboardAwareScrollView>
         </View>
     );
 };
