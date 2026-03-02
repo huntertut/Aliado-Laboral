@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppTheme } from '../../../../theme/colors';
 import { API_URL } from '../../../../config/constants';
 import { useAuth } from '../../../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 
@@ -78,6 +79,7 @@ const STATES = [
 
 export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => {
     const { getAccessToken } = useAuth();
+    const navigation = useNavigation();
     const [modalVisible, setModalVisible] = useState(false);
     const [sector, setSector] = useState(laborData?.occupation || '');
     const [estado, setEstado] = useState(laborData?.federalEntity || '');
@@ -225,6 +227,19 @@ export const JurisdictionFinderModule = ({ laborData }: { laborData?: any }) => 
                                     <Text style={styles.recInstance}>{result.recomendacion.instancia}</Text>
                                     <Text style={styles.recAddress} selectable>{result.recomendacion.direccionOficial}</Text>
                                     <Text style={styles.recMeta}>{result.recomendacion.indicaciones}</Text>
+
+                                    {result.recomendacion.instancia.includes('PROFEDET') && (
+                                        <TouchableOpacity
+                                            style={styles.profedetLinkButton}
+                                            onPress={() => {
+                                                setModalVisible(false);
+                                                setTimeout(() => navigation.navigate('Guides' as never), 300);
+                                            }}
+                                        >
+                                            <Ionicons name="information-circle" size={20} color="#fff" style={{ marginRight: 8 }} />
+                                            <Text style={styles.profedetLinkText}>Ver Directorio de PROFEDET</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             </View>
                         )}
@@ -401,5 +416,19 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#7f8c8d',
         lineHeight: 18,
+    },
+    profedetLinkButton: {
+        backgroundColor: '#34495e',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        marginTop: 15,
+    },
+    profedetLinkText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
     }
 });
