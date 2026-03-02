@@ -78,32 +78,31 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend is reachable', ip: req.ip });
 });
 
-app.use('/auth', authRoutes);
-app.use('/lawyers', lawyerRoutes);
-app.use('/cases', caseRoutes);
-app.use('/ai', aiRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/lawyers', lawyerRoutes);
+app.use('/api/cases', caseRoutes);
+app.use('/api/ai', aiRoutes);
 // NUEVAS RUTAS - Sistema de Contacto
-app.use('/contact', contactRoutes);
-app.use('/subscription', subscriptionRoutes);
-app.use('/lawyer-profile', lawyerProfileRoutes);
-app.use('/worker-subscription', workerSubscriptionRoutes);
-app.use('/worker-profile', workerProfileRoutes);
-app.use('/admin', adminRoutes);
-app.use('/supervisor', supervisorRoutes);
-app.use('/accountant', accountantRoutes);
-app.use('/chat', chatRoutes);
-app.use('/vault', vaultRoutes);
-app.use('/news', newsRoutes);
-app.use('/pyme-profile', pymeRoutes);
-app.use('/pyme-profile', pymeRoutes);
-app.use('/system', systemRoutes);
-app.use('/forum', forumRoutes); // Forum Routes
-app.use('/analytics', analyticsRoutes);
-app.use('/documents', documentRoutes);
-app.use('/jurisdiction', jurisdictionRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/lawyer-profile', lawyerProfileRoutes);
+app.use('/api/worker-subscription', workerSubscriptionRoutes);
+app.use('/api/worker-profile', workerProfileRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/supervisor', supervisorRoutes);
+app.use('/api/accountant', accountantRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/vault', vaultRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/pyme-profile', pymeRoutes);
+app.use('/api/system', systemRoutes);
+app.use('/api/forum', forumRoutes); // Forum Routes
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/jurisdiction', jurisdictionRoutes);
 
 import reportRoutes from './routes/reportRoutes';
-app.use('/reports', reportRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use('/api/dev', devRoutes);
 
