@@ -26,4 +26,4 @@ RUN npm run build
 EXPOSE 3001
 
 # Start command (can be overridden by docker-compose)
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
