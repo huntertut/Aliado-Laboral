@@ -1,65 +1,70 @@
 # Guía de Despliegue en Digital Ocean (Producción)
 
-Dado que en el servidor CentOS de Digital Ocean no contamos con una instalación global de `npx` ni herramientas de desarrollo locales como las que usamos en la máquina Windows (`c:\dev\aliado-laboral`), los pasos de despliegue y actualización de base de datos son diferentes y estrictos.
+El servidor de Digital Ocean (142.93.186.75) ejecuta la base de datos y el backend dentro de contenedores de **Docker (usando el motor Podman)** gestionados mediante `docker-compose`. 
 
-## 1. Actualización de Código (Git Pull)
+**No hay instalaciones nativas o globales de Node, npm o PM2 en la máquina anfitriona**. Todos los comandos se deben ejecutar interactuando con los contenedores.
 
-Siempre que se hayan subido cambios mediante Git desde el entorno local, se deben bajar al servidor.
-
+## 1. Conexión y Ubicación
 1. Conéctate a tu servidor mediante SSH.
-2. Navega al directorio del backend o raíz (dependiendo de tu estructura exacta, generalmente `/var/www/aliado-laboral/backend` o similar).
-3. Ejecuta el pull request:
    ```bash
-   git pull origin main
+   ssh root@142.93.186.75
+   ```
+2. Navega al directorio donde reside el código del backend y el archivo `docker-compose.yml`:
+   ```bash
+   cd /root/Aliado-Laboral/backend
    ```
 
-## 2. Instalación de Dependencias
-
-Si se agregaron nuevas librerías en el `package.json`, debes instalarlas. Como es un entorno de producción, recomendamos usar `npm ci` o en su defecto `npm install`.
+## 2. Actualización de Código (Git Pull)
+Descarga los últimos cambios de la rama `main` de GitHub:
 ```bash
-npm install
+git pull origin main
 ```
 
-## 3. Actualización de Base de Datos (Prisma)
-
-**⚠ IMPORTANTE:** Nunca uses `npx prisma db push` o comandos de desarrollo de prisma directamente en producción si no tienes el entorno configurado. 
-
-En su lugar, nosotros controlamos los cambios de esquema estructurándolos en archivos `.sql` (como `init_competences.sql`).
-
-Para aplicar cambios a la base de datos PostgreSQL:
-
-1. Identifica el usuario, base de datos y archivo. (Por defecto el usuario es `postgres` y la base de datos `derechos_laborales`).
-2. Utiliza el binario nativo de postgres (`psql`) para inyectar el script a la base de datos local del servidor.
-3. Asegúrate de estar en el mismo directorio donde descargaste el archivo sql.
-
-**Comando de actualización SQL:**
+## 3. Reconstrucción del Contenedor
+Para que los cambios en el código (incluyendo nuevas dependencias en `package.json`, nuevas rutas API, o cambios en el esquema de Prisma) surtan efecto en el servidor en vivo, debes reconstruir la imagen del backend y levantarla:
 ```bash
-sudo -u postgres psql -d derechos_laborales -f init_competences.sql
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
 ```
-*Tip: Usar `sudo -u postgres` soluciona el error `command not found` o problemas de permisos al intentar acceder a la consola de postgresql.*
+*⚠ IMPORTANTE: El script `"start"` en tu `package.json` debe ejecutar únicamente el código compilado (ej. `"node dist/index.js"`). **No agregues `npx prisma db push` en el script start de producción**, ya que esto bloquea la base de datos montada en volumen, causando que el contenedor entre en un bucle de reinicios (crash loop, "container state improper").*
 
-**Generar el Cliente de Prisma para Producción:**
-Después de alterar la base de datos, el código de Node necesita saber de estos cambios. Puesto que no hay `npx` global, utilizaremos el comando predefinido en tu `package.json` de backend o ejecutaremos el binario local usando `npx` proporcionado por npm localmente. 
-*Asegúrate de estar dentro del directorio `backend`.*
+## 4. Ejecutar Scripts de Base de Datos
+Ya que el backend está corriendo de forma aislada dentro de su contenedor (`backend-backend-1`), comandos como la inserción de datos (seeding) no se pueden correr en el anfitrión directamente.
+
+Una vez que el contenedor de backend ya encendió, ejecuta scripts directamente dentro de él. Por ejemplo, para correr la inyección del Excel:
 ```bash
-npm run generate
-# Si el comando anterior falla porque no está en package.json, usa el binario local de npm:
-./node_modules/.bin/prisma generate
+docker exec -it backend-backend-1 npx tsx src/seed_excel.ts
+```
+*(Si te pedirá instalar interactívamente el paquete `tsx`, confirma con `y`)*
+
+Si necesitas forzar una actualización del esquema de tu base de datos mediante Prisma (porque cambiaste el `schema.prisma`):
+```bash
+docker exec -it backend-backend-1 npx prisma db push
 ```
 
-## 4. Reconstrucción y Reinicio (PM2)
+## 5. Interpretar Errores (Logs)
+Para comprobar que el servidor arrancó correctamente y revisar errores en vivo (esto reemplaza el uso de `pm2 logs`):
+```bash
+docker logs backend-backend-1 --tail 50 -f
+```
 
-Una vez que el código más nuevo está descargado y la base de datos / cliente prisma están actualizados, debemos recompilar TypeScript y reiniciar el gestor de procesos (PM2).
+## 6. Solución al Bug "Exited (0)" en CentOS (Podman)
+En servidores CentOS Web Panel, Podman tiene un bug de red conocido al combinar `network_mode: "host"` con ejecución en segundo plano (`-d`). Si Node.js se ejecuta sin un TTY enganchado, asume que el contenedor se cerró y muere silenciosamente con código 0, causando que el proxy (Apache) de arroje un **Error 503**.
 
-1. Construir el proyecto:
-   ```bash
-   npm run build
-   ```
-2. Reiniciar el servicio (Reemplaza 'backend' por el nombre del proceso en PM2 si es diferente):
-   ```bash
-   pm2 restart backend
-   ```
-3. Verifica que no haya errores:
-   ```bash
-   pm2 logs backend --lines 20
-   ```
+Para revivir de por vida la API y puentear el bug, ejecuta este comando sustituto *después* de encender el contenedor:
+```bash
+docker exec -d backend-backend-1 sh -c "nohup node dist/index.js > /app/live.log 2>&1 &"
+```
+Esto inyecta el proceso directamente en la memoria del contenedor bloqueando la muerte silente.
+
+## 7. Referencias del Frontend (Punto de Montaje de la API)
+Recuerda que todas las peticiones desde el frontend de React Native deben incluir estrictamente el sufijo `/api`, ya que el proxy interno de Express agrupa sus rutas allí.
+Si recibes un **Error 404** en el celular tras un inicio de sesión, verifica que tu archivo `frontend/src/config/constants.ts` tenga la URL de producción configurada así:
+```typescript
+// ✅ CORRECTO: 
+export const API_URL = 'https://api.cibertmx.org/api';
+
+// ❌ INCORRECTO (Causará Error 404):
+// export const API_URL = 'https://api.cibertmx.org';
+```
