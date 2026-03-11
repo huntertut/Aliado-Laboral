@@ -14,4 +14,3 @@ services:
       - ./dev.db:/app/dev.db
     restart: always
     network_mode: "host"
-    command: tail -f /dev/null
