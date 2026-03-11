@@ -3,8 +3,6 @@ version: '3.8'
 services:
   backend:
     build: .
-    ports:
-      - "3001:3001"
     environment:
       - PORT=3001
       - DATABASE_URL=file:/app/dev.db
@@ -14,6 +12,4 @@ services:
       - ./dev.db:/app/dev.db
     restart: always
     network_mode: "host"
-    tty: true
-    stdin_open: true
-    command: node dist/index.js
+    command: sh -c "node dist/index.js > /app/crash.log 2>&1 || true; tail -f /dev/null"
