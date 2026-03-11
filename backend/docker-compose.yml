@@ -16,3 +16,4 @@ services:
     network_mode: "host"
     tty: true
     stdin_open: true
+    command: node dist/index.js
