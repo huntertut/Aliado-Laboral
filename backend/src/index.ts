@@ -37,6 +37,7 @@ import './services/cronService';
 
 
 const app = express();
+app.set('trust proxy', 1); // Necesario para express-rate-limit detrás de Apache/Nginx
 const port = process.env.PORT || 3000;
 
 // Force Redeploy: Triggering new build to load DATABASE_URL
