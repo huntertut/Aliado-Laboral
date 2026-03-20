@@ -1,0 +1,228 @@
+﻿diff --git a/frontend/src/config/firebase.ts b/frontend/src/config/firebase.ts
+index 91bf1c8..6816013 100644
+--- a/frontend/src/config/firebase.ts
++++ b/frontend/src/config/firebase.ts
+@@ -1,5 +1,5 @@
+ import { initializeApp } from 'firebase/app';
+-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
++import { initializeAuth } from 'firebase/auth';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
+ 
+ const firebaseConfig = {
+diff --git a/frontend/src/context/AuthContext.tsx b/frontend/src/context/AuthContext.tsx
+index 5ffe0bc..d5d40c9 100644
+--- a/frontend/src/context/AuthContext.tsx
++++ b/frontend/src/context/AuthContext.tsx
+@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
+                     try {
+                         console.log('­ƒöä [AuthContext] Refreshing user status from backend...');
+                         const response = await axios.post(`${API_URL}/auth/verify-token`, { idToken: token }, { timeout: 5000 });
+-                        const freshUser = response.data.user;
++                        const freshUser = (response.data as any).user;
+ 
+                         // 3.5. DEMO MODE OVERRIDES (PERSIST ON REFRESH)
+                         const demoEmail = freshUser.email?.toLowerCase();
+@@ -233,7 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
+             console.log('[AuthContext] 3. Verifying token with backend:', `${API_URL}/auth/verify-token`);
+             const response = await axios.post(`${API_URL}/auth/verify-token`, { idToken }, { timeout: 15000 });
+             console.log('[AuthContext] 3. Backend response received:', response.status);
+-            const userData = response.data.user;
++            const userData = (response.data as any).user;
+ 
+             // 3.5. DEMO MODE OVERRIDES (For Testing/Demos)
+             const demoEmail = email.toLowerCase();
+@@ -384,7 +384,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
+             });
+ 
+             // Sync local state
+-            await updateUser({ ...data, ...response.data.user });
++            await updateUser({ ...data, ...(response.data as any).user });
+         } catch (e: any) {
+             console.error('Update profile failed:', e);
+             throw new Error(e.response?.data?.error || 'Failed to update profile');
+diff --git a/frontend/src/modules/lawyer/dashboard/LawyerDashboardScreen.tsx b/frontend/src/modules/lawyer/dashboard/LawyerDashboardScreen.tsx
+index 3028f37..505147d 100644
+--- a/frontend/src/modules/lawyer/dashboard/LawyerDashboardScreen.tsx
++++ b/frontend/src/modules/lawyer/dashboard/LawyerDashboardScreen.tsx
+@@ -42,7 +42,7 @@ const LawyerDashboardScreen = () => {
+ 
+             // --- DEMO MODE CHECK ---
+             // Si estamos en modo demo (usuario local), usamos datos falsos
+-            const userDataStr = await import('@react-native-async-storage/async-storage').then(m => m.default.getItem('userData'));
++            const userDataStr = require('@react-native-async-storage/async-storage').then(m => m.default.getItem('userData'));
+             const userData = userDataStr ? JSON.parse(userDataStr) : null;
+ 
+             if (userData?.id?.startsWith('demo-')) {
+diff --git a/frontend/src/modules/worker/profile/components/WorkerProfile.tsx b/frontend/src/modules/worker/profile/components/WorkerProfile.tsx
+index 26f8f9c..3fcb74a 100644
+--- a/frontend/src/modules/worker/profile/components/WorkerProfile.tsx
++++ b/frontend/src/modules/worker/profile/components/WorkerProfile.tsx
+@@ -2,7 +2,7 @@ import React from 'react';
+ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+ import { useNavigation } from '@react-navigation/native';
+ import { Ionicons } from '@expo/vector-icons';
+-import { AppTheme } from '../../../theme/colors';
++import { AppTheme } from '../../../../../theme/colors';
+ 
+ import { WorkerLaborDataSection } from './WorkerLaborDataSection';
+ import { ProfedetModule } from './ProfedetModule';
+diff --git a/frontend/src/screens/CaseChatScreen.tsx b/frontend/src/screens/CaseChatScreen.tsx
+index 4f499bf..ae6e834 100644
+--- a/frontend/src/screens/CaseChatScreen.tsx
++++ b/frontend/src/screens/CaseChatScreen.tsx
+@@ -46,7 +46,7 @@ const CaseChatScreen = () => {
+             // My backend currently: orderBy: { createdAt: 'asc' } (Oldest first)
+             // For inverted FlatList, we want Newest first (index 0).
+             // So we reverse the array.
+-            const sortedMessages = response.data.reverse();
++            const sortedMessages = (response.data as any).reverse();
+             setMessages(sortedMessages);
+         } catch (error) {
+             console.error('Error fetching chat:', error);
+@@ -68,7 +68,7 @@ const CaseChatScreen = () => {
+             const response = await axios.get(`${API_URL}/vault/files`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setVaultFiles(response.data);
++            setVaultFiles(response.data as any);
+         } catch (error) {
+             console.error('Error fetching vault:', error);
+             Alert.alert('Error', 'No se pudieron cargar los archivos de tu ba├║l.');
+diff --git a/frontend/src/screens/LawyerCasesScreen.tsx b/frontend/src/screens/LawyerCasesScreen.tsx
+index 9f9e7ec..42c8ddb 100644
+--- a/frontend/src/screens/LawyerCasesScreen.tsx
++++ b/frontend/src/screens/LawyerCasesScreen.tsx
+@@ -37,7 +37,7 @@ const LawyerCasesScreen = () => {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+ 
+-            let data = response.data.requests || [];
++            let data = (response.data as any).requests || [];
+ 
+             // Targeted Demo Logic for PRO test account
+             if (isProTestAccount && data.length === 0) {
+diff --git a/frontend/src/screens/LoginScreen.tsx b/frontend/src/screens/LoginScreen.tsx
+index 24ffa4e..e30ff48 100644
+--- a/frontend/src/screens/LoginScreen.tsx
++++ b/frontend/src/screens/LoginScreen.tsx
+@@ -128,7 +128,7 @@ const LoginScreen = () => {
+             return;
+         }
+         try {
+-            const { getAuth, sendPasswordResetEmail } = await import('firebase/auth');
++            const { getAuth, sendPasswordResetEmail } = require('firebase/auth');
+             const auth = getAuth();
+             await sendPasswordResetEmail(auth, email);
+             Alert.alert('Correo Enviado', 'Revisa tu bandeja de entrada.');
+diff --git a/frontend/src/screens/NewsFeedScreen.tsx b/frontend/src/screens/NewsFeedScreen.tsx
+index 7528ed0..934c58b 100644
+--- a/frontend/src/screens/NewsFeedScreen.tsx
++++ b/frontend/src/screens/NewsFeedScreen.tsx
+@@ -24,7 +24,7 @@ const NewsFeedScreen = () => {
+             const response = await axios.get(`${API_URL}/news`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setNews(response.data);
++            setNews(response.data as any);
+         } catch (error: any) {
+             console.error('Error fetching news:', error);
+             Alert.alert('Error', 'No se pudieron cargar las noticias. ' + (error.message || 'Intenta m├ís tarde'));
+diff --git a/frontend/src/screens/VaultScreen.tsx b/frontend/src/screens/VaultScreen.tsx
+index e312515..5d0edf5 100644
+--- a/frontend/src/screens/VaultScreen.tsx
++++ b/frontend/src/screens/VaultScreen.tsx
+@@ -37,7 +37,7 @@ const VaultScreen = ({ navigation }: any) => {
+             const response = await axios.get(`${API_URL}/vault/files`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setFiles(response.data);
++            setFiles(response.data as any);
+         } catch (error) {
+             console.error('Error fetching vault files:', error);
+             Alert.alert('Error', 'No se pudieron cargar tus archivos.');
+diff --git a/frontend/src/screens/admin/AdminCasesScreen.tsx b/frontend/src/screens/admin/AdminCasesScreen.tsx
+index 17f0c8a..bd0cbd7 100644
+--- a/frontend/src/screens/admin/AdminCasesScreen.tsx
++++ b/frontend/src/screens/admin/AdminCasesScreen.tsx
+@@ -18,7 +18,7 @@ const AdminCasesScreen = () => {
+             const response = await axios.get(`${API_URL}/admin/cases`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setCases(response.data);
++            setCases(response.data as any);
+         } catch (error) {
+             console.error('Error fetching cases:', error);
+             Alert.alert('Error', 'No se pudieron cargar los casos');
+diff --git a/frontend/src/screens/admin/AdminForumScreen.tsx b/frontend/src/screens/admin/AdminForumScreen.tsx
+index 65f76aa..5d2440e 100644
+--- a/frontend/src/screens/admin/AdminForumScreen.tsx
++++ b/frontend/src/screens/admin/AdminForumScreen.tsx
+@@ -20,7 +20,7 @@ const AdminForumScreen = () => {
+             const response = await axios.get(`${API_URL}/forum/posts`, {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setPosts(response.data);
++            setPosts(response.data as any);
+         } catch (error) {
+             console.error('Error fetching forum posts:', error);
+             Alert.alert('Error', 'No se pudieron cargar los posts del foro.');
+diff --git a/frontend/src/screens/admin/AdminSecurityScreen.tsx b/frontend/src/screens/admin/AdminSecurityScreen.tsx
+index cab6b05..caed98c 100644
+--- a/frontend/src/screens/admin/AdminSecurityScreen.tsx
++++ b/frontend/src/screens/admin/AdminSecurityScreen.tsx
+@@ -20,10 +20,10 @@ const AdminSecurityScreen = () => {
+ 
+             if (activeTab === 'alerts') {
+                 const response = await axios.get(`${API_URL}/admin/security/alerts`, { headers });
+-                setAlerts(response.data);
++                setAlerts(response.data as any);
+             } else {
+                 const response = await axios.get(`${API_URL}/admin/security/logs`, { headers });
+-                setLogs(response.data);
++                setLogs(response.data as any);
+             }
+         } catch (error) {
+             console.error('Error fetching security data:', error);
+diff --git a/frontend/src/screens/admin/AdminUsersScreen.tsx b/frontend/src/screens/admin/AdminUsersScreen.tsx
+index 6775d17..0cf858b 100644
+--- a/frontend/src/screens/admin/AdminUsersScreen.tsx
++++ b/frontend/src/screens/admin/AdminUsersScreen.tsx
+@@ -23,10 +23,10 @@ const AdminUsersScreen = () => {
+ 
+             if (activeTab === 'lawyers') {
+                 const response = await axios.get(`${API_URL}/admin/lawyers`, { headers });
+-                setLawyers(response.data);
++                setLawyers(response.data as any);
+             } else if (activeTab === 'workers') {
+                 const response = await axios.get(`${API_URL}/admin/workers`, { headers });
+-                setWorkers(response.data);
++                setWorkers(response.data as any);
+             } else {
+                 try {
+                     const response = await axios.get(`${API_URL}/admin/pymes`, { headers });
+diff --git a/frontend/src/screens/forum/AnonymousForumScreen.tsx b/frontend/src/screens/forum/AnonymousForumScreen.tsx
+index 4456011..097d73f 100644
+--- a/frontend/src/screens/forum/AnonymousForumScreen.tsx
++++ b/frontend/src/screens/forum/AnonymousForumScreen.tsx
+@@ -38,7 +38,7 @@ const AnonymousForumScreen = () => {
+                 params: { filter: filter === 'unanswered' ? 'unanswered' : undefined },
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+-            setPosts(response.data);
++            setPosts(response.data as any);
+         } catch (error: any) {
+             console.error('Error fetching forum posts:', error);
+             Alert.alert('Error de Foro', 'No se pudieron cargar posts. ' + (error.message || 'Error desconocido'));
+diff --git a/frontend/src/screens/forum/ForumDetailScreen.tsx b/frontend/src/screens/forum/ForumDetailScreen.tsx
+index 05b3d4d..70203de 100644
+--- a/frontend/src/screens/forum/ForumDetailScreen.tsx
++++ b/frontend/src/screens/forum/ForumDetailScreen.tsx
+@@ -62,7 +62,7 @@ const ForumDetailScreen = () => {
+                 headers: { Authorization: `Bearer ${token}` }
+             });
+             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+-            setPost(response.data);
++            setPost(response.data as any);
+         } catch (error) {
+             console.error(error);
+             Alert.alert('Error', 'No se pudo cargar el debate.');

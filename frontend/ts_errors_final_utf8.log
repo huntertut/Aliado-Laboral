@@ -1,0 +1,11 @@
+﻿src/config/firebase.ts(3,43): error TS2307: Cannot find module 'firebase/auth/react-native' or its corresponding type declarations.
+src/screens/admin/AdminFinanceScreen.tsx(26,21): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/screens/CaseChatScreen.tsx(49,50): error TS2339: Property 'reverse' does not exist on type 'unknown'.
+src/screens/CaseChatScreen.tsx(148,21): error TS2339: Property 'downloadUrl' does not exist on type '{}'.
+src/screens/forum/AnonymousForumScreen.tsx(67,52): error TS2345: Argument of type '[string, { postId: string; }]' is not assignable to parameter of type 'never'.
+src/screens/LawyerCasesScreen.tsx(40,38): error TS2339: Property 'requests' does not exist on type 'unknown'.
+src/screens/ProfileScreen.tsx(234,49): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/pyme/ContractReviewScreen.tsx(191,51): error TS2820: Type '" bold"' is not assignable to type '"bold" | "normal" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900" | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | "ultralight" | "thin" | "light" | "medium" | ... 5 more ... | "black"'. Did you mean '"bold"'?
+src/screens/RegisterScreen.tsx(431,57): error TS2345: Argument of type '[never, never]' is not assignable to parameter of type 'never'.
+src/screens/VaultScreen.tsx(78,21): error TS2339: Property 'uploadUrl' does not exist on type '{}'.
+src/screens/VaultScreen.tsx(78,32): error TS2339: Property 'filePath' does not exist on type '{}'.

@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
 interface User {
@@ -329,6 +329,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // isLoading stays false
         setError(null);
         try {
+            // 1. Crear el usuario en Firebase Auth PRIMERO (la fuente de la verdad para login)
+            console.log('[AuthContext] Creando usuario en Firebase...');
+            await createUserWithEmailAndPassword(auth, email, password);
+
+            // 2. Guardar el resto de los datos en la base de datos (Prisma)
+            console.log('[AuthContext] Registrando perfil en el Backend...');
             await axios.post(`${API_URL}/auth/register`, {
                 email,
                 password,
@@ -336,7 +342,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role,
                 ...extraData
             });
-            // We do NOT log in automatically. User must verify email or just login manually.
+
+            // 3. Autologin (Pase Directo) O Cierre de sesión si es abogado
+            if (role === 'worker' || role === 'pyme') {
+                console.log('[AuthContext] Auto-iniciando sesión (Pase Directo)...');
+                await login(email, password);
+            } else {
+                console.log('[AuthContext] Abogado registrado, cerrando sesión de Firebase para revisión manual...');
+                await signOut(auth);
+            }
+
         } catch (e: any) {
             console.error('Register error:', e);
 

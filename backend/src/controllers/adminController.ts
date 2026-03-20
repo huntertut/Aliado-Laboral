@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import * as storageService from '../services/storageService';
+import { sendPushNotification } from '../services/notificationService';
 
 const prisma = new PrismaClient();
 
@@ -192,11 +193,23 @@ export const verifyLawyer = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.update({
             where: { id: lawyerId },
-            data: { isVerified }
+            data: { isVerified },
+            include: { user: true }
         });
 
         // Log activity
         // await prisma.activityLog.create(...)
+
+        // Enviar Push Notification si fue aprobado
+        if (isVerified === true && lawyer.user?.id) {
+            console.log(`[AdminController] Enviando notificación de aprobación al abogado ${lawyer.user.id}`);
+            await sendPushNotification(
+                lawyer.user.id,
+                '¡Cuenta Aprobada!',
+                'Felicidades, tu cuenta de Aliado Laboral ha sido verificada. Ya puedes iniciar sesión y acceder a casos.',
+                { type: 'LAWYER_VERIFIED' }
+            );
+        }
 
         res.json(lawyer);
     } catch (error) {

@@ -2,8 +2,8 @@
   "expo": {
     "name": "Aliado Laboral",
     "slug": "aliado-laboral",
-    "version": "1.19.1",
-    "runtimeVersion": "1.19.1",
+    "version": "1.19.4",
+    "runtimeVersion": "1.19.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/images/aliado_logo_new.png",

@@ -18,6 +18,18 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    // Easter Egg State
+    const [tapCount, setTapCount] = useState(0);
+
+    const handleLogoPress = () => {
+        const newCount = tapCount + 1;
+        setTapCount(newCount);
+        if (newCount >= 7) {
+            setTapCount(0);
+            navigation.navigate('DeveloperCredits' as never);
+        }
+    };
+
     // Biometric State
     const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
     const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
@@ -143,16 +155,16 @@ const LoginScreen = () => {
                 colors={[AppTheme?.colors?.primary || '#1e3799', '#3742fa']}
                 style={styles.header}
             >
-                <View style={styles.logoContainer}>
+                <TouchableOpacity style={styles.logoContainer} activeOpacity={0.9} onPress={handleLogoPress}>
                     <Image
                         source={require('../../assets/images/aliado_logo_new.png')}
                         style={styles.logo}
                         resizeMode="contain"
                     />
-                </View>
+                </TouchableOpacity>
                 <Text style={styles.title}>Aliado Laboral</Text>
                 <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
-                <Text style={styles.versionTextHeader}>v1.19.1</Text>
+                <Text style={styles.versionTextHeader}>v1.19.4</Text>
             </LinearGradient>
 
             <KeyboardAwareScrollView
@@ -223,6 +235,7 @@ const LoginScreen = () => {
                     </LinearGradient>
                 </TouchableOpacity>
 
+                {/* SOCIAL LOGIN HIDDEN FOR V1 GOOGLE PLAY RELEASE
                 <View style={styles.dividerContainer}>
                     <View style={styles.divider} />
                     <Text style={styles.dividerText}>O continúa con</Text>
@@ -240,6 +253,7 @@ const LoginScreen = () => {
                         <Text style={styles.socialButtonText}>Facebook</Text>
                     </TouchableOpacity>
                 </View>
+                */}
 
                 <View style={styles.registerContainer}>
                     <Text style={styles.registerText}>¿No tienes cuenta? </Text>
@@ -248,57 +262,7 @@ const LoginScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* DEV QUICK LOGIN - Only visible in DEV mode */}
-                {__DEV__ && (
-                    <View style={{ marginTop: 30, padding: 10, backgroundColor: '#f0f0f0', borderRadius: 10 }}>
-                        <Text style={{ textAlign: 'center', marginBottom: 10, fontWeight: 'bold', color: '#555' }}>
-                            🛠️ ACCESO RÁPIDO (DEV)
-                        </Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, justifyContent: 'center' }}>
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#3498db', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('worker_premium@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>👷 Worker Prem</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#2c3e50', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('lawyer_basic@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>⚖️ Lawyer Basic</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#2c3e50', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('lawyer_pro@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>⚖️ Lawyer Pro</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#e67e22', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('pyme_basic@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>🏢 Pyme Basic</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#e67e22', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('pyme_premium@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>🏢 Pyme Prem</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#c0392b', padding: 8, borderRadius: 5, margin: 2 }}
-                                onPress={() => { setEmail('admin@test.com'); setPassword('123456'); }}
-                            >
-                                <Text style={{ color: 'white', fontSize: 10 }}>👑 Admin</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                )}
+                {/* DEV QUICK LOGIN REMOVED */}
             </KeyboardAwareScrollView>
         </View>
     );

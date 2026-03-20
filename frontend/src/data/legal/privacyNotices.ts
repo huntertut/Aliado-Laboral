@@ -1,11 +1,11 @@
 export const PRIVACY_NOTICES = {
     LAWYER: {
         title: "Términos y Condiciones para Abogados Asociados",
-        lastUpdate: "25 de enero de 2026",
+        lastUpdate: "16 de marzo de 2026",
         sections: [
             {
                 heading: "1. OBJETO",
-                content: "Aliado Laboral es una plataforma de intermediación tecnológica que conecta a abogados con trabajadores y empresas."
+                content: "Aliado Laboral, operado por Misael Morales Urbano, es una plataforma de intermediación tecnológica que conecta a abogados con trabajadores y empresas."
             },
             {
                 heading: "2. ESQUEMA DE COMISIONES POR ÉXITO ('SUCCESS FEE')",
@@ -24,11 +24,11 @@ export const PRIVACY_NOTICES = {
 
     WORKER: {
         title: "Aviso de Privacidad Integral para Trabajadores",
-        lastUpdate: "25 de enero de 2026",
+        lastUpdate: "16 de marzo de 2026",
         sections: [
             {
                 heading: "1. Responsable del Tratamiento",
-                content: "\"Aliado Laboral\" protege su información personal bajo los más altos estándares de seguridad tecnológica."
+                content: "Misael Morales Urbano (Aliado Laboral) protege su información personal bajo los más altos estándares de seguridad tecnológica."
             },
             {
                 heading: "2. Finalidades Principales",
@@ -47,7 +47,7 @@ export const PRIVACY_NOTICES = {
 
     PYME: {
         title: "Aviso de Privacidad Integral para PYMEs",
-        lastUpdate: "25 de enero de 2026",
+        lastUpdate: "16 de marzo de 2026",
         sections: [
             {
                 heading: "1. Tratamiento de Datos Corporativos",
@@ -55,33 +55,46 @@ export const PRIVACY_NOTICES = {
             },
             {
                 heading: "2. Confidencialidad",
-                content: "Aliado Laboral actúa como Encargado del Tratamiento, limitándose a proveer la infraestructura tecnológica sin acceso o uso de los datos para fines distintos a los contratados."
+                content: "Aliado Laboral (Misael Morales Urbano) actúa como Encargado del Tratamiento, limitándose a proveer la infraestructura tecnológica sin acceso o uso de los datos para fines distintos a los contratados."
             }
         ]
     },
+
     GENERAL: {
         title: "Aviso de Privacidad General (Plataforma)",
-        lastUpdate: "09 de enero de 2026",
+        lastUpdate: "16 de marzo de 2026",
         sections: [
             {
-                heading: "1. Alcance",
-                content: "Este aviso aplica a cualquier usuario (visitante, registrado o no) que acceda, navegue o utilice el sitio web y/o la aplicación móvil de Aliado Laboral."
+                heading: "1. Responsable Legal",
+                content: "Misael Morales Urbano (Aliado Laboral), con domicilio en Ciudad de México, México, es responsable del tratamiento de sus datos personales.\nContacto: soporte@cibertmx.org"
             },
             {
-                heading: "2. Datos de Navegación y Cookies",
+                heading: "2. Audiencia y Restricción de Edad",
+                content: "La plataforma está dirigida exclusivamente a personas mayores de 18 años en el contexto de relaciones laborales en México. No recopilamos intencionalmente datos de menores de edad."
+            },
+            {
+                heading: "3. Datos que Recopilamos",
+                content: "• Todos los usuarios: nombre, correo, teléfono, contraseña (cifrada).\n• Trabajadores: CURP, NSS (IMSS), puesto, historial laboral, salario.\n• Abogados: Cédula Profesional, foto de perfil, zona de atención.\n• PyMEs: razón social, RFC, datos de plantilla laboral.\n• Archivos: documentos PDF e imágenes subidas a la Bóveda Virtual."
+            },
+            {
+                heading: "4. Uso de la Cámara del Dispositivo",
+                content: "La aplicación solicita acceso a la cámara únicamente para permitirle capturar y adjuntar documentos o fotografías en los flujos de comunicación entre Abogados, Trabajadores y PyMEs (ej. documentos en la Bóveda Virtual).\n\n• No se usa para reconocimiento facial ni vigilancia.\n• Las imágenes no se analizan automáticamente sin su consentimiento.\n• Puede revocar este permiso en cualquier momento desde la configuración de su dispositivo."
+            },
+            {
+                heading: "5. Retención de Datos",
+                content: "Conservamos sus datos mientras su cuenta esté activa y hasta 3 años adicionales después de su eliminación, por obligaciones fiscales y legales en México. Los casos cerrados con pagos comprobados pueden ser anonimizados a solicitud."
+            },
+            {
+                heading: "6. Datos de Navegación y Cookies",
                 content: "Utilizamos cookies y tecnologías de rastreo para:\n• Reconocerlo al iniciar sesión.\n• Analizar métricas de tráfico y comportamiento de uso (Analytics).\n• Mejorar la seguridad del sitio.\n\nPuede deshabilitar las cookies desde la configuración de su navegador, aunque algunas funciones del sitio podrían no operar correctamente."
             },
             {
-                heading: "3. Formularios de Contacto",
-                content: "Los datos (nombre, correo, mensaje) enviados a través de nuestros formularios de contacto o soporte serán utilizados exclusivamente para atender su petición, duda o comentario."
+                heading: "7. Servicios de Terceros",
+                content: "Utilizamos: Stripe (pagos), Firebase/Google (notificaciones y analíticas) y servicios de nube cifrada (Bóveda Virtual). No vendemos datos personales a ningún tercero."
             },
             {
-                heading: "4. Enlaces a Terceros",
-                content: "La Plataforma puede contener enlaces a sitios externos. No nos hacemos responsables de las prácticas de privacidad de dichos sitios."
-            },
-            {
-                heading: "5. Contacto de Privacidad",
-                content: "Para cualquier duda relacionada con la protección de sus datos personales, el Departamento de Privacidad de Aliado Laboral está a sus órdenes en: vinculacion@savestudiomx.com."
+                heading: "8. Contacto de Privacidad y Derechos ARCO",
+                content: "Para ejercer sus derechos de Acceso, Rectificación, Cancelación u Oposición (ARCO), contáctenos en: soporte@cibertmx.org\n\nTambién puede eliminar su cuenta y datos desde el panel de configuración de la aplicación."
             }
         ]
     }

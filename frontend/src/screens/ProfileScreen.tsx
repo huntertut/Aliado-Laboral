@@ -9,9 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WorkerProfileModule } from '../modules/worker/profile/WorkerProfileModule';
 import { LawyerProfileModule } from '../modules/lawyer/profile/LawyerProfileModule';
-import { AdminPanelWrapper } from '../modules/admin/dashboard/AdminPanelWrapper';
-import { SupervisorDashboard } from '../modules/supervisor/dashboard/SupervisorDashboard';
-import { AccountantDashboard } from '../modules/accountant/dashboard/AccountantDashboard';
+
 import { PymeProfileModule } from '../modules/pyme/profile/PymeProfileModule';
 
 const ProfileScreen = () => {
@@ -189,62 +187,50 @@ const ProfileScreen = () => {
                 )}
             </LinearGradient>
 
-            {role === 'admin' ? (
-                <AdminPanelWrapper />
-            ) : (
-                <ScrollView style={styles.content}>
-                    {/* Renderizado CONDICIONAL estricto por rol */}
-                    {role === 'worker' && (
-                        <WorkerProfileModule />
-                    )}
+            <ScrollView style={styles.content}>
+                {/* Renderizado CONDICIONAL estricto por rol */}
+                {role === 'worker' && (
+                    <WorkerProfileModule />
+                )}
 
-                    {role === 'lawyer' && (
-                        <LawyerProfileModule />
-                    )}
+                {role === 'lawyer' && (
+                    <LawyerProfileModule />
+                )}
 
-                    {role === 'supervisor' && (
-                        <SupervisorDashboard />
-                    )}
+                {role === 'pyme' && (
+                    <PymeProfileModule />
+                )}
 
-                    {role === 'accountant' && (
-                        <AccountantDashboard />
-                    )}
+                <TouchableOpacity
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#fff',
+                        padding: 15,
+                        borderRadius: 10,
+                        marginTop: 10,
+                        marginBottom: 20
+                    }}
+                    onPress={() => {
+                        // Determine correct policy type based on role
+                        let policyType = 'GENERAL';
+                        if (role === 'worker') policyType = 'WORKER';
+                        else if (role === 'lawyer') policyType = 'LAWYER';
+                        else if (role === 'pyme') policyType = 'PYME';
 
-                    {role === 'pyme' && (
-                        <PymeProfileModule />
-                    )}
+                        navigation.navigate('PrivacyPolicy' as never, { type: policyType } as never);
+                    }}
+                >
+                    <Ionicons name="shield-checkmark-outline" size={20} color={AppTheme.colors.primary} />
+                    <Text style={{ marginLeft: 10, fontSize: 16, color: '#333', fontWeight: '500' }}>
+                        Aviso de Privacidad
+                    </Text>
+                    <View style={{ flex: 1 }} />
+                    <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            backgroundColor: '#fff',
-                            padding: 15,
-                            borderRadius: 10,
-                            marginTop: 10,
-                            marginBottom: 20
-                        }}
-                        onPress={() => {
-                            // Determine correct policy type based on role
-                            let policyType = 'GENERAL';
-                            if (role === 'worker') policyType = 'WORKER';
-                            else if (role === 'lawyer') policyType = 'LAWYER';
-                            else if (role === 'pyme') policyType = 'PYME';
-
-                            navigation.navigate('PrivacyPolicy' as never, { type: policyType } as never);
-                        }}
-                    >
-                        <Ionicons name="shield-checkmark-outline" size={20} color={AppTheme.colors.primary} />
-                        <Text style={{ marginLeft: 10, fontSize: 16, color: '#333', fontWeight: '500' }}>
-                            Aviso de Privacidad
-                        </Text>
-                        <View style={{ flex: 1 }} />
-                        <Ionicons name="chevron-forward" size={20} color="#ccc" />
-                    </TouchableOpacity>
-
-                    <View style={{ height: 40 }} />
-                </ScrollView>
-            )}
+                <View style={{ height: 40 }} />
+            </ScrollView>
         </View>
     );
 };

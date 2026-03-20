@@ -19,8 +19,7 @@ import NewsFeedScreen from '../screens/NewsFeedScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import AdminNavigator from './AdminNavigator';
-import SupervisorNavigator from './SupervisorNavigator';
+
 import ProfileWizardScreen from '../screens/ProfileWizardScreen';
 import PrivacyPolicyScreen from '../screens/legal/PrivacyPolicyScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
@@ -49,6 +48,7 @@ import LawyerRequestDetailScreen from '../screens/LawyerRequestDetailScreen';
 import ContractReviewScreen from '../screens/pyme/ContractReviewScreen';
 import LiquidationCalculatorView from '../screens/pyme/LiquidationCalculatorView';
 import GenerateActScreen from '../screens/pyme/GenerateActScreen';
+import DeveloperCreditsScreen from '../screens/DeveloperCreditsScreen';
 
 const Stack = createStackNavigator();
 
@@ -93,30 +93,15 @@ const AppNavigator = () => {
                 {user ? (
                     /* Main App Stack */
                     <>
-                        {/* Role Based Navigation */}
-                        {user.role === 'admin' ? (
-                            <Stack.Screen
-                                name="AdminDashboard"
-                                component={AdminNavigator}
-                                options={{ headerShown: false }}
-                            />
-                        ) : user.role === 'supervisor' ? (
-                            <Stack.Screen
-                                name="SupervisorDashboard"
-                                component={SupervisorNavigator}
-                                options={{ headerShown: false }}
-                            />
-                        ) : (
-                            // Standard User Stack (Worker, Lawyer, Pyme)
-                            <Stack.Screen
-                                name="Home"
-                                component={HomeScreen}
-                                options={{
-                                    headerTitle: 'Aliado Laboral',
-                                    headerLeft: () => null
-                                }}
-                            />
-                        )}
+                        {/* Standard User Stack (Worker, Lawyer, Pyme) */}
+                        <Stack.Screen
+                            name="Home"
+                            component={HomeScreen}
+                            options={{
+                                headerTitle: 'Aliado Laboral',
+                                headerLeft: () => null
+                            }}
+                        />
 
                         {/* Common Screens */}
                         <Stack.Screen name="Calculator" component={CalculatorScreen} options={{ headerShown: false }} />
@@ -184,6 +169,11 @@ const AppNavigator = () => {
                             name="PrivacyPolicy"
                             component={PrivacyPolicyScreen}
                             options={{ title: 'Política de Privacidad', headerShown: true }}
+                        />
+                        <Stack.Screen
+                            name="DeveloperCredits"
+                            component={DeveloperCreditsScreen}
+                            options={{ headerShown: false }}
                         />
                     </>
                 )}

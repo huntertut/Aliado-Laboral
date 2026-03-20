@@ -34,3 +34,43 @@ Sigue estos pasos para regenerar la configuración de manera limpia:
 
 4. Vuelve a correr tu emulador:
 `npm run android`
+
+## Problemas del Empaquetador (Metro Bundler) y Caché
+
+### Error: "Unable to load script" o "unable to resolve Intent" en pantalla roja
+
+**Síntoma:**
+El emulador de Android arranca, pero muestra una pantalla roja indicando que no puede conectarse con Metro o no puede resolver el Intent `com.aliadolaboral.app://expo-development-client`. Esto pasa frecuentemente después de reiniciar la PC o cambiar de red Wi-Fi.
+
+**Causa:**
+Cuando usas solo `npx expo start`, la aplicación en el emulador intenta buscar el código de JavaScript (el Bundle) a través de la dirección IP de tu red local (ej. `192.168.1.x:8081`). Al reiniciar la computadora, tu IP puede cambiar o el Firewall puede bloquear la conexión, dejando a la app pre-instalada "huérfana" e incapaz de descargar la nueva versión del código.
+
+**Solución:**
+En lugar de solo levantar el servidor, debes forzar una reinstalación nativa que construya un "túnel" directo por cable/emulador (ADB reverse) hacia `localhost`:
+1. Cierra el proceso de Metro (Ctrl+C en la terminal).
+2. Ejecuta:
+```bash
+npm run android
+```
+Esto creará una **nueva APK de desarrollo**, la instalará, y enlazará los puertos internamente para que no dependa de tu dirección IP de red.
+
+### Error de Compilación Súbita: "';' expected" o "identifier expected in declaration"
+
+**Síntoma:**
+La aplicación sufre un crasheo masivo o el Metro Bundler se queda atrapado en un loop recargando solo "1 module" después de que cambias de ventana o copias/pegas logs.
+
+**Causa:**
+Frecuentemente provocado por **pegar accidentalmente** texto de la terminal o descripciones de errores directamente dentro de un archivo de código `.ts` o `.tsx` que tenías abierto en tu editor, corrompiendo la sintaxis ("código basura"). Cuando Metro intenta transpilar esto usando Babel o el motor Hermes de Android, la aplicación explota dinámicamente.
+
+**Solución:**
+1. Detén el servidor (Ctrl+C).
+2. Usa Git para descartar los cambios sucios y recuperar los archivos limpios:
+```bash
+git status
+git restore .
+```
+*(Cuidado: Esto borrará cualquier código no guardado/commiteado que hayas hecho. Si tienes cambios importantes, restaura solo el archivo afectado: `git restore src/screens/ArchivoCorrupto.tsx`)*
+3. Borra el caché corrupto del empaquetador iniciando de cero:
+```bash
+npx expo start -c
+```
