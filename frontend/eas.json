@@ -15,8 +15,7 @@
         },
         "production": {
             "android": {
-                "buildType": "apk",
-                "gradleCommand": ":app:assembleRelease"
+                "buildType": "app-bundle"
             },
             "env": {
                 "EXPO_PUBLIC_ENV": "production"

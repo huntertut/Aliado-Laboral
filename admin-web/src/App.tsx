@@ -9,6 +9,8 @@ import Settings from './pages/Settings';
 import Cases from './pages/Cases';
 import Verifications from './pages/Verifications';
 import Finance from './pages/Finance';
+import Security from './pages/Security';
+import Promotions from './pages/Promotions';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
             <Route path="cases" element={<Cases />} />
             <Route path="verifications" element={<Verifications />} />
             <Route path="finance" element={<Finance />} />
+            <Route path="security" element={<Security />} />
+            <Route path="promotions" element={<Promotions />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/login" replace />} />

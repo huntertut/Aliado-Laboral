@@ -126,93 +126,15 @@ export const confirmPayment = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Payment not successful yet' });
         }
 
-        // Extract metadata
-        const planType = paymentIntent.metadata.planType;
-        const role = paymentIntent.metadata.role;
-
-        // Start Transaction to update DB
-        await prisma.$transaction(async (tx) => {
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 30); // 30 Days default
-
-            if (role === 'worker') {
-                // Update User Plan
-                await tx.user.update({ where: { id: userId }, data: { plan: 'premium' } });
-
-                // Upsert Subscription
-                const existing = await tx.workerSubscription.findUnique({ where: { userId } });
-                if (existing) {
-                    await tx.workerSubscription.update({
-                        where: { userId },
-                        data: {
-                            status: 'active',
-                            endDate,
-                            amount: new Date().getTime() % 2 === 0 ? 29 : 29, // Hack, use Decimal properly
-                            lastPaymentId: paymentIntent.id,
-                            paymentProvider: 'stripe'
-                        }
-                    });
-                } else {
-                    await tx.workerSubscription.create({
-                        data: {
-                            userId,
-                            status: 'active',
-                            endDate,
-                            amount: 29,
-                            lastPaymentId: paymentIntent.id,
-                            paymentProvider: 'stripe'
-                        }
-                    });
-                }
-
-            } else if (role === 'lawyer') {
-                const lawyer = await tx.lawyer.findUnique({ where: { userId } });
-                if (!lawyer) throw new Error('Lawyer not found');
-
-                const planName = planType === 'lawyer_pro' ? 'pro' : 'basic';
-                const amount = planName === 'pro' ? 299 : 99;
-
-                const existing = await tx.lawyerSubscription.findUnique({ where: { lawyerId: lawyer.id } });
-
-                if (existing) {
-                    await tx.lawyerSubscription.update({
-                        where: { id: existing.id },
-                        data: {
-                            status: 'active',
-                            plan: planName,
-                            endDate,
-                            amount,
-                            lastPaymentId: paymentIntent.id,
-                            paymentMethod: 'stripe'
-                        }
-                    });
-                } else {
-                    await tx.lawyerSubscription.create({
-                        data: {
-                            lawyerId: lawyer.id,
-                            status: 'active',
-                            plan: planName,
-                            endDate,
-                            amount,
-                            lastPaymentId: paymentIntent.id,
-                            paymentMethod: 'stripe'
-                        }
-                    });
-                }
-            } else if (role === 'pyme') {
-                // Update Pyme User Fields
-                // Note: Schema stores subscriptionLevel on User or PymeProfile?
-                // User model has `subscriptionLevel`.
-                const level = planType === 'pyme_pro' ? 'premium' : 'basic';
-
-                await tx.user.update({
-                    where: { id: userId },
-                    data: { subscriptionLevel: level, planExpiresAt: endDate }
-                });
-            }
+        // DEPRECACIÓN DE SEGURIDAD:
+        // Todas las actualizaciones de la base de datos (suscripciones, planes, etc)
+        // ahora son manejadas EXCLUSIVAMENTE por los Webhooks de Stripe (webhookHandlerService.ts)
+        // para prevenir manipulación desde el frontend e inconsistencias.
+        
+        res.json({ 
+            success: true,
+            message: 'Pago validado correctamente. Los permisos se actualizarán en breve de forma segura (Webhook).'
         });
-
-        res.json({ success: true });
 
     } catch (error: any) {
         console.error('Error confirming payment:', error);

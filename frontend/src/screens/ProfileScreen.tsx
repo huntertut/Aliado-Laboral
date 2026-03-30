@@ -168,7 +168,7 @@ const ProfileScreen = () => {
                     </Text>
                     <TouchableOpacity onPress={handleLogout} style={styles.logoutHeaderBtn}>
                         <Text style={styles.logoutHeaderText}>Cerrar Sesión</Text>
-                        <Ionicons name="log-out-outline" size={24} color="#fff" />
+                        <Ionicons name="log-out-outline" size={24} color="#ff4757" />
                     </TouchableOpacity>
                 </View>
 
@@ -265,14 +265,17 @@ const styles = StyleSheet.create({
     logoutHeaderBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 5,
-        marginLeft: 15
+        backgroundColor: '#ff4757',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        marginLeft: 10,
     },
     logoutHeaderText: {
         color: '#fff',
-        marginRight: 8,
-        fontWeight: '600',
-        fontSize: 14
+        marginRight: 6,
+        fontWeight: '700',
+        fontSize: 13,
     },
     notificationBtn: {
         padding: 5,

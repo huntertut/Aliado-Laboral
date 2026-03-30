@@ -29,6 +29,15 @@ export const register = async (req: Request, res: Response) => {
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
         if (existingUser) {
+            await prisma.securityLog.create({
+                data: {
+                    event: 'REGISTER_FAILED',
+                    email,
+                    ipAddress: req.ip || '',
+                    userAgent: req.headers['user-agent'] || '',
+                    details: 'User already exists'
+                }
+            });
             return res.status(400).json({ error: 'User already exists' });
         }
 
@@ -38,6 +47,23 @@ export const register = async (req: Request, res: Response) => {
         }
 
         const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+        // Fetch active FREE_TRIAL promotion for the user role
+        const now = new Date();
+        const activePromo = await prisma.promotion.findFirst({
+            where: {
+                isActive: true,
+                type: 'FREE_TRIAL',
+                OR: [{ targetRole: 'ALL' }, { targetRole: role || 'worker' }],
+                AND: [
+                    { OR: [{ startDate: null }, { startDate: { lte: now } }] },
+                    { OR: [{ endDate: null }, { endDate: { gte: now } }] }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        const trialDays = activePromo?.value || 0;
+        const trialEndDate = trialDays > 0 ? new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000) : null;
 
         // Use transaction to create User and optionally Lawyer
         const result = await prisma.$transaction(async (tx) => {
@@ -58,7 +84,9 @@ export const register = async (req: Request, res: Response) => {
                 await tx.workerSubscription.create({
                     data: {
                         userId: user.id,
-                        status: 'inactive',
+                        status: trialEndDate ? 'active' : 'inactive',
+                        startDate: trialEndDate ? now : null,
+                        endDate: trialEndDate,
                         amount: 29.00,
                         autoRenew: false
                     }
@@ -94,7 +122,9 @@ export const register = async (req: Request, res: Response) => {
                     data: {
                         lawyerId: lawyer.id,
                         plan: 'basic',
-                        status: 'inactive',
+                        status: trialEndDate ? 'active' : 'inactive',
+                        startDate: trialEndDate ? now : null,
+                        endDate: trialEndDate,
                         amount: 99.00,
                         autoRenew: true
                     }
@@ -107,10 +137,10 @@ export const register = async (req: Request, res: Response) => {
                 await tx.pymeProfile.create({
                     data: {
                         userId: user.id,
-                        razonSocial: req.body.companyName,
-                        rfc: req.body.rfc,
-                        industry: req.body.industry,
-                        assignedLawyerId: req.body.assignedLawyerId,
+                        razonSocial: req.body.companyName || '',
+                        rfc: req.body.rfc || '',
+                        industry: req.body.industry || '',
+                        assignedLawyerId: req.body.assignedLawyerId || null,
                         riskScore: 50
                     }
                 });
@@ -140,11 +170,29 @@ export const login = async (req: Request, res: Response) => {
         });
 
         if (!user) {
+            await prisma.securityLog.create({
+                data: {
+                    event: 'LOGIN_FAILED',
+                    email,
+                    ipAddress: req.ip || '',
+                    userAgent: req.headers['user-agent'] || '',
+                    details: 'User not found'
+                }
+            });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         const validPassword = await bcrypt.compare(password, user.passwordHash);
         if (!validPassword) {
+            await prisma.securityLog.create({
+                data: {
+                    event: 'LOGIN_FAILED',
+                    email,
+                    ipAddress: req.ip || '',
+                    userAgent: req.headers['user-agent'] || '',
+                    details: 'Incorrect password'
+                }
+            });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 

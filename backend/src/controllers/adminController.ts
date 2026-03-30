@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import * as storageService from '../services/storageService';
 import { sendPushNotification } from '../services/notificationService';
-
+import bcrypt from 'bcrypt';
+import admin from '../config/firebase';
 const prisma = new PrismaClient();
 
 export const getDashboardStats = async (req: Request, res: Response) => {
@@ -218,6 +219,182 @@ export const verifyLawyer = async (req: Request, res: Response) => {
     }
 };
 
+export const updateAdminPassword = async (req: Request, res: Response) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        // El authMiddleware inyecta userId en req.user
+        const userId = (req as any).user?.userId;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'No autorizado' });
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const validPassword = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!validPassword) {
+            return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+        }
+
+        const SALT_ROUNDS = 10;
+        const newPasswordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { passwordHash: newPasswordHash }
+        });
+
+        res.json({ success: true, message: 'Contraseña actualizada correctamente' });
+    } catch (error) {
+        console.error('Error updating admin password:', error);
+        res.status(500).json({ error: 'Failed to update admin password' });
+    }
+};
+
+export const syncFirebaseLawyers = async (req: Request, res: Response) => {
+    try {
+        console.log('[Admin] Starting Firebase Lawyer Sync...');
+        let syncedCount = 0;
+        let errorsCount = 0;
+
+        // Fetch all Firebase users (up to 1000 for simplicity in MVP)
+        const listUsersResult = await admin.auth().listUsers(1000);
+        
+        for (const fbUser of listUsersResult.users) {
+            const email = fbUser.email;
+            if (!email) continue;
+
+            // 1. Determine if this user in our DB is supposed to be a lawyer
+            // Or if the email forces them to be a lawyer in our test environments
+            let isLawyer = false;
+
+            const existingUser = await prisma.user.findUnique({
+                where: { email }
+            });
+
+            if (existingUser && existingUser.role === 'lawyer') {
+                isLawyer = true;
+            } else if (!existingUser && (email.includes('abogado') || email.includes('lawyer'))) {
+                // He's a lawyer in Firebase, but missing entirely in Postgres. 
+                // That's an edge case, but we can flag it for sync.
+                isLawyer = true;
+            }
+
+            if (!isLawyer) continue;
+
+            // 2. We know they are a lawyer. Check if Lawyer model exists.
+            if (existingUser) {
+                const lawyerRecord = await prisma.lawyer.findUnique({
+                    where: { userId: existingUser.id }
+                });
+
+                if (!lawyerRecord) {
+                    console.log(`[Admin] Sincronizando abogado perdido: ${email}`);
+                    try {
+                        const newLawyer = await prisma.lawyer.create({
+                            data: {
+                                userId: existingUser.id,
+                                licenseNumber: `SYNC_${existingUser.id.substring(0, 8)}`,
+                                professionalName: existingUser.fullName,
+                                specialty: 'Pendiente de asignar',
+                                status: 'PENDING',
+                                isVerified: false
+                            }
+                        });
+
+                        await prisma.lawyerProfile.create({
+                            data: {
+                                lawyerId: newLawyer.id,
+                                bio: 'Perfil en revisión/Sincronizado desde Firebase (Admin)'
+                            }
+                        });
+
+                        await prisma.lawyerSubscription.create({
+                            data: {
+                                lawyerId: newLawyer.id,
+                                plan: 'free',
+                                status: 'active',
+                                startDate: new Date(),
+                                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                            }
+                        });
+                        syncedCount++;
+                    } catch (e) {
+                        console.error(`Error sincronizando ${email}:`, e);
+                        errorsCount++;
+                    }
+                }
+            } else {
+                // If the user doesn't even exist in the User table, the best way to handle this 
+                // is to let them login once so verifyFirebaseToken handles it. 
+                // Or we create the User here. Let's create the User here to be robust.
+                try {
+                    console.log(`[Admin] Creando User y Lawyer desde cero para: ${email}`);
+                    const createdUser = await prisma.user.create({
+                        data: {
+                            email,
+                            passwordHash: 'firebase_managed', 
+                            fullName: fbUser.displayName || email.split('@')[0],
+                            role: 'lawyer',
+                            plan: 'free'
+                        }
+                    });
+
+                    await prisma.userRole.create({
+                        data: {
+                            firebaseUid: fbUser.uid,
+                            role: 'lawyer',
+                            email,
+                            fullName: createdUser.fullName,
+                            userId: createdUser.id
+                        }
+                    });
+
+                    const newLawyer = await prisma.lawyer.create({
+                        data: {
+                            userId: createdUser.id,
+                            licenseNumber: `SYNC_${createdUser.id.substring(0, 8)}`,
+                            professionalName: createdUser.fullName,
+                            specialty: 'Pendiente de asignar',
+                            status: 'PENDING',
+                            isVerified: false
+                        }
+                    });
+
+                    await prisma.lawyerProfile.create({
+                        data: {
+                            lawyerId: newLawyer.id,
+                            bio: 'Perfil recuperado desde Firebase (Admin)'
+                        }
+                    });
+
+                    await prisma.lawyerSubscription.create({
+                        data: {
+                            lawyerId: newLawyer.id,
+                            plan: 'free',
+                            status: 'active',
+                            startDate: new Date(),
+                            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                        }
+                    });
+                    syncedCount++;
+                } catch(e) {
+                    console.error(`Error creando a ${email} completo:`, e);
+                    errorsCount++;
+                }
+            }
+        }
+
+        res.json({ success: true, syncedCount, errorsCount, message: `Sincronización completada. ${syncedCount} recuperados.` });
+    } catch (error) {
+        console.error('Error during Firebase sync:', error);
+        res.status(500).json({ error: 'Failed to sync Firebase lawyers' });
+    }
+};
+
 export const getWorkers = async (req: Request, res: Response) => {
     try {
         // Workers are Users with role 'worker'
@@ -405,8 +582,7 @@ export const getAllCases = async (req: Request, res: Response) => {
 
 export const getSecurityLogs = async (req: Request, res: Response) => {
     try {
-        const logs = await prisma.activityLog.findMany({
-            include: { user: { select: { email: true, role: true } } },
+        const logs = await prisma.securityLog.findMany({
             orderBy: { createdAt: 'desc' },
             take: 50
         });

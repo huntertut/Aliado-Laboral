@@ -96,3 +96,60 @@ Este documento sirve como base de conocimiento para problemas tÃ©cnicos resuelto
     *   **LecciÃ³n:** Auditar que todos los archivos importados realmente existan antes de descomentar cÃ³digo masivamente.
 
 ---
+
+---
+
+## ?? 2026-03-25: Error 503 Recurrente — API Caída Completa
+**Estado:** ? Solucionado Permanentemente
+
+### ?? Síntoma
+- Todos los usuarios reciben **Error 503 Service Unavailable** (app móvil y panel web).
+- Usuarios reportan: "Request failed with status code 503" al iniciar sesión.
+- El servidor DigitalOcean responde al ping pero no sirve la API.
+
+### ?? Causa Raíz
+El proceso Node.js dentro del contenedor Docker muere silenciosamente por el bug de Podman/CentOS con `network_mode: host`. El workaround anterior de `nohup` NO sobrevive reinicios del contenedor ni del servidor.
+
+Adicionalmente, existía un proceso PM2 nativo en el host que en ocasiones secuestraba el Puerto 3001 sirviendo código desactualizado (sin Prisma Client actualizado), causando Error 500 en Promociones.
+
+### ??? Solución Permanente
+La solución correcta es usar PM2 en el host OS (Node.js v20 vía NVM está instalado nativamente):
+
+    cd /root/Aliado-Laboral/backend
+    npx prisma generate    # CRITICO: regenerar Prisma ANTES (evita Error 500 en /promotions)
+    pm2 start dist/index.js --name aliado-api
+    pm2 save
+    pm2 startup            # Ejecutar el comando systemctl que imprime
+    pm2 save
+
+### ? Verificación
+    curl https://api.cibertmx.org/api/health
+    # Respuesta esperada: {"status":"ok","message":"Backend is reachable"}
+    pm2 list   # Debe mostrar aliado-api en estado "online"
+
+### ? Lección
+- La solución `nohup` dentro del contenedor es TEMPORAL. No depender de ella.
+- Siempre ejecutar `npx prisma generate` antes de `pm2 start`.
+- El archivo `07_DESPLIEGUE_PRODUCCION.md` fue actualizado con el procedimiento correcto.
+
+---
+
+## ?? 2026-03-24: Error 500 en Registro Cuenta Empresarial (Pyme)
+**Estado:** ? Solucionado
+
+### ?? Síntoma
+- Al registrar sin seleccionar Abogado Asignado, la app lanza Error 500: Internal server error.
+
+### ?? Causa Raíz
+La app enviaba `assignedLawyerId: ""` (string vacío). Prisma lo rechazaba con Error P2003 (violación de llave foránea) porque ningún abogado tiene ID vacío.
+
+### ??? Solución
+En `backend/src/controllers/authController.ts`:
+
+    // Antes (problemático):
+    assignedLawyerId: req.body.assignedLawyerId
+
+    // Después (correcto):
+    assignedLawyerId: req.body.assignedLawyerId || null
+
+El `|| null` convierte el string vacío en null, que Prisma acepta como "sin abogado asignado".

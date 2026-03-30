@@ -369,6 +369,11 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
             // Update Request Status & Create Auto-Welcome Message
             const now = new Date();
 
+            // 🔒 COMMISSION FREEZE: Snapshot the rate at the moment of acceptance
+            // This ensures plan upgrades do NOT retroactively lower the rate on this case
+            const isPro = lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active';
+            const snapshotCommissionRate = isPro ? 0.07 : 0.10; // 7% PRO / 10% BASIC
+
             const [updatedRequest, initialMessage] = await prisma.$transaction([
                 // Update Contact Request
                 prisma.contactRequest.update({
@@ -381,6 +386,9 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
                         bothPaymentsSucceeded: true, // Worker already paid
                         subStatus: 'chat_active',    // Enable Chat
                         lastLawyerActivityAt: now,
+                        // 🔒 FREEZE the commission rate at acceptance time
+                        commissionRate: snapshotCommissionRate,
+                        commissionStatus: 'pending',
                         // Update Chat Optimization Fields
                         lastMessageAt: now,
                         lastMessageContent: '¡Hola! He aceptado tu solicitud. ¿En qué puedo ayudarte?',
@@ -755,40 +763,45 @@ export const closeCaseWithCommission = async (req: Request, res: Response) => {
 
         if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
 
-        // 1. Determine Rate based on CURRENT Plan
-        const isPro = lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active';
-        const commissionRate = isPro ? 0.07 : 0.10; // 7% vs 10%
+        // 🔒 COMMISSION FREEZE: Read the rate that was snapshotted at acceptance time
+        // This prevents plan upgrades from retroactively lowering the commission on existing cases
+        const existingCase = await prisma.contactRequest.findUnique({ where: { id } });
+        if (!existingCase) return res.status(404).json({ error: 'Caso no encontrado' });
+
+        const commissionRate = existingCase.commissionRate
+            ? Number(existingCase.commissionRate)
+            : (lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active' ? 0.07 : 0.10);
 
         const amount = Number(settlementAmount);
         const commissionFee = amount * commissionRate;
+        const frozenAtAcceptance = existingCase.commissionRate != null;
 
         // 2. Close Case & Record Debt
         const updatedRequest = await prisma.contactRequest.update({
             where: { id },
             data: {
                 crmStatus: 'CLOSED_WON',
-                settlementAmount: amount, // Corrected field name
-                commissionRate: commissionRate,
+                settlementAmount: amount,
                 commissionAmount: commissionFee,
-                settlementDocUrl: evidenceUrl, // Mapped to Correct Schema Field
+                settlementDocUrl: evidenceUrl,
                 closedAt: new Date()
+                // Note: commissionRate is NOT updated here — it was frozen at acceptance
             },
-            include: { worker: true } // REQUIRED to access request.worker later
+            include: { worker: true }
         });
 
-        // 3. Notify (Mock Invoice)
-        const savingsMsg = isPro
-            ? `✅ Ahorraste $${(amount * 0.03).toFixed(2)} por ser PRO.`
-            : `⚠️ Tarifa 10% aplicada. (Si fueras PRO pagarías $${(amount * 0.07).toFixed(2)})`;
-
+        // 3. Response
         res.json({
             success: true,
             message: 'Caso cerrado con éxito.',
             financials: {
                 settlement: amount,
-                rateApplied: `${(commissionRate * 100)}%`,
+                rateApplied: `${(commissionRate * 100).toFixed(0)}%`,
                 commissionDue: commissionFee,
-                note: savingsMsg
+                rateFrozenAt: frozenAtAcceptance ? 'aceptación del caso' : 'cierre del caso',
+                note: frozenAtAcceptance
+                    ? `✅ Tasa congelada al momento de aceptar: ${(commissionRate * 100).toFixed(0)}%.`
+                    : `ℹ️ Tasa aplicada según plan actual: ${(commissionRate * 100).toFixed(0)}%.`
             }
         });
 
@@ -974,18 +987,26 @@ export const uploadSettlementDoc = async (req: Request, res: Response) => {
             console.log('[El Puente] PDF uploaded, skipping OCR for MVP');
         }
 
-        // 3. Logic: Dynamic Commission Calculation (Antigravity v2.1)
+        // 3. 🔒 COMMISSION FREEZE: Use rate stored at acceptance time if available
+        // This prevents plan upgrades from lowering the rate on already-active cases
+        const type = (processType || 'JUICIO').toUpperCase();
         const isPro = lawyer.subscription?.plan === 'pro';
-        const type = (processType || 'JUICIO').toUpperCase(); // Default to JUICIO if missing
 
-        let rate = 0.05; // Default Safe Fallback
-
-        if (isPro) {
-            // PRO Rates
-            rate = (type === 'CONCILIACION') ? 0.07 : 0.05; // 7% Fast / 5% Slow
+        let rate: number;
+        if (request.commissionRate != null) {
+            // Frozen rate exists — respect the snapshot from acceptance time
+            // Adjust for CONCILIACION vs JUICIO multiplier while keeping base rate
+            const baseRate = Number(request.commissionRate); // e.g. 0.07 or 0.10
+            // Apply a small discount for conciliacion (faster = slightly higher, but capped at frozen rate)
+            rate = (type === 'CONCILIACION') ? baseRate : Math.max(baseRate - 0.02, 0.05);
+            console.log(`[Commission Freeze] Using frozen rate ${request.commissionRate} → adjusted: ${rate} (${type})`);
         } else {
-            // BASIC Rates
-            rate = (type === 'CONCILIACION') ? 0.10 : 0.08; // 10% Fast / 8% Slow
+            // No frozen rate: fallback to current plan (old cases without snapshot)
+            if (isPro) {
+                rate = (type === 'CONCILIACION') ? 0.07 : 0.05;
+            } else {
+                rate = (type === 'CONCILIACION') ? 0.10 : 0.08;
+            }
         }
 
         let commissionAmount = 0;

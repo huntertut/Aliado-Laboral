@@ -26,6 +26,8 @@ import devRoutes from './routes/devRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import documentRoutes from './routes/documentRoutes';
 import jurisdictionRoutes from './routes/jurisdictionRoutes';
+import promotionRoutes from './routes/promotionRoutes';
+import webhookRoutes from './routes/webhookRoutes';
 
 // ... (imports)
 
@@ -51,6 +53,10 @@ app.use((req, res, next) => {
 
 app.use(helmet());
 app.use(cors());
+
+// IMPORTANT: Webhooks must be BEFORE express.json() to maintain raw body for signature validation
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 
 // --- SECURITY: Rate Limiting ---
@@ -79,6 +85,31 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Backend is reachable', ip: req.ip });
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// APP VERSION CONFIG — Force Update Endpoint
+// Change MIN_VERSION_ANDROID / MIN_VERSION_IOS to force users to update.
+// Uses 5-minute in-memory cache to avoid hitting the file on every request.
+// ──────────────────────────────────────────────────────────────────────────────
+const MIN_VERSION_ANDROID = '1.20.0';  // ← Change to force Android update (current: 1.20.0)
+const MIN_VERSION_IOS = '1.20.0';  // ← Change to force iOS update    (current: 1.20.0)
+let versionConfigCache: { data: any; expiry: number } | null = null;
+
+app.get('/api/config/version', (req, res) => {
+    const now = Date.now();
+    if (versionConfigCache && versionConfigCache.expiry > now) {
+        return res.json(versionConfigCache.data);
+    }
+    const data = {
+        min_version_android: MIN_VERSION_ANDROID,
+        min_version_ios: MIN_VERSION_IOS,
+        update_url_android: 'market://details?id=com.aliadolaboral.app',
+        update_url_ios: 'itms-apps://itunes.apple.com/app/id0000000000' // Update when iOS is published
+    };
+    versionConfigCache = { data, expiry: now + 5 * 60 * 1000 }; // 5 min cache
+    res.json(data);
+});
+// ──────────────────────────────────────────────────────────────────────────────
+
 app.use('/api/auth', authRoutes);
 app.use('/api/lawyers', lawyerRoutes);
 app.use('/api/cases', caseRoutes);
@@ -101,6 +132,8 @@ app.use('/api/forum', forumRoutes); // Forum Routes
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/jurisdiction', jurisdictionRoutes);
+app.use('/api/promotions', promotionRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 import reportRoutes from './routes/reportRoutes';
 app.use('/api/reports', reportRoutes);

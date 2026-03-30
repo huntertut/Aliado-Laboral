@@ -22,6 +22,6 @@ conn.on('ready', () => {
     host: '142.93.186.75',
     port: 22,
     username: 'root',
-    password: 'Z3lG$@*gN(H!n_q',
+    password: 'yA7%pA1{vD7_rR2R',
     readyTimeout: 20000
 });

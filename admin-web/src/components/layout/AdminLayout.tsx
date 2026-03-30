@@ -1,9 +1,39 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FileText, Wallet, Settings, LogOut, ShieldAlert } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { api } from '../../config/axios';
+import logo from '../../assets/logo.png';
+import {
+    Users,
+    Settings,
+    LayoutDashboard,
+    LogOut,
+    Wallet,
+    FileText,
+    ShieldAlert,
+    Gift
+} from 'lucide-react';
 
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+    
+    const [pendingLawyersCount, setPendingLawyersCount] = useState(0);
+
+    useEffect(() => {
+        const fetchPending = async () => {
+            try {
+                const res = await api.get('/admin/dashboard');
+                if (res.data?.actionItems?.pendingLawyers !== undefined) {
+                    setPendingLawyersCount(res.data.actionItems.pendingLawyers);
+                }
+            } catch (err) {
+                console.error('Error fetching pending lawyers:', err);
+            }
+        };
+        fetchPending();
+        const interval = setInterval(fetchPending, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, []);
 
     const handleLogout = () => {
         // TODO: Clear tokens
@@ -16,6 +46,8 @@ export default function AdminLayout() {
         { name: 'Contabilidad', path: '/app/finance', icon: Wallet },
         { name: 'Casos y Foro', path: '/app/cases', icon: FileText },
         { name: 'Validaciones', path: '/app/verifications', icon: ShieldAlert },
+        { name: 'Seguridad', path: '/app/security', icon: ShieldAlert },
+        { name: 'Promociones', path: '/app/promotions', icon: Gift },
         { name: 'Configuración', path: '/app/settings', icon: Settings },
     ];
 
@@ -23,9 +55,12 @@ export default function AdminLayout() {
         <div className="min-h-screen bg-slate-50 flex">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex">
-                <div className="p-6 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-blue-700 font-sans tracking-tight">Aliado Laboral</h2>
-                    <p className="text-xs text-slate-400 font-medium">Panel Administrativo</p>
+                <div className="p-6 border-b border-slate-100 flex items-center space-x-3">
+                    <img src={logo} alt="Logo" className="w-10 h-10 object-contain" />
+                    <div>
+                        <h2 className="text-lg font-bold text-blue-700 font-sans tracking-tight leading-tight">Aliado Laboral</h2>
+                        <p className="text-xs text-slate-400 font-medium">Panel Admin</p>
+                    </div>
                 </div>
 
                 <nav className="flex-1 py-4 px-3 space-y-1">
@@ -43,6 +78,11 @@ export default function AdminLayout() {
                             >
                                 <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
                                 {item.name}
+                                {item.name === 'Usuarios' && pendingLawyersCount > 0 && (
+                                    <span className="ml-auto bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                        {pendingLawyersCount}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}

@@ -65,6 +65,48 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 });
             }
 
+            // --- ADDED: Auto-Stub Lawyer Sync ---
+            // Si el usuario es abogado pero no tiene registro en la tabla Lawyer,
+            // creamos un "stub" (fantasma) para que aparezca en el Panel Admin como Pendiente.
+            if (existingUser.role === 'lawyer') {
+                const existingLawyer = await prisma.lawyer.findUnique({
+                    where: { userId: existingUser.id }
+                });
+
+                if (!existingLawyer) {
+                    console.log(`[verifyFirebaseToken] Auto-syncing missing Lawyer record for ${email}`);
+                    const newLawyer = await prisma.lawyer.create({
+                        data: {
+                            userId: existingUser.id,
+                            licenseNumber: `SYNC_${existingUser.id.substring(0, 8)}`,
+                            professionalName: existingUser.fullName,
+                            specialty: 'Pendiente de asignar',
+                            status: 'PENDING',
+                            isVerified: false
+                        }
+                    });
+
+                    await prisma.lawyerProfile.create({
+                        data: {
+                            lawyerId: newLawyer.id,
+                            bio: 'Perfil en revisión/Sincronizado desde móvil'
+                        }
+                    });
+
+                    // Crear suscripción básica pendiente
+                    await prisma.lawyerSubscription.create({
+                        data: {
+                            lawyerId: newLawyer.id,
+                            plan: 'free',
+                            status: 'active',
+                            startDate: new Date(),
+                            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 días de gracia
+                        }
+                    });
+                }
+            }
+            // ------------------------------------
+
             // 4. Create or Update UserRole linking to User
             const existingRoleByUserId = await prisma.userRole.findUnique({
                 where: { userId: existingUser.id }

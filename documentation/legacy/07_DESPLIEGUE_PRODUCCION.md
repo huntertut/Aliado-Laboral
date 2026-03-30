@@ -44,19 +44,51 @@ docker exec -it backend-backend-1 npx prisma db push
 ```
 
 ## 5. Interpretar Errores (Logs)
-Para comprobar que el servidor arrancó correctamente y revisar errores en vivo (esto reemplaza el uso de `pm2 logs`):
+
+El servidor en producción es administrado por **PM2** directamente en el host. Para ver los logs en tiempo real:
 ```bash
-docker logs backend-backend-1 --tail 50 -f
+pm2 logs aliado-api --lines 50
+pm2 logs aliado-api --err --lines 50   # Solo errores
 ```
 
-## 6. Solución al Bug "Exited (0)" en CentOS (Podman)
-En servidores CentOS Web Panel, Podman tiene un bug de red conocido al combinar `network_mode: "host"` con ejecución en segundo plano (`-d`). Si Node.js se ejecuta sin un TTY enganchado, asume que el contenedor se cerró y muere silenciosamente con código 0, causando que el proxy (Apache) de arroje un **Error 503**.
-
-Para revivir de por vida la API y puentear el bug, ejecuta este comando sustituto *después* de encender el contenedor:
+Para ver el estado del proceso:
 ```bash
-docker exec -d backend-backend-1 sh -c "nohup node dist/index.js > /app/live.log 2>&1 &"
+pm2 list
 ```
-Esto inyecta el proceso directamente en la memoria del contenedor bloqueando la muerte silente.
+
+## 6. Solución al Bug de Servidor Caído — Error 503 (Solución Permanente)
+
+> ⚠️ **IMPORTANTE:** La solución `nohup` dentro del contenedor Docker es temporal y NO sobrevive reinicios. La solución correcta y permanente es usar **PM2 en el host** como se describe aquí.
+
+El servidor CentOS tiene Node.js v20 instalado nativamente (NVM). La API se ejecuta con PM2 apuntando al código compilado en `/root/Aliado-Laboral/backend/dist/index.js`.
+
+### Si la API está caída (503) — Pasos de Recuperación:
+```bash
+# 1. Navegar al backend
+cd /root/Aliado-Laboral/backend
+
+# 2. ⚠ CRÍTICO: Regenerar el cliente Prisma ANTES de iniciar PM2
+#    Sin este paso, la API arranca pero /promotions da Error 500
+npx prisma generate
+
+# 3. Iniciar con PM2
+pm2 start dist/index.js --name aliado-api
+
+# 4. Guardar para persistir en reinicios
+pm2 save
+```
+
+### Si PM2 no survive a un reinicio del servidor:
+```bash
+pm2 startup    # Genera comando systemctl — ejecutarlo tal cual
+pm2 save
+```
+
+### Verificar que la API está activa:
+```bash
+curl https://api.cibertmx.org/api/health
+# Debe responder: {"status":"ok","message":"Backend is reachable"}
+```
 
 ## 7. Referencias del Frontend (Punto de Montaje de la API)
 Recuerda que todas las peticiones desde el frontend de React Native deben incluir estrictamente el sufijo `/api`, ya que el proxy interno de Express agrupa sus rutas allí.

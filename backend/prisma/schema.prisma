@@ -46,6 +46,7 @@ model User {
   userRole                   UserRole?
   workerProfile              WorkerProfile?
   workerSubscription         WorkerSubscription?
+  payments                   Payment[]
 }
 
 model UserDocument {
@@ -341,6 +342,17 @@ model RequestPayment {
   request       ContactRequest @relation(fields: [requestId], references: [id])
 }
 
+model NewsPost {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  sourceUrl String?
+  imageUrl  String?
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model ActivityLog {
   id        String   @id @default(uuid())
   userId    String?
@@ -512,4 +524,52 @@ model IndustryCompetence {
   keywords     String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model SecurityLog {
+  id        String   @id @default(uuid())
+  event     String   // e.g., 'LOGIN_FAILED', 'REGISTER_FAILED'
+  email     String?  // The email attempted
+  ipAddress String?  // The IP address of the request
+  userAgent String?  // Device or browser info
+  details   String?  // Additional context / error message
+  createdAt DateTime @default(now())
+}
+
+model Promotion {
+  id            String    @id @default(uuid())
+  title         String
+  description   String?
+  targetRole    String    // 'ALL', 'lawyer', 'worker', 'pyme'
+  type          String    // 'FREE_TRIAL', 'DISCOUNT'
+  value         Int       // Days for free trial or % discount
+  isActive      Boolean   @default(true)
+  startDate     DateTime?
+  endDate       DateTime?
+  maxUses       Int?
+  currentUses   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Payment {
+  id                    String   @id @default(uuid())
+  userId                String?
+  stripeSessionId       String?  @unique
+  stripePaymentIntentId String?  @unique
+  status                String   @default("pending")
+  type                  String
+  amount                Decimal?
+  currency              String?  @default("mxn")
+  metadata              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User?    @relation(fields: [userId], references: [id])
+}
+
+model StripeEvent {
+  id        String   @id
+  type      String
+  processed Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

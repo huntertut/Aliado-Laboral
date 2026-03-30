@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Settings as SettingsIcon, Save, Gift, AlertCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Gift, AlertCircle, ShieldAlert, Lock, CheckCircle } from 'lucide-react';
 
 export default function Settings() {
     const [loading, setLoading] = useState(true);
@@ -9,6 +9,13 @@ export default function Settings() {
     const [trialDays, setTrialDays] = useState('30');
     const [bannerText, setBannerText] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Password Update State
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordLoading, setPasswordLoading] = useState(false);
+    const [passwordMsg, setPasswordMsg] = useState({ type: '', text: '' });
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -48,6 +55,35 @@ export default function Settings() {
         }
     };
 
+    const handlePasswordUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPasswordMsg({ type: '', text: '' });
+
+        if (newPassword !== confirmPassword) {
+            setPasswordMsg({ type: 'error', text: 'Las contraseñas nuevas no coinciden.' });
+            return;
+        }
+        if (newPassword.length < 6) {
+            setPasswordMsg({ type: 'error', text: 'La contraseña debe tener al menos 6 caracteres.' });
+            return;
+        }
+
+        try {
+            setPasswordLoading(true);
+            await api.put('/admin/security/password', { currentPassword, newPassword });
+            setPasswordMsg({ type: 'success', text: '¡Contraseña de administrador actualizada con éxito!' });
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            console.error('Error updating password:', error);
+            const msg = error.response?.data?.error || 'No se pudo actualizar la contraseña.';
+            setPasswordMsg({ type: 'error', text: msg });
+        } finally {
+            setPasswordLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-full items-center justify-center">
@@ -82,64 +118,15 @@ export default function Settings() {
                 </div>
 
                 <div className="p-6 space-y-6">
-                    {/* Toggle Active */}
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
                         <div>
-                            <h3 className="font-medium text-slate-800">Activar Promoción de Bienvenida</h3>
-                            <p className="text-sm text-slate-500">Habilita el periodo de prueba gratuito para los nuevos registros de abogados.</p>
+                            <h3 className="font-medium text-slate-800">Motor Avanzado de Promociones</h3>
+                            <p className="text-sm text-slate-500">Las promociones, descuentos y regalias han sido movidas a su propio panel dedicado.</p>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={promoActive}
-                                onChange={(e) => setPromoActive(e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
+                        <a href="/app/promotions" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-indigo-700 transition">
+                            Ir a Promociones
+                        </a>
                     </div>
-
-                    {promoActive && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Días de Prueba (Gratis)
-                                </label>
-                                <input
-                                    type="number"
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    value={trialDays}
-                                    onChange={(e) => setTrialDays(e.target.value)}
-                                    placeholder="Ej. 30"
-                                />
-                                <p className="mt-1 text-xs text-slate-500">Los abogados recibirán estos días de gracia antes de su primer cobro.</p>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Texto del Banner Promocional
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    value={bannerText}
-                                    onChange={(e) => setBannerText(e.target.value)}
-                                    placeholder="Ej. ¡Aprovecha nuestro Buen Fin! 30 días Gratis"
-                                />
-                            </div>
-
-                            {/* Banner Preview */}
-                            {bannerText && (
-                                <div className="mt-4">
-                                    <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Vista Previa Mobile</span>
-                                    <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg p-3 text-center shadow-inner flex items-center justify-center">
-                                        <Gift className="w-5 h-5 text-white mr-2" />
-                                        <span className="text-white font-bold">{bannerText}</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
                 </div>
 
                 <div className="bg-slate-50 border-t border-slate-100 p-4 flex justify-end">
@@ -155,6 +142,83 @@ export default function Settings() {
                         )}
                         {saving ? 'Guardando...' : 'Guardar Configuración'}
                     </button>
+                </div>
+            </div>
+
+            {/* Account Security Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-8 mb-12">
+                <div className="border-b border-slate-100 p-6 bg-slate-50">
+                    <h2 className="text-lg font-semibold text-slate-800 flex items-center">
+                        <ShieldAlert className="w-5 h-5 mr-2 text-red-600" />
+                        Seguridad de la Cuenta Admin
+                    </h2>
+                </div>
+
+                <div className="p-6">
+                    {passwordMsg.text && (
+                        <div className={`p-4 mb-6 rounded-lg flex items-center ${passwordMsg.type === 'success' ? 'bg-green-50 text-green-800 border-l-4 border-green-500' : 'bg-red-50 text-red-800 border-l-4 border-red-500'}`}>
+                            {passwordMsg.type === 'success' ? <CheckCircle className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
+                            {passwordMsg.text}
+                        </div>
+                    )}
+
+                    <form onSubmit={handlePasswordUpdate} className="space-y-4 max-w-md">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña Actual</label>
+                            <input
+                                type="password"
+                                required
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                                placeholder="Escribe la contraseña vigente"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Nueva Contraseña</label>
+                            <input
+                                type="password"
+                                required
+                                minLength={6}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                                placeholder="Escribe la nueva contraseña"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Confirmar Nueva Contraseña</label>
+                            <input
+                                type="password"
+                                required
+                                minLength={6}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                                placeholder="Repite la nueva contraseña"
+                            />
+                        </div>
+
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={passwordLoading}
+                                className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+                            >
+                                {passwordLoading ? (
+                                    <span className="flex items-center">
+                                        <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                                        Actualizando...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center">
+                                        <Lock className="w-5 h-5 mr-2" />
+                                        Cambiar Contraseña
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

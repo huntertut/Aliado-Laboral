@@ -135,17 +135,18 @@ const RegisterScreen = () => {
         }
 
         const hasNumber = /\d/.test(password);
-        const hasLetter = /[a-zA-Z]/.test(password);
+        const hasLetterOrSymbol = /[a-zA-ZáéíóúÁÉÍÓÚñÑ\W_]/.test(password);
 
-        if (!hasNumber || !hasLetter) {
+        if (!hasNumber || !hasLetterOrSymbol) {
             Alert.alert(
                 'Contraseña débil',
-                'La contraseña debe contener al menos una letra y un número para mayor seguridad'
+                'La contraseña debe contener al menos un número y una letra o símbolo válido.'
             );
             return;
         }
 
-        try {
+        const processRegistration = async () => {
+            try {
             let extraData: any = undefined;
 
             if (role === 'lawyer') {
@@ -177,8 +178,22 @@ const RegisterScreen = () => {
                     { text: 'OK', onPress: () => navigation.navigate('Login' as never) }
                 ]);
             }
-        } catch (e: any) {
-            Alert.alert('Error', e.message || 'No se pudo crear la cuenta.');
+            } catch (e: any) {
+                Alert.alert('Error', e.message || 'No se pudo crear la cuenta.');
+            }
+        };
+
+        if (role === 'lawyer') {
+            Alert.alert(
+                'Solicitud en Proceso',
+                'Tu solicitud será revisada y aprobada en un plazo máximo de 48 horas hábiles.',
+                [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Aceptar', onPress: () => processRegistration() }
+                ]
+            );
+        } else {
+            processRegistration();
         }
     };
 
@@ -389,6 +404,8 @@ const RegisterScreen = () => {
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
                     />
                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                         <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color="#666" />
@@ -403,6 +420,8 @@ const RegisterScreen = () => {
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        autoCorrect={false}
                     />
                 </View>
 

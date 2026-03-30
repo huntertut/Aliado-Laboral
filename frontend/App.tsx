@@ -1,43 +1,55 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import AppNavigator from './src/navigation/AppNavigator'; // ENABLED
-// Interceptor Removed
+import React, { useState, useEffect } from 'react';
+import { Platform } from 'react-native';
+import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useNotifications } from './src/hooks/useNotifications';
+import UpdateRequired from './src/screens/UpdateRequired';
+import * as Application from 'expo-application';
 
-// MOCK REMOVED
+const API_BASE = 'https://api.cibertmx.org/api';
 
-// import firebase from '@react-native-firebase/app';
-import { firebaseConfig } from './src/config/firebase';
-
-// Initialize Firebase for Native SDKs (Analytics, etc) if not already done
-// if (!firebase.apps.length) {
-//     try {
-//         firebase.initializeApp(firebaseConfig);
-//         console.log('[App] Firebase Initialized Manually');
-//     } catch (e) {
-//         console.error('[App] Firebase Init Error:', e);
-//     }
-// }
+function compareVersions(installed: string, required: string): boolean {
+    const parse = (v: string) => v.split('.').map(n => parseInt(n, 10) || 0);
+    const [a1, b1, c1] = parse(installed);
+    const [a2, b2, c2] = parse(required);
+    if (a1 !== a2) return a1 < a2;
+    if (b1 !== b2) return b1 < b2;
+    return c1 < c2;
+}
 
 export default function App() {
-    // Initialize notifications hook
     useNotifications();
 
-    // console.log('[DEBUG] App.tsx Rendering with Providers...');
+    const [needsUpdate, setNeedsUpdate] = useState(false);
+    const [storeUrl, setStoreUrl] = useState('market://details?id=com.cibertmx.aliadolaboral');
+    const [updateChecked, setUpdateChecked] = useState(false);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/config/version`)
+            .then(r => r.json())
+            .then(data => {
+                const installed = Application.nativeApplicationVersion || '1.0.0';
+                const minVersion = Platform.OS === 'android' ? data.min_version_android : data.min_version_ios;
+                const url = Platform.OS === 'android' ? data.update_url_android : data.update_url_ios;
+                if (url) setStoreUrl(url);
+                if (compareVersions(installed, minVersion)) setNeedsUpdate(true);
+            })
+            .catch(() => { /* Network error: let user in */ })
+            .finally(() => setUpdateChecked(true));
+    }, []);
+
+    if (!updateChecked) return null;
+    if (needsUpdate) return <UpdateRequired storeUrl={storeUrl} />;
 
     return (
-        <StripeProvider
-            publishableKey="pk_test_51Sb1MxAnr3rKmiaWJSPgHYSFqTC07ya0896cQuON6MIqibc8dqSw6bkOF2zJ3olI2LjguKaalLsbj3iiLnLDtqn700PScbxcDT"
-        >
+        <StripeProvider publishableKey="pk_test_51Sb1MxAnr3rKmiaWJSPgHYSFqTC07ya0896cQuON6MIqibc8dqSw6bkOF2zJ3olI2LjguKaalLsbj3iiLnLDtqn700PScbxcDT">
             <AuthProvider>
                 <AppNavigator />
             </AuthProvider>
         </StripeProvider>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,

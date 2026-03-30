@@ -55,9 +55,33 @@ export async function checkBothPaymentsSuccess(contactRequestId: string): Promis
  */
 export async function handleStripeWebhook(event: any): Promise<void> {
     try {
-        console.log(`Processing Stripe webhook: ${event.type}`);
+        console.log(`Processing Stripe webhook: ${event.type} (${event.id})`);
+
+        // Check Idempotency
+        if (event.id) {
+            const existingEvent = await prisma.stripeEvent.findUnique({
+                where: { id: event.id }
+            });
+
+            if (existingEvent) {
+                console.log(`[Idempotency] Stripe event ${event.id} already processed. Ignoring.`);
+                return;
+            }
+
+            // Save event
+            await prisma.stripeEvent.create({
+                data: {
+                    id: event.id,
+                    type: event.type,
+                }
+            });
+        }
 
         switch (event.type) {
+            case 'checkout.session.completed':
+                await handleStripeCheckoutSessionCompleted(event.data.object);
+                break;
+
             case 'payment_intent.succeeded':
                 await handleStripePaymentSuccess(event.data.object);
                 break;
@@ -88,11 +112,73 @@ export async function handleStripeWebhook(event: any): Promise<void> {
 }
 
 /**
+ * Handle Stripe checkout session completed
+ */
+async function handleStripeCheckoutSessionCompleted(session: any): Promise<void> {
+    const metadata = session.metadata || {};
+    const { userId, type, contactRequestId } = metadata;
+
+    console.log(`Checkout session completed: ${session.id} for type: ${type}`);
+
+    // Create payment record
+    await prisma.payment.upsert({
+        where: { stripeSessionId: session.id },
+        update: { status: 'success' },
+        create: {
+            stripeSessionId: session.id,
+            stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
+            userId: userId || null,
+            status: 'success',
+            type: type || 'unknown',
+            amount: session.amount_total ? session.amount_total / 100 : null,
+            currency: session.currency,
+            metadata: JSON.stringify(metadata)
+        }
+    });
+
+    if (type === 'worker_contact_fee' && contactRequestId) {
+        await prisma.contactRequest.update({
+            where: { id: contactRequestId },
+            data: {
+                workerPaid: true,
+                workerTransactionId: session.id,
+            },
+        });
+        await checkBothPaymentsSuccess(contactRequestId);
+    } else if (type === 'lawyer_case_acceptance' && contactRequestId) {
+        await prisma.contactRequest.update({
+            where: { id: contactRequestId },
+            data: {
+                lawyerPaid: true,
+                lawyerTransactionId: session.id,
+            },
+        });
+        await checkBothPaymentsSuccess(contactRequestId);
+    }
+}
+
+/**
  * Handle Stripe payment success
  */
 async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
     const metadata = paymentIntent.metadata || {};
     const { contactRequestId, userId, type } = metadata;
+
+    if (paymentIntent.id) {
+        await prisma.payment.upsert({
+            where: { stripePaymentIntentId: paymentIntent.id },
+            update: { status: 'success' },
+            create: {
+                stripePaymentIntentId: paymentIntent.id,
+                userId: userId || null,
+                status: 'success',
+                type: type || 'unknown',
+                amount: paymentIntent.amount ? paymentIntent.amount / 100 : null,
+                currency: paymentIntent.currency,
+                metadata: JSON.stringify(metadata)
+            }
+        });
+    }
 
     if (type === 'worker_contact_fee' && contactRequestId) {
         // Worker paid $50 via Stripe
@@ -128,7 +214,23 @@ async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
  */
 async function handleStripePaymentFailure(paymentIntent: any): Promise<void> {
     const metadata = paymentIntent.metadata || {};
-    const { contactRequestId, type } = metadata;
+    const { contactRequestId, userId, type } = metadata;
+
+    if (paymentIntent.id) {
+        await prisma.payment.upsert({
+            where: { stripePaymentIntentId: paymentIntent.id },
+            update: { status: 'failed' },
+            create: {
+                stripePaymentIntentId: paymentIntent.id,
+                userId: userId || null,
+                status: 'failed',
+                type: type || 'unknown',
+                amount: paymentIntent.amount ? paymentIntent.amount / 100 : null,
+                currency: paymentIntent.currency,
+                metadata: JSON.stringify(metadata)
+            }
+        });
+    }
 
     if (contactRequestId) {
         // Payment failed - trigger refund logic
