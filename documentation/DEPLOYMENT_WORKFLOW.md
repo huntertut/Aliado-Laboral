@@ -13,7 +13,7 @@ Este documento define estrictamente la distribución de responsabilidades entre 
 - **Responsable de Distribución:** Humano
 - **Flujo:** La IA programa la feature, valida dependencias y corre los procesos de Gradle/Expo necesarios para generar el archivo final `.AAB` en el disco local.
 - **Rol del Humano:** Retira el `.AAB` generado en la computadora local y lo sube manualmente a Google Play Console firmándolo.
-- **Regla:** **Híbrido**. La IA nunca intenta usar credenciales ni sube directamente a Play Store. El trabajo de la IA termina al entregar el archivo.
+- **Regla Obligatoria:** **Híbrido**. La IA nunca intenta usar credenciales ni sube directamente a Play Store. El trabajo de la IA termina al entregar el archivo y, adicionalmente, proporcionando obligatoriamente las **notas de versión en formato `<es-419>`** para que el humano las pegue en la consola.
 
 ## 3. Sistema Web (Frontend Admin)
 - **Responsable de Compilación (Build):** IA

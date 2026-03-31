@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 6,
+      "versionCode": 8,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",
         "backgroundColor": "#1e3799",
