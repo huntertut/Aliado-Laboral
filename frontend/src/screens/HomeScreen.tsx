@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
         marginTop: -30, // Pulls the CTA slightly over the header
         borderRadius: 20,
         marginBottom: 25,
-        ...AppTheme.shadows.medium,
+        ...AppTheme.shadows.default,
         elevation: 6,
     },
     ctaGradient: {
