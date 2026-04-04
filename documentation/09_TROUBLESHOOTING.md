@@ -72,3 +72,25 @@ location /api {
     proxy_set_header Host $host;
 }
 ```
+
+---
+
+## 5. Mobile App: "Property 'StyleSheet' doesn't exist" (Hermes Crash)
+**Symptom:**
+The release build (AAB/APK) installs correctly but crashes violently on startup with a white screen. Capturing logcat reveals:
+`ReferenceError: Property 'StyleSheet' doesn't exist, js engine: hermes`
+
+**Cause:**
+This is a **Hermes initialization order conflict**, usually triggered by a global polyfill imported at the very top of `index.js`. Libraries like `react-native-url-polyfill/auto` execute synchronously and force `react-native-readable-stream` to load before React Native's internal `FabricUIManager` or `StyleSheet` modules have fully initialized in the Hermes engine. 
+
+**Resolution:**
+Do **not** import aggressive global polyfills at the root of the app unless absolutely necessary.
+`index.js`:
+```js
+// Remove this line to prevent circular dependency crashes on Android release builds
+// import 'react-native-url-polyfill/auto'; 
+
+import { AppRegistry } from 'react-native';
+import App from './App';
+AppRegistry.registerComponent('main', () => App);
+```
