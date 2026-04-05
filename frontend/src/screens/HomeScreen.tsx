@@ -8,6 +8,34 @@ import { useAuth } from '../context/AuthContext';
 import DonationModal from '../components/DonationModal';
 import PanicButton from '../components/common/PanicButton';
 
+class ErrorBoundary extends React.Component<any, any> {
+    constructor(props: any) {
+      super(props);
+      this.state = { hasError: false, error: null };
+    }
+  
+    static getDerivedStateFromError(error: any) {
+      return { hasError: true, error };
+    }
+  
+    componentDidCatch(error: any, errorInfo: any) {
+      console.error("ErrorBoundary caught:", error, errorInfo);
+    }
+  
+    render() {
+      if (this.state.hasError) {
+        return (
+          <View style={{flex: 1, padding: 40, backgroundColor: '#b33939', justifyContent: 'center'}}>
+            <Text style={{color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 10}}>ERROR FATAL DE RENDERIZADO:</Text>
+            <Text style={{color: '#fff', fontSize: 13}}>{this.state.error && this.state.error.toString()}</Text>
+            <Text style={{color: '#fff', fontSize: 13, marginTop: 20}}>¡Tómale captura a esta pantalla y mándasela al ingeniero web!</Text>
+          </View>
+        );
+      }
+      return this.props.children; 
+    }
+}
+
 const HomeScreen = () => {
     const navigation = useNavigation();
     const { user } = useAuth();
@@ -34,7 +62,8 @@ const HomeScreen = () => {
     }, [user, isPro, isLawyerBasic, isLawyerPro]);
 
     return (
-        <View style={styles.mainContainer}>
+        <ErrorBoundary>
+            <View style={styles.mainContainer}>
             <StatusBar barStyle="light-content" backgroundColor={AppTheme.colors.primary} />
 
             {/* HEADER ZONA 1 */}
@@ -67,12 +96,12 @@ const HomeScreen = () => {
                 {/* ZONA 1: Gancho Texto */}
                 <View style={styles.heroTextContainer}>
                     <Text style={styles.heroTitle}>
-                         Hola, {user?.fullName ? user.fullName.split(' ')[0] : 'Bienvenido'}
-                         {(isWorkerPremium || isLawyerBasic || isLawyerPro || isPro) && (
-                            <Text style={{color: '#2ecc71', fontSize: 16}}>  [PRO]</Text>
-                         )}
+                        {'Hola, '}{user?.fullName ? user.fullName.split(' ')[0] : 'Bienvenido'}
+                        {(isWorkerPremium || isLawyerBasic || isLawyerPro || isPro) ? (
+                            <Text style={{color: '#2ecc71', fontSize: 16}}>{'  [PRO]'}</Text>
+                        ) : null}
                     </Text>
-                    <Text style={styles.heroPreTitle}>¿Tienes dudas sobre tu empleo?</Text>
+                    <Text style={styles.heroPreTitle}>{'¿Tienes dudas sobre tu empleo?'}</Text>
                 </View>
             </LinearGradient>
 
@@ -191,11 +220,12 @@ const HomeScreen = () => {
                         </TouchableOpacity>
                     </View>
                 </View>
-                <View style={{height: 80}} /> {/* Spacer for FAB */}
+                <View style={{height: 80}} />
             </ScrollView>
 
             <PanicButton />
         </View>
+        </ErrorBoundary>
     );
 };
 
