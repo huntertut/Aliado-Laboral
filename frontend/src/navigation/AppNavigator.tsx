@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import HomeScreen from '../screens/HomeScreen';
 import CalculatorScreen from '../screens/CalculatorScreen';
 import GuidesScreen from '../screens/GuidesScreen';
@@ -54,8 +55,17 @@ const Stack = createStackNavigator();
 
 const AppNavigator = () => {
     const { user, isLoading } = useAuth();
+    const [hasOpenedBefore, setHasOpenedBefore] = useState<boolean | null>(null);
 
-    if (isLoading) {
+    useEffect(() => {
+        AsyncStorage.getItem('HAS_OPENED_APP').then((value) => {
+            setHasOpenedBefore(value === 'true');
+        }).catch(() => {
+            setHasOpenedBefore(false);
+        });
+    }, []);
+
+    if (isLoading || hasOpenedBefore === null) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={'#0000ff'} />
@@ -148,18 +158,27 @@ const AppNavigator = () => {
                         <Stack.Screen name="LawyerRequestDetail" component={LawyerRequestDetailScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
-                    // Auth Stack
+                    // Auth Stack — skip Welcome for returning users
                     <>
-                        <Stack.Screen
-                            name="Welcome"
-                            component={WelcomeScreen}
-                            options={{ headerShown: false }}
-                        />
+                        {hasOpenedBefore ? null : (
+                            <Stack.Screen
+                                name="Welcome"
+                                component={WelcomeScreen}
+                                options={{ headerShown: false }}
+                            />
+                        )}
                         <Stack.Screen
                             name="Login"
                             component={LoginScreen}
                             options={{ headerShown: false }}
                         />
+                        {hasOpenedBefore ? (
+                            <Stack.Screen
+                                name="Welcome"
+                                component={WelcomeScreen}
+                                options={{ headerShown: false }}
+                            />
+                        ) : null}
                         <Stack.Screen
                             name="Register"
                             component={RegisterScreen}

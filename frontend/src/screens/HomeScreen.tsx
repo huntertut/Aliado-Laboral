@@ -26,9 +26,9 @@ class ErrorBoundary extends React.Component<any, any> {
       if (this.state.hasError) {
         return (
           <View style={{flex: 1, padding: 40, backgroundColor: '#b33939', justifyContent: 'center'}}>
-            <Text style={{color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 10}}>ERROR FATAL DE RENDERIZADO:</Text>
-            <Text style={{color: '#fff', fontSize: 13}}>{this.state.error && this.state.error.toString()}</Text>
-            <Text style={{color: '#fff', fontSize: 13, marginTop: 20}}>¡Tómale captura a esta pantalla y mándasela al ingeniero web!</Text>
+            <Text style={{color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 10}}>{'ERROR FATAL DE RENDERIZADO:'}</Text>
+            <Text style={{color: '#fff', fontSize: 13}}>{this.state.error ? this.state.error.toString() : 'Unknown error'}</Text>
+            <Text style={{color: '#fff', fontSize: 13, marginTop: 20}}>{'¡Tómale captura a esta pantalla y mándasela al ingeniero web!'}</Text>
           </View>
         );
       }
@@ -43,12 +43,9 @@ const HomeScreen = () => {
     const userPlan = user?.plan?.toLowerCase();
     const isLawyer = user?.role === 'lawyer';
 
-    // Helper statuses for logging and UI
     const isWorkerPremium = user?.role === 'worker' && (userPlan === 'premium' || userPlan === 'worker_premium');
     const isLawyerBasic = isLawyer && userPlan === 'basic';
     const isLawyerPro = isLawyer && userPlan === 'pro';
-
-    // Generic high-tier check for legacy UI styling
     const isPro = isLawyerPro || isWorkerPremium || user?.plan === 'PRO' || user?.plan === 'PREMIUM';
 
     useEffect(() => {
@@ -66,157 +63,156 @@ const HomeScreen = () => {
             <View style={styles.mainContainer}>
             <StatusBar barStyle="light-content" backgroundColor={AppTheme.colors.primary} />
 
-            {/* HEADER ZONA 1 */}
-            <LinearGradient colors={[AppTheme.colors.primary, '#3742fa']} style={styles.header}>
-                <View style={styles.headerTop}>
-                    <View style={styles.greetingContainer}>
+            {/* ─── HEADER ─── */}
+            <LinearGradient colors={['#1e3799', '#3742fa']} style={styles.header}>
+                <View style={styles.headerRow}>
+                    <View style={styles.headerLeft}>
                         <Image
                             source={isPro ? require('../../assets/images/logo_m_pro.jpg') : require('../../assets/images/aliado_logo_new.png')}
                             style={styles.headerLogo}
                             resizeMode="contain"
                         />
-                        <View style={{ flex: 1, justifyContent: 'center' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Text style={styles.greeting} numberOfLines={1}>
-                                    Aliado Laboral
-                                </Text>
-                            </View>
-                        </View>
+                        <Text style={styles.headerTitle}>{'Aliado Laboral'}</Text>
                     </View>
-                    <View style={styles.headerActionRow}>
+                    <View style={styles.headerRight}>
                         <TouchableOpacity onPress={() => navigation.navigate('NewsFeed' as never)} style={styles.iconBtn}>
-                            <Ionicons name="notifications-outline" size={26} color="#fff" />
+                            <Ionicons name="notifications-outline" size={24} color="#fff" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.iconBtn}>
-                            <Ionicons name="person-circle-outline" size={32} color="#fff" />
+                        <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.avatarBtn}>
+                            <Ionicons name="person-circle" size={36} color="#fff" />
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* ZONA 1: Gancho Texto */}
-                <View style={styles.heroTextContainer}>
-                    <Text style={styles.heroTitle}>
-                        {'Hola, '}{user?.fullName ? user.fullName.split(' ')[0] : 'Bienvenido'}
-                        {(isWorkerPremium || isLawyerBasic || isLawyerPro || isPro) ? (
-                            <Text style={{color: '#2ecc71', fontSize: 16}}>{'  [PRO]'}</Text>
-                        ) : null}
-                    </Text>
-                    <Text style={styles.heroPreTitle}>{'¿Tienes dudas sobre tu empleo?'}</Text>
+                {/* ─── ZONA 1: El Gancho ─── */}
+                <View style={styles.heroSection}>
+                    <Text style={styles.zoneLabel}>{'ZONA 1: El "Gancho"'}</Text>
+                    <Text style={styles.heroTitle}>{'¿Tienes dudas sobre\ntu empleo?'}</Text>
+                    {isPro ? (
+                        <View style={styles.proBadge}>
+                            <Text style={styles.proBadgeText}>{'⭐ PRO'}</Text>
+                        </View>
+                    ) : null}
                 </View>
+
+                {/* ─── CTA: Calculadora ─── */}
+                <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Calculator' as never)} style={styles.ctaWrapper}>
+                    <LinearGradient colors={['#667eea', '#764ba2']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={styles.ctaGradient}>
+                        <View style={styles.ctaIconBg}>
+                            <Ionicons name="calculator" size={36} color="#fff" />
+                        </View>
+                        <View style={styles.ctaTextContainer}>
+                            <Text style={styles.ctaTitle}>{'Calcular mi Finiquito\n/ Liquidación'}</Text>
+                            <Text style={styles.ctaSubtitle}>{'Saber cuánto te deben es el primer paso.'}</Text>
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
             </LinearGradient>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 
-                {/* ZONA 1 CTA: Calculadora */}
-                <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Calculator' as never)} style={styles.ctaWrapper}>
-                    <LinearGradient colors={['#FF8C00', '#FFD700']} start={{x: 0, y: 0}} end={{x: 1, y: 1}} style={styles.ctaGradient}>
-                        <View style={styles.ctaIconBg}>
-                            <Ionicons name="calculator" size={42} color="#fff" />
-                        </View>
-                        <View style={styles.ctaTextContainer}>
-                            <Text style={styles.ctaTitle}>Calcular mi Finiquito{'\n'}/ Liquidación</Text>
-                            <Text style={styles.ctaSubtitle}>Saber cuánto te deben es el primer paso.</Text>
-                        </View>
-                    </LinearGradient>
-                </TouchableOpacity>
-
-                {/* ZONA 2: Acciones Rápidas (Grid 2x2) */}
-                <Text style={styles.sectionHeader}>Acciones Rápidas</Text>
+                {/* ─── ZONA 2: Acciones Rápidas ─── */}
+                <Text style={styles.sectionHeader}>
+                    <Text style={styles.zoneBold}>{'ZONA 2: '}</Text>
+                    {'Acciones Rápidas'}
+                </Text>
                 <View style={styles.grid}>
-                    {/* Tarjeta 1 */}
+                    {/* Card 1: Asesor IA */}
                     <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Chat' as never)} style={styles.cardContainer}>
-                        <LinearGradient colors={isPro ? ['#1dd1a1', '#10ac84'] : ['#43e97b', '#38f9d7']} start={{x:0, y:0}} end={{x:1, y:1}} style={styles.card}>
-                            <View style={styles.iconContainer}>
-                                <Ionicons name="chatbubbles" size={30} color="#fff" />
+                        <LinearGradient colors={['#43e97b', '#38f9d7']} start={{x:0, y:0}} end={{x:1, y:1}} style={styles.card}>
+                            <View style={styles.cardIconCircle}>
+                                <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
                             </View>
-                            <Text style={styles.cardTitle}>Asesor IA</Text>
+                            <Text style={styles.cardTitle}>{'Asesor IA'}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Tarjeta 2 */}
+                    {/* Card 2: Abogados Aliados */}
                     <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Lawyers' as never)} style={styles.cardContainer}>
                         <LinearGradient colors={['#4facfe', '#00f2fe']} start={{x:0, y:0}} end={{x:1, y:1}} style={styles.card}>
-                            <View style={styles.iconContainer}>
-                                <Ionicons name="scale" size={30} color="#fff" />
+                            <View style={styles.cardIconCircle}>
+                                <Ionicons name="scale" size={28} color="#fff" />
                             </View>
-                            <Text style={styles.cardTitle}>Abogados Aliados</Text>
+                            <Text style={styles.cardTitle}>{'Abogados Aliados'}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Tarjeta 3 */}
+                    {/* Card 3: Guía Laboral */}
                     <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('LaborGuide' as never)} style={styles.cardContainer}>
                         <LinearGradient colors={['#FF9A9E', '#FECFEF']} start={{x:0, y:0}} end={{x:1, y:1}} style={styles.card}>
-                            <View style={styles.iconContainer}>
-                                <Ionicons name="book" size={30} color="#fff" />
+                            <View style={styles.cardIconCircle}>
+                                <Ionicons name="book" size={28} color="#fff" />
                             </View>
-                            <Text style={styles.cardTitle}>Guía Laboral</Text>
+                            <Text style={styles.cardTitle}>{'Guía Laboral'}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Tarjeta 4 */}
+                    {/* Card 4: Mi Kit Legal */}
                     <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('MyChest' as never)} style={styles.cardContainer}>
                         <LinearGradient colors={['#a18cd1', '#fbc2eb']} start={{x:0, y:0}} end={{x:1, y:1}} style={styles.card}>
-                            <View style={styles.iconContainer}>
-                                <Ionicons name="briefcase" size={30} color="#fff" />
+                            <View style={styles.cardIconCircle}>
+                                <Ionicons name="folder-open" size={28} color="#fff" />
                             </View>
-                            <Text style={styles.cardTitle}>Mi Kit Legal</Text>
+                            <Text style={styles.cardTitle}>{'Mi Kit Legal'}</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
 
-                {/* ZONA 3: Información y Apoyo (Horizontal) */}
-                <Text style={styles.sectionHeader}>Información y Apoyo</Text>
+                {/* ─── ZONA 3: Información y Apoyo ─── */}
+                <Text style={styles.sectionHeader}>
+                    <Text style={styles.zoneBold}>{'ZONA 3: '}</Text>
+                    {'Información y Apoyo'}
+                </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
                     
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('NewsFeed' as never)}>
                         <View style={styles.smallIconCircle}><Ionicons name="newspaper-outline" size={24} color={AppTheme.colors.primary} /></View>
-                        <Text style={styles.smallCardText}>Noticias</Text>
+                        <Text style={styles.smallCardText}>{'Noticias\nLegales'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('Forum' as never)}>
                         <View style={styles.smallIconCircle}><Ionicons name="people-outline" size={24} color={AppTheme.colors.primary} /></View>
-                        <Text style={styles.smallCardText}>Foro</Text>
+                        <Text style={styles.smallCardText}>{'Foro\nAnónimo'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('ImssNom' as never)}>
                         <View style={styles.smallIconCircle}><Ionicons name="medkit-outline" size={24} color={AppTheme.colors.primary} /></View>
-                        <Text style={styles.smallCardText}>IMSS</Text>
+                        <Text style={styles.smallCardText}>{'IMSS'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('Guides' as never)}>
                         <View style={styles.smallIconCircle}><Ionicons name="shield-checkmark-outline" size={24} color={AppTheme.colors.primary} /></View>
-                        <Text style={styles.smallCardText}>PROFEDET</Text>
+                        <Text style={styles.smallCardText}>{'PROFEDET'}</Text>
                     </TouchableOpacity>
 
-                    {/* Suscripciones Aliado PRO */}
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('SubscriptionManagement' as never)}>
-                        <View style={styles.smallIconCircle}><Ionicons name="business-outline" size={24} color="#f1c40f" /></View>
-                        <Text style={styles.smallCardText}>Aliado PRO</Text>
+                        <View style={styles.smallIconCircle}><Ionicons name="star-outline" size={24} color="#f1c40f" /></View>
+                        <Text style={styles.smallCardText}>{'Aliado\nPRO'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.smallCard} onPress={() => setShowDonationModal(true)}>
-                        <View style={styles.smallIconCircle}><Ionicons name="gift-outline" size={24} color="#e84393" /></View>
-                        <Text style={styles.smallCardText}>Donar</Text>
+                        <View style={[styles.smallIconCircle, {backgroundColor: '#fff0f6'}]}><Ionicons name="gift-outline" size={24} color="#e84393" /></View>
+                        <Text style={styles.smallCardText}>{'Donar al\nProyecto'}</Text>
                     </TouchableOpacity>
 
                 </ScrollView>
 
                 <DonationModal visible={showDonationModal} onClose={() => setShowDonationModal(false)} />
 
-                {/* Footer */}
+                {/* ─── Footer ─── */}
                 <View style={styles.footer}>
-                    <Text style={styles.copyright}>© 2024 Aliado Laboral</Text>
+                    <Text style={styles.copyright}>{'© 2024 Aliado Laboral'}</Text>
                     <View style={styles.footerLogosContainer}>
                         <TouchableOpacity style={styles.creditsRow} onPress={() => Linking.openURL('https://cibertmx.org/')} activeOpacity={0.7}>
-                            <Text style={styles.credits}>Diseñado por </Text>
+                            <Text style={styles.credits}>{'Diseñado por '}</Text>
                             <Image source={require('../../assets/images/ciber-logo.jpg')} style={styles.logoImage} resizeMode="contain" />
-                            <Text style={styles.creditsName}>CIBERT</Text>
+                            <Text style={styles.creditsName}>{'CIBERT'}</Text>
                         </TouchableOpacity>
-                        <Text style={styles.separator}>  |  </Text>
+                        <Text style={styles.separator}>{'  |  '}</Text>
                         <TouchableOpacity style={styles.creditsRow} onPress={() => Linking.openURL('https://savestudiomx.com')} activeOpacity={0.7}>
-                            <Text style={styles.credits}>Colab de </Text>
+                            <Text style={styles.credits}>{'Colaboración de '}</Text>
                             <Image source={require('../../assets/images/save-logo.jpg')} style={styles.logoImage} resizeMode="contain" />
-                            <Text style={styles.creditsName}>SAVE</Text>
+                            <Text style={styles.creditsName}>{'SAVE'}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -232,155 +228,188 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
-        backgroundColor: '#f5f7fa',
+        backgroundColor: '#f0f2f5',
     },
+    // ─── Header ───
     header: {
-        paddingTop: 50,
-        paddingBottom: 25,
+        paddingTop: 48,
+        paddingBottom: 20,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        ...AppTheme.shadows.default,
+        borderBottomLeftRadius: 28,
+        borderBottomRightRadius: 28,
     },
-    headerTop: {
+    headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    greetingContainer: {
+    headerLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        flex: 1,
     },
     headerLogo: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 10,
         backgroundColor: '#fff',
-        marginRight: 10,
+        marginRight: 8,
     },
-    greeting: {
-        fontSize: 18,
+    headerTitle: {
+        fontSize: 16,
         fontWeight: '700',
         color: '#fff',
     },
-    headerActionRow: {
+    headerRight: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     iconBtn: {
-        padding: 5,
-        marginLeft: 5,
+        padding: 6,
+        marginRight: 4,
     },
-    heroTextContainer: {
-        marginTop: 20,
+    avatarBtn: {
+        padding: 2,
     },
-    heroPreTitle: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        color: '#ffffff',
-        marginTop: 5,
+    // ─── Hero / Zona 1 ───
+    heroSection: {
+        alignItems: 'center',
+        marginTop: 24,
+        marginBottom: 20,
+    },
+    zoneLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: 'rgba(255,255,255,0.65)',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 6,
     },
     heroTitle: {
-        fontSize: 16,
-        color: '#d1d8e0',
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#fff',
+        textAlign: 'center',
+        lineHeight: 36,
     },
-    scrollContent: {
-        padding: 20,
-        paddingTop: 10,
+    proBadge: {
+        marginTop: 8,
+        backgroundColor: 'rgba(46, 204, 113, 0.25)',
+        paddingHorizontal: 14,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(46, 204, 113, 0.5)',
     },
+    proBadgeText: {
+        color: '#2ecc71',
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    // ─── CTA: Calculator ───
     ctaWrapper: {
-        marginTop: -30, // Pulls the CTA slightly over the header
-        borderRadius: 20,
-        marginBottom: 25,
-        ...AppTheme.shadows.default,
+        borderRadius: 18,
+        overflow: 'hidden',
         elevation: 6,
+        shadowColor: '#764ba2',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     ctaGradient: {
-        borderRadius: 20,
-        padding: 20,
+        borderRadius: 18,
+        paddingVertical: 18,
+        paddingHorizontal: 20,
         flexDirection: 'row',
         alignItems: 'center',
     },
     ctaIconBg: {
-        width: 65,
-        height: 65,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.25)',
+        width: 60,
+        height: 60,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.2)',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
+        marginRight: 14,
     },
     ctaTextContainer: {
         flex: 1,
     },
     ctaTitle: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '800',
         color: '#fff',
-        marginBottom: 5,
-        textShadowColor: 'rgba(0,0,0,0.1)',
-        textShadowOffset: {width: 0, height: 1},
-        textShadowRadius: 2,
+        marginBottom: 4,
     },
     ctaSubtitle: {
-        fontSize: 13,
-        color: 'rgba(255,255,255,0.9)',
+        fontSize: 12,
+        color: 'rgba(255,255,255,0.85)',
         fontWeight: '500',
     },
-    sectionHeader: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 15,
-        marginTop: 5,
+    // ─── Scroll Content ───
+    scrollContent: {
+        padding: 20,
+        paddingTop: 18,
     },
+    sectionHeader: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#444',
+        marginBottom: 14,
+        marginTop: 4,
+    },
+    zoneBold: {
+        fontWeight: '800',
+        color: AppTheme.colors.primary,
+    },
+    // ─── Grid ───
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     cardContainer: {
         width: '48%',
-        marginBottom: 15,
+        marginBottom: 14,
         borderRadius: 18,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.1,
-        shadowRadius: 5,
+        shadowRadius: 6,
         elevation: 4,
     },
     card: {
         borderRadius: 18,
-        padding: 15,
+        paddingVertical: 20,
+        paddingHorizontal: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        height: 125, // Slightly shorter than before to fit in screen
+        height: 130,
     },
-    iconContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(255,255,255,0.3)',
+    cardIconCircle: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: 'rgba(255,255,255,0.35)',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 10,
     },
     cardTitle: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
     },
+    // ─── Horizontal Icons (Zona 3) ───
     horizontalScroll: {
         paddingRight: 20,
         paddingBottom: 20,
     },
     smallCard: {
         alignItems: 'center',
-        marginRight: 20,
-        width: 60,
+        marginRight: 16,
+        width: 68,
     },
     smallIconCircle: {
         width: 50,
@@ -389,22 +418,25 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 6,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 2,
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 3,
     },
     smallCardText: {
-        fontSize: 11,
-        color: '#666',
+        fontSize: 10,
+        color: '#555',
         textAlign: 'center',
         fontWeight: '600',
+        lineHeight: 13,
     },
+    // ─── Footer ───
     footer: {
         alignItems: 'center',
-        paddingVertical: 10,
+        paddingVertical: 14,
+        marginTop: 6,
     },
     copyright: {
         fontSize: 12,
@@ -418,7 +450,7 @@ const styles = StyleSheet.create({
     },
     separator: {
         color: '#ccc',
-        marginHorizontal: 10,
+        marginHorizontal: 6,
     },
     creditsRow: {
         flexDirection: 'row',
@@ -436,7 +468,7 @@ const styles = StyleSheet.create({
     logoImage: {
         width: 18,
         height: 18,
-        marginHorizontal: 4,
+        marginHorizontal: 3,
     },
 });
 

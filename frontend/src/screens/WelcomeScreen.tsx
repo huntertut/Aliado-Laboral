@@ -13,6 +13,7 @@ const WelcomeScreen = () => {
     const handleRoleSelect = async (role: 'worker' | 'lawyer' | 'pyme') => {
         try {
             await AsyncStorage.setItem('TEMP_ROLE_SELECTION', role);
+            await AsyncStorage.setItem('HAS_OPENED_APP', 'true');
         } catch (e) {
             console.error('Failed to save role', e);
         }
@@ -124,7 +125,10 @@ const WelcomeScreen = () => {
 
                 <TouchableOpacity
                     style={styles.loginButton}
-                    onPress={() => navigation.navigate('Login' as never)}
+                    onPress={async () => {
+                        try { await AsyncStorage.setItem('HAS_OPENED_APP', 'true'); } catch(e) {}
+                        navigation.navigate('Login' as never);
+                    }}
                 >
                     <Text style={styles.loginText}>¿Ya tienes cuenta? <Text style={styles.loginLink}>Inicia Sesión</Text></Text>
                 </TouchableOpacity>
