@@ -1,7 +1,11 @@
 import cron from 'node-cron';
 import { PrismaClient } from '@prisma/client';
+import { startScheduler as startNewsScheduler } from './newsScheduler';
 
 const prisma = new PrismaClient();
+
+// Start News Scheduler
+startNewsScheduler();
 
 // Se ejecuta todos los días a las 2:00 AM
 cron.schedule('0 2 * * *', async () => {

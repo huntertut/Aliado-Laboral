@@ -1111,3 +1111,72 @@ export const uploadSettlementDoc = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error procesando el convenio' });
     }
 };
+
+/**
+ * LAWYER: Suggest first message reply using Groq AI
+ */
+export const suggestReply = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user?.id;
+
+        const lawyer = await prisma.lawyer.findUnique({
+            where: { userId },
+            include: { profile: true }
+        });
+
+        if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
+
+        const request = await prisma.contactRequest.findUnique({ where: { id }, include: { worker: true } });
+        if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+        if (request.lawyerProfileId !== lawyer.profile.id) {
+            return res.status(403).json({ error: 'No autorizado' });
+        }
+
+        if (!process.env.GROQ_API_KEY) {
+            return res.json({
+                suggestions: [
+                    "Hola, soy el abogado asignado a tu caso. ¿Podemos hablar y revisar los detalles?",
+                    "Saludos, he revisado parte de tu problema laboral y me gustaría brindarte apoyo.",
+                    "¡Hola! Entiendo que tuviste problemas en el trabajo. Estoy aquí para orientarte sin compromiso inicial."
+                ]
+            });
+        }
+
+        const groq = new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
+
+        const prompt = `Eres un experto redactor legal y asistente de servicio al cliente para abogados laboralistas en México.
+        El trabajador ha descrito su caso así (puede ser un resumen de otra IA o palabras suyas):
+        "${request.aiSummary || request.caseSummary}"
+
+        Tu tarea:
+        Redacta 3 opciones separadas para enviar un "Primer Mensaje" que el abogado le enviará por chat al prospecto.
+        Las reglas son:
+        - Empático, humano, dando confianza.
+        - Breve (ideal para un chat celular), sin aburrir con leyes en el saludo.
+        - Debe invitar a seguir conversando.
+
+        Obligatorio: Imprime la respuesta como un objeto JSON válido con un arreglo de textos llamado "suggestions".
+        Formato exacto esperado: { "suggestions": ["Mensaje 1...", "Mensaje 2...", "Mensaje 3..."] }`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.1-8b-instant",
+            response_format: { type: "json_object" },
+            temperature: 0.7
+        });
+
+        const responseContent = completion.choices[0]?.message?.content || '{"suggestions":[]}';
+        const result = JSON.parse(responseContent);
+
+        res.json({ suggestions: result.suggestions });
+
+    } catch (error: any) {
+        console.error('Error generating AI suggestions:', error);
+        res.status(500).json({ error: 'Error generando sugerencias', details: error.message });
+    }
+};

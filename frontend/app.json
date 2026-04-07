@@ -2,8 +2,8 @@
   "expo": {
     "name": "Aliado Laboral",
     "slug": "aliado-laboral",
-    "version": "1.20.0",
-    "runtimeVersion": "1.20.0",
+    "version": "1.20.3",
+    "runtimeVersion": "1.20.3",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/images/aliado_logo_new.png",
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 13,
+      "versionCode": 15,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",
         "backgroundColor": "#1e3799",

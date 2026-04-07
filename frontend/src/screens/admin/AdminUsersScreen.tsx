@@ -156,6 +156,50 @@ const AdminUsersScreen = () => {
         );
     };
 
+    const handleGrantTrial = (userId: string, name: string) => {
+        Alert.alert(
+            'Regalar Meses Pro',
+            `¿Cuántos meses gratis deseas otorgar a ${name}?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: '1 Mes',
+                    onPress: async () => {
+                        try {
+                            const token = await AsyncStorage.getItem('authToken');
+                            await axios.put(
+                                `${API_URL}/admin/users/${userId}/subscription`,
+                                { plan: 'pro', role: 'lawyer', durationMonths: 1 },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            Alert.alert('Éxito', `1 Mes Pro otorgado a ${name}.`);
+                            fetchData();
+                        } catch (error) {
+                            Alert.alert('Error', 'No se pudo otorgar el mes.');
+                        }
+                    }
+                },
+                {
+                    text: '3 Meses',
+                    onPress: async () => {
+                        try {
+                            const token = await AsyncStorage.getItem('authToken');
+                            await axios.put(
+                                `${API_URL}/admin/users/${userId}/subscription`,
+                                { plan: 'pro', role: 'lawyer', durationMonths: 3 },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            Alert.alert('Éxito', `3 Meses Pro otorgados a ${name}.`);
+                            fetchData();
+                        } catch (error) {
+                            Alert.alert('Error', 'No se pudieron otorgar los meses.');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const renderLawyerItem = ({ item }: { item: any }) => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -179,6 +223,13 @@ const AdminUsersScreen = () => {
                         onPress={() => handleUpdatePlan(item.userId, 'lawyer', item.subscriptionStatus === 'active' && item.plan === 'pro' ? 'pro' : 'basic', item.fullName)}
                     >
                         <Text style={[styles.actionText, { color: '#1565c0' }]}>Plan</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#e8f5e9', marginRight: 10 }]}
+                        onPress={() => handleGrantTrial(item.userId, item.fullName)}
+                    >
+                        <Text style={[styles.actionText, { color: '#2e7d32' }]}>Regalar</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

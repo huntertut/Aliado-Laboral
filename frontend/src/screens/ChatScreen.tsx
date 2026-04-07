@@ -5,6 +5,7 @@ import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Message {
     id: string;
@@ -55,12 +56,18 @@ const ChatScreen = () => {
         setLoading(true);
 
         try {
+            const token = await AsyncStorage.getItem('auth_token');
+            const headers: any = {
+                'Content-Type': 'application/json',
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             // LLAMADA AL BACKEND CON OPENAI
             const response = await fetch(`${API_URL}/ai/chat`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify({
                     message: currentInput,
                     persona: persona

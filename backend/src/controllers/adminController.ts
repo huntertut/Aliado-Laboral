@@ -939,9 +939,9 @@ export const getCollectiveRadar = async (req: Request, res: Response) => {
 export const updateUserSubscription = async (req: Request, res: Response) => {
     try {
         const { userId } = req.params;
-        const { plan, role } = req.body; // plan: 'free' | 'premium' (worker) OR 'basic' | 'pro' (lawyer/pyme)
+        const { plan, role, durationMonths = 1 } = req.body; // plan: 'free' | 'premium' (worker) OR 'basic' | 'pro' (lawyer/pyme)
 
-        console.log(`[Admin] Updating subscription for User ${userId} (${role}) to ${plan}`);
+        console.log(`[Admin] Updating subscription for User ${userId} (${role}) to ${plan} for ${durationMonths} month(s)`);
 
         // 1. Update User Record
         const user = await prisma.user.update({
@@ -954,7 +954,8 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
 
         const now = new Date();
         const nextMonth = new Date();
-        nextMonth.setDate(now.getDate() + 30);
+        const duration = Number(durationMonths) || 1;
+        nextMonth.setDate(now.getDate() + (30 * duration));
 
         // 2. Update Role Specific Tables
         if (role === 'worker') {
