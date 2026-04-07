@@ -173,6 +173,39 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     }
 };
 
+export const optionalAuthMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return next(); // Guest
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        try {
+            const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+            req.user = decoded;
+            return next();
+        } catch (jwtError) {}
+
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const userRole = await prisma.userRole.findUnique({ where: { firebaseUid: decodedToken.uid } });
+        
+        if (userRole && userRole.userId) {
+            req.user = {
+                id: userRole.userId,
+                email: userRole.email,
+                role: userRole.role
+            };
+        }
+        return next();
+    } catch (error) {
+        // Just proceed without user if token is invalid
+        return next();
+    }
+};
+
 export const requireRole = (allowedRoles: string[]) => {
     return async (req: AuthRequest, res: Response, next: NextFunction) => {
         if (!req.user) {

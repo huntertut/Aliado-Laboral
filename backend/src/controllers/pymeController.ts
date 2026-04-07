@@ -124,10 +124,10 @@ export const getPymeLiability = async (req: any, res: Response) => {
     }
 };
 
-export const generateAdministrativeAct = async (req: any, res: Response) => {
+export const generateDocument = async (req: any, res: Response) => {
     try {
         const userId = req.user.id;
-        const { employeeId, incident, date } = req.body;
+        const { employeeId, incident, date, documentType = 'acta', salary = 'N/A', role = 'N/A' } = req.body;
 
         const profile = await prisma.pymeProfile.findUnique({ where: { userId } });
         if (!profile) return res.status(404).json({ error: 'Pyme no encontrada' });
@@ -138,7 +138,7 @@ export const generateAdministrativeAct = async (req: any, res: Response) => {
         // AI Generation
         if (!process.env.GROQ_API_KEY) {
             return res.json({
-                content: `<h1>Acta Administrativa (MOCK)</h1><p>Empleado: ${employee.fullName}</p><p>Incidente: ${incident}</p><p>Nota: Configura GROQ_API_KEY para contenido real.</p>`
+                content: `<h1>Documento (MOCK)</h1><p>Empleado: ${employee.fullName}</p><p>Tipo: ${documentType}</p><p>Nota: Configura GROQ_API_KEY para contenido real.</p>`
             });
         }
 
@@ -147,33 +147,55 @@ export const generateAdministrativeAct = async (req: any, res: Response) => {
             baseURL: 'https://api.groq.com/openai/v1'
         });
 
-        const prompt = `
-            Eres un abogado laboral experto en México.
-            Redacta un "Acta Administrativa" formal.
-            
+        let prompt = '';
+
+        if (documentType === 'contrato') {
+            prompt = `Eres un abogado laboral corporativo experto en México. Redacta un "Contrato Individual de Trabajo por Tiempo Indeterminado".
+            Datos:
+            - Patrón: ${profile.razonSocial || 'La Empresa'}
+            - Trabajador: ${employee.fullName} (RFC: ${employee.rfc || 'N/A'})
+            - Fecha de ingreso: ${date || new Date().toISOString().split('T')[0]}
+            - Puesto: ${role}
+            - Salario mensual: ${salary}
+            Instrucciones:
+            - Usa lenguaje legal formal y clausulas básicas: Declaraciones, Objeto, Jornada, Salario, Vacaciones, Aguinaldo.
+            - Devuelve el resultado en formato MARKDOWN limpio interactivo (negritas, listas, titulos). NO uses HTML.`;
+        } else if (documentType === 'rescision') {
+            prompt = `Eres un abogado laboral experto en México. Redacta un "Aviso de Rescisión de Relación Laboral" sin responsabilidad para el patrón (Art. 47 LFT).
+            Datos:
+            - Empresa: ${profile.razonSocial || 'La Empresa'}
+            - Trabajador: ${employee.fullName} (RFC: ${employee.rfc || 'N/A'})
+            - Fecha: ${date || new Date().toISOString().split('T')[0]}
+            - Causa (hechos): "${incident}"
+            Instrucciones:
+            - Redacta de forma contundente y formal.
+            - Menciona que se le notifica la rescisión debido a las causas precisadas.
+            - Devuelve el resultado en formato MARKDOWN limpio interactivo. NO uses HTML.`;
+        } else {
+            // Default to 'acta'
+            prompt = `Eres un abogado laboral experto en México. Redacta un "Acta Administrativa" formal.
             Datos:
             - Empresa: ${profile.razonSocial || 'La Empresa'}
             - Empleado: ${employee.fullName} (RFC: ${employee.rfc || 'N/A'})
             - Fecha del incidente: ${date}
             - Descripción de los hechos: "${incident}"
-            
             Instrucciones:
             - Cita los artículos de la Ley Federal del Trabajo (LFT) aplicables.
             - Usa lenguaje legal formal, firme pero respetuoso.
             - Estructura: Lugar y Fecha, Comparecientes, Declaración de Hechos, Fundamento Legal, Cierre y Firmas.
-            - Devuelve el resultado en formato MARKDOWN limpio interactivo (negritas, listas, titulos). NO uses HTML.
-        `;
+            - Devuelve el resultado en formato MARKDOWN limpio interactivo (negritas, listas, titulos). NO uses HTML.`;
+        }
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
             model: "llama3-70b-8192", // Smart Model for Drafting
         });
 
-        const htmlContent = completion.choices[0]?.message?.content;
+        const htmlContent = completion.choices[0]?.message?.content || 'Error en Groq';
         res.json({ content: htmlContent });
 
     } catch (error: any) {
-        console.error('Act Generation Error:', error);
-        res.status(500).json({ error: 'Error al generar el acta' });
+        console.error('Document Generation Error:', error);
+        res.status(500).json({ error: 'Error al generar el documento' });
     }
 };

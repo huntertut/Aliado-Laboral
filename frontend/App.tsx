@@ -50,21 +50,3 @@ export default function App() {
         </StripeProvider>
     );
 }
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#2ecc71', // GREEN
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    text: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 10,
-    },
-    subtext: {
-        fontSize: 16,
-        color: 'white',
-    }
-});

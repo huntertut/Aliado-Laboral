@@ -150,15 +150,10 @@ export const startScheduler = () => {
     setTimeout(() => cleanOldNews(), 5000);
 };
 
-// --- NEW SCHEDULER (Vaporware Implementation) ---
-import * as schedulerService from './schedulerService';
-schedulerService.startScheduler();
-
-
 /**
  * Delete news older than 7 days
  */
-const cleanOldNews = async () => {
+export const cleanOldNews = async () => {
     try {
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

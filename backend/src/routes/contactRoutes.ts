@@ -25,4 +25,7 @@ router.get('/lawyer/:id/contact', authMiddleware, contactController.getUnlockedC
 // LAWYER - Update CRM Status (e.g. 'CLOSED_WON')
 router.patch('/lawyer/:id/status', authMiddleware, contactController.updateCRMStatus);
 
+// LAWYER - AI Suggest First Reply
+router.post('/lawyer/:id/suggest-reply', authMiddleware, contactController.suggestReply);
+
 export default router;
