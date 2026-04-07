@@ -5,8 +5,10 @@ import { AppTheme } from '../../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminUsersScreen = () => {
+    const { logout } = useAuth();
     const [activeTab, setActiveTab] = useState<'lawyers' | 'workers' | 'pymes'>('lawyers');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -40,8 +42,14 @@ const AdminUsersScreen = () => {
                     setPymes([]); // Don't alert, just show empty
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching users:', error);
+            if (error.response?.status === 401) {
+                Alert.alert('Sesión Expirada', 'Por seguridad, tu sesión ha terminado. Inicia sesión nuevamente.', [
+                    { text: 'Entendido', onPress: () => logout() }
+                ]);
+                return;
+            }
             if (activeTab !== 'pymes') {
                 Alert.alert('Error', 'No se pudieron cargar los usuarios');
             }
@@ -122,6 +130,9 @@ const AdminUsersScreen = () => {
                     <Ionicons name="close-circle" size={20} color="#ccc" />
                 </TouchableOpacity>
             )}
+            <TouchableOpacity onPress={onRefresh} style={{ marginLeft: 15, padding: 8, backgroundColor: '#e3f2fd', borderRadius: 20 }}>
+                <Ionicons name="refresh" size={20} color={AppTheme.colors.primary} />
+            </TouchableOpacity>
         </View>
     );
 
