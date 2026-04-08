@@ -94,3 +94,39 @@ import { AppRegistry } from 'react-native';
 import App from './App';
 AppRegistry.registerComponent('main', () => App);
 ```
+
+---
+
+## 6. Backend: Worker Profile Save Error (Prisma Invalid Date)
+**Symptom:**
+The mobile app returns `Error Backend: Error updating profile` or `Error Backend: Provided Date object is invalid` when saving the worker profile, even if no date was changed.
+
+**Cause:**
+Prisma's SQLite connector crashes if a `Date` object passed to it is invalid or if a string is not in ISO format. The mobile app sometimes leaks localized strings (e.g., `"25/11/2026"` - DD/MM/YYYY) into the `startDate` field. Native `new Date()` in NodeJS treats `25` as an invalid month, causing an `Invalid Date` crash.
+
+**Resolution:**
+Implemented defensive parsing in `workerProfileController.ts`. The backend now intercepts strings containing slashes and manually re-orders them to `YYYY-MM-DD` before attempting to create a Date object. If parsing still fails, it defaults to `null` to prevent a 500 error.
+
+---
+
+## 7. Deployment: "Invalid ELF Header" (bcrypt) & Permission Denied
+**Symptom:**
+After a fresh `git pull` and `npm install` on DigitalOcean, the API crashes on startup with:
+`Error: .../bcrypt_lib.node: invalid ELF header` or `sh: npx prisma: Permission denied`.
+
+**Cause:**
+1. **Binary Mismatch:** `node_modules` containing Windows-compiled binaries were synced/pushed to the Linux server. Linux cannot execute Windows `.node` files.
+2. **Permissions:** The `node_modules/.bin` directory lost execution bits during the file transfer or internal OS migration.
+
+**Resolution:**
+Execute a surgical rebuild on the server:
+```bash
+cd /root/Aliado-Laboral/backend
+rm -rf node_modules
+npm install --legacy-peer-deps
+npm rebuild bcrypt --build-from-source
+chmod -R 777 node_modules/.bin
+npx prisma generate
+npm run build
+pm2 restart aliado-api
+```

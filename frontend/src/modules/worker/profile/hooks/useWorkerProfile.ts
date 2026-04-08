@@ -75,7 +75,8 @@ export const useWorkerProfile = () => {
                 Alert.alert('Éxito', 'Información laboral actualizada correctamente.');
                 return true;
             } else {
-                Alert.alert('Error', 'No se pudo actualizar la información');
+                const errData = await response.json().catch(() => ({}));
+                Alert.alert('Error Backend', errData?.details || errData?.error || 'No se pudo actualizar la información');
                 return false;
             }
         } catch (error) {

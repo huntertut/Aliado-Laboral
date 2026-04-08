@@ -4,6 +4,11 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.20.7] - April 2026 (Phase 28 - Final)
+- **Bugfix (Critical / Backend):** Implementación de "Parsing Defensivo" para fechas en `workerProfileController.ts`. Ahora el backend detecta y corrige automáticamente fechas en formato latino (DD/MM/YYYY) enviadas por la App, evitando el colapso de Prisma (Invalid Date Error 500).
+- **Maintenance (DevOps):** Resolución de desajuste de binarios en DigitalOcean (`invalid ELF header`). Se forzó la reconstrucción nativa de `bcrypt` en el servidor y se corrigieron permisos de ejecución en `node_modules/.bin` para permitir la regeneración de Prisma.
+- **Build (Mobile):** Generado **VersionCode 19 (v.1.20.7)**. Esta versión incluye alertas de diagnóstico extendidas para interceptar errores de red y respuestas 502/500 con mayor claridad.
+
 ## [v1.20.6] - April 2026 (Phase 28)
 - **Feature (Mobile UX):** Eliminación de textos estructurales temporales (ZONA 1, ZONA 2, ZONA 3) de la pantalla de inicio y redundancia de logotipos. Deshabilitado el Action Header nativo de React Navigation (`headerShown: false`) para erradicar el doble cintillo azul, ahorrando valioso espacio de pantalla.
 - **Privacy Policy (Legal):** Inyectado interceptor de perfil en la Pantalla de Privacidad (`PrivacyPolicyScreen.tsx`); los usuarios logueados sólo visualizarán directamente la política aplicable a ellos (Trabajador, PyME, o Abogado).
