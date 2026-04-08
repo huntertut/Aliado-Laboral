@@ -55,6 +55,36 @@ export default function Users() {
         }
     };
 
+    const handleGrantTrial = async (userId: string, name: string) => {
+        const months = window.prompt(`¿Cuántos meses de acceso PRO deseas regalar a ${name}? (Escribe un número, ej: 1 o 3)`);
+        if (!months) return;
+
+        const durationMonths = parseInt(months, 10);
+        if (isNaN(durationMonths) || durationMonths <= 0) {
+            alert('Por favor, ingresa un número válido de meses (ej: 1, 3, 6).');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await api.put(`/admin/users/${userId}/subscription`, {
+                plan: 'pro',
+                role: 'lawyer',
+                durationMonths,
+            });
+            alert(`Suscripción PRO extendida exitosamente por ${durationMonths} meses.`);
+            
+            // Reload user list to show active status
+            const response = await api.get('/admin/lawyers');
+            setUsers(response.data);
+        } catch (error) {
+            console.error('Error granting trial:', error);
+            alert('Ocurrió un error al regalar los meses de prueba. Asegúrate de tener permisos.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const renderTableHeaders = () => {
         if (activeTab === 'lawyers') {
             return (
@@ -126,6 +156,12 @@ export default function Users() {
                         )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                            onClick={() => handleGrantTrial(user.id, user.fullName || 'Abogado')}
+                            className="mr-2 px-3 py-1 rounded-md transition-colors text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                        >
+                            Regalar
+                        </button>
                         <button
                             onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
                             className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
