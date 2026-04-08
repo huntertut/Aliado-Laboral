@@ -5,9 +5,10 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 ---
 
 ## [v1.20.6] - April 2026 (Phase 28)
-- **Feature (Mobile UX):** Eliminación de textos estructurales temporales (ZONA 1, ZONA 2, ZONA 3) de la pantalla de inicio y redundancia de logotipos.
+- **Feature (Mobile UX):** Eliminación de textos estructurales temporales (ZONA 1, ZONA 2, ZONA 3) de la pantalla de inicio y redundancia de logotipos. Deshabilitado el Action Header nativo de React Navigation (`headerShown: false`) para erradicar el doble cintillo azul, ahorrando valioso espacio de pantalla.
 - **Privacy Policy (Legal):** Inyectado interceptor de perfil en la Pantalla de Privacidad (`PrivacyPolicyScreen.tsx`); los usuarios logueados sólo visualizarán directamente la política aplicable a ellos (Trabajador, PyME, o Abogado).
 - **Bugfix (Critical):** Solucionado error 500 al guardar perfiles de trabajadores enviando Strings Vacíos. Se añadió lógica 'Null Coalescing' en el JSON de Prisma en el backend (`workerProfileController.ts`) reparando envíos para el `monthlySalary`.
+- **Bugfix (Critical):** Solucionado Crash `ReferenceError: Property 'TextInput' doesn't exist` que mataba la aplicación al ingresar al Foro Anónimo (producto de falta de importación en la Fase 25).
 - **Build (Mobile):** Generado de urgencia `versionCode` 18 v.1.20.6 tras las purgas.
 
 ---

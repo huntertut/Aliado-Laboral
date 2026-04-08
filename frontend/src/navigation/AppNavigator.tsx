@@ -108,8 +108,7 @@ const AppNavigator = () => {
                             name="Home"
                             component={HomeScreen}
                             options={{
-                                headerTitle: 'Aliado Laboral',
-                                headerLeft: () => null
+                                headerShown: false
                             }}
                         />
 
