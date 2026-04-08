@@ -82,6 +82,21 @@ export const updateProfile = async (req: any, res: Response) => {
         const initialContactStr = profedetInitialContact ? JSON.stringify(profedetInitialContact) : null;
         const documentsStr = profedetDocuments ? JSON.stringify(profedetDocuments) : null;
 
+        // Safely parse Date (handles frontend DD/MM/YYYY locale leaks that cause Invalid Date crashes)
+        let parsedStartDate = null;
+        if (startDate) {
+            const d = new Date(startDate);
+            if (!isNaN(d.getTime())) {
+                parsedStartDate = d;
+            } else if (typeof startDate === 'string' && startDate.includes('/')) {
+                const parts = startDate.split('/');
+                if (parts.length === 3) {
+                    const fallback = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00Z`);
+                    if (!isNaN(fallback.getTime())) parsedStartDate = fallback;
+                }
+            }
+        }
+
         // Parse salary safely to prevent Prisma Decimal cast exceptions on empty strings ("")
         const parsedMonthlySalary = (monthlySalary !== undefined && monthlySalary !== null && monthlySalary !== '')
             ? parseFloat(monthlySalary)
@@ -100,7 +115,7 @@ export const updateProfile = async (req: any, res: Response) => {
             update: {
                 occupation,
                 federalEntity,
-                startDate: startDate ? new Date(startDate) : null,
+                startDate: parsedStartDate,
                 monthlySalary: parsedMonthlySalary,
                 profedetIsActive,
                 profedetStage,
@@ -112,7 +127,7 @@ export const updateProfile = async (req: any, res: Response) => {
                 userId,
                 occupation,
                 federalEntity,
-                startDate: startDate ? new Date(startDate) : null,
+                startDate: parsedStartDate,
                 monthlySalary: parsedMonthlySalary,
                 profedetIsActive,
                 profedetStage,
@@ -123,9 +138,9 @@ export const updateProfile = async (req: any, res: Response) => {
         });
 
         res.json(profile);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating worker profile:', error);
-        res.status(500).json({ error: 'Error updating profile' });
+        res.status(500).json({ error: 'Error updating profile', details: error?.message || String(error) });
     }
 };
 
