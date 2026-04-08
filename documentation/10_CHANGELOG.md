@@ -4,6 +4,23 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.20.4] - April 2026 (Phase 24, 25 & 26)
+- **Feature (Mobile Forum):** Evolución del foro anónimo hacia una Bóveda de Glosario permanente. Eliminación de la extinción de posteos en 7 días y adición de un buscador de texto completo en la app para explorar dudas históricas.
+- **Feature (AI Integration):** Se actualizó el motor LLM (Groq / Llama 3.1) inyectando JWT directamente desde el middleware para permitir que los bots saluden y procesen datos usando el nombre real de los usuarios, generando respuestas profesionales y empáticas.
+- **Feature (Documents):** Refactor de generación de documentos dinámicos (Contratos, Renuncias, Actas Administrativas) optimizando la integración.
+- **Feature (Web Admin):** Inyección del módulo "Regalar Meses" de forma directa y nativa en el panel VITE Web, permitiendo extender suscripciones PRO a abogados con sistema de alertas prompt.
+- **UX/Bugfix (Web Admin):** Integración de mecanismos de resiliencia de sesión: ahora cuando el JWT token expira (401 Unauthorized), la web no se vacía ni muestra listas vacías, sino que dispara modal y expulsa al usuario (auto-logout) elegantemente. Adicionado un botón 'Refresh' manual cerca a la barra de búsqueda.
+- **Build:** Actualización masiva de `versionCode` a 16 y version `1.20.4` debido al desfase de binarios Play Store. Nuevos APK/AAB generados.
+
+---
+
+## [v1.20.3] - April 2026 (Phase 22 & 23)
+- **Feature (Admin/Mobile):** Creación del botón "Regalar Plan" en la interfaz de Administración desde el dispositivo móvil para extender hasta 1 o 3 meses a Abogados pioneros sin cobro de la mensualidad.
+- **Maintenance:** Re-arquitectura del cronService para los envíos programados y noticias.
+- **Build:** AAB Version Code 15 para Google Play.
+
+---
+
 ## [v1.20.2] - April 2026 (Phase 21 UI Polish)
 - **Feature (Mobile UX):** Implemented WelcomeScreen skip logic: Returning users are now routed directly to `LoginScreen` instead of `WelcomeScreen`, resolving a friction point.
 - **Feature (Mobile UI):** Finalized `HomeScreen` UI redesign to exactly match the target mockup. Enhancements include cleaner header layout preserving the mini logo, centered hero text with PRO tags, a blue-purple glassmorphism gradient for the Calculator CTA, and explicit Zona labeling with frosted-glass card icons.
