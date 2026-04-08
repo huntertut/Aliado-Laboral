@@ -81,6 +81,7 @@ const PrivacyPolicyScreen = () => {
             </TouchableOpacity>
         </ScrollView>
     );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
