@@ -4,13 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppTheme } from '../../theme/colors';
 import { PRIVACY_NOTICES } from '../../data/legal/privacyNotices';
+import { useAuth } from '../../context/AuthContext';
 
 type PrivacyType = 'WORKER' | 'LAWYER' | 'PYME' | 'GENERAL';
 
 const PrivacyPolicyScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
-    const [noticeType, setNoticeType] = useState<PrivacyType>('GENERAL');
+    const { user } = useAuth();
+    
+    // Default to the user's role if logged in
+    const defaultType = user?.role === 'worker' ? 'WORKER' : 
+                        user?.role === 'lawyer' ? 'LAWYER' : 
+                        user?.role === 'pyme' ? 'PYME' : 'GENERAL';
+
+    const [noticeType, setNoticeType] = useState<PrivacyType>(defaultType);
 
     useEffect(() => {
         // Allow passing type via route params
@@ -34,10 +42,16 @@ const PrivacyPolicyScreen = () => {
         </View>
     );
 
-    const renderTabs = () => (
-        <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
+    const renderTabs = () => {
+        // If the user has a specific defined role across the active personas, hide the tabs. They don't need to see the others.
+        if (user && ['worker', 'lawyer', 'pyme'].includes(user.role)) {
+            return null;
+        }
+
+        return (
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
             style={styles.tabsContainer}
             contentContainerStyle={styles.tabsContent}
         >
@@ -73,7 +87,6 @@ const PrivacyPolicyScreen = () => {
             <StatusBar barStyle="dark-content" />
             {renderHeader()}
 
-            {/* Show tabs unless type was strictly enforced? For now, always show to allow exploration */}
             {renderTabs()}
 
             <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>

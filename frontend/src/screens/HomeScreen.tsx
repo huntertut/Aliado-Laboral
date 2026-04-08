@@ -72,7 +72,6 @@ const HomeScreen = () => {
                             style={styles.headerLogo}
                             resizeMode="contain"
                         />
-                        <Text style={styles.headerTitle}>{'Aliado Laboral'}</Text>
                     </View>
                     <View style={styles.headerRight}>
                         <TouchableOpacity onPress={() => navigation.navigate('NewsFeed' as never)} style={styles.iconBtn}>
@@ -84,9 +83,7 @@ const HomeScreen = () => {
                     </View>
                 </View>
 
-                {/* ─── ZONA 1: El Gancho ─── */}
                 <View style={styles.heroSection}>
-                    <Text style={styles.zoneLabel}>{'ZONA 1: El "Gancho"'}</Text>
                     <Text style={styles.heroTitle}>{'¿Tienes dudas sobre\ntu empleo?'}</Text>
                     {isPro ? (
                         <View style={styles.proBadge}>
@@ -111,11 +108,8 @@ const HomeScreen = () => {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 
-                {/* ─── ZONA 2: Acciones Rápidas ─── */}
-                <Text style={styles.sectionHeader}>
-                    <Text style={styles.zoneBold}>{'ZONA 2: '}</Text>
-                    {'Acciones Rápidas'}
-                </Text>
+                {/* ─── Acciones Rápidas ─── */}
+                <Text style={styles.sectionHeader}>{'Acciones Rápidas'}</Text>
                 <View style={styles.grid}>
                     {/* Card 1: Asesor IA */}
                     <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Chat' as never)} style={styles.cardContainer}>
@@ -158,11 +152,8 @@ const HomeScreen = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* ─── ZONA 3: Información y Apoyo ─── */}
-                <Text style={styles.sectionHeader}>
-                    <Text style={styles.zoneBold}>{'ZONA 3: '}</Text>
-                    {'Información y Apoyo'}
-                </Text>
+                {/* ─── Información y Apoyo ─── */}
+                <Text style={styles.sectionHeader}>{'Información y Apoyo'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
                     
                     <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('NewsFeed' as never)}>

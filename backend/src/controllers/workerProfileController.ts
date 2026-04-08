@@ -82,6 +82,11 @@ export const updateProfile = async (req: any, res: Response) => {
         const initialContactStr = profedetInitialContact ? JSON.stringify(profedetInitialContact) : null;
         const documentsStr = profedetDocuments ? JSON.stringify(profedetDocuments) : null;
 
+        // Parse salary safely to prevent Prisma Decimal cast exceptions on empty strings ("")
+        const parsedMonthlySalary = (monthlySalary !== undefined && monthlySalary !== null && monthlySalary !== '')
+            ? parseFloat(monthlySalary)
+            : null;
+
         // Update User's fullName if provided
         if (fullName !== undefined) {
             await prisma.user.update({
@@ -96,7 +101,7 @@ export const updateProfile = async (req: any, res: Response) => {
                 occupation,
                 federalEntity,
                 startDate: startDate ? new Date(startDate) : null,
-                monthlySalary,
+                monthlySalary: parsedMonthlySalary,
                 profedetIsActive,
                 profedetStage,
                 profedetCaseFile,
@@ -108,7 +113,7 @@ export const updateProfile = async (req: any, res: Response) => {
                 occupation,
                 federalEntity,
                 startDate: startDate ? new Date(startDate) : null,
-                monthlySalary,
+                monthlySalary: parsedMonthlySalary,
                 profedetIsActive,
                 profedetStage,
                 profedetCaseFile,

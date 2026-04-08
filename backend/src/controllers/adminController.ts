@@ -157,7 +157,8 @@ export const getLawyers = async (req: Request, res: Response) => {
                     select: {
                         fullName: true,
                         email: true,
-                        createdAt: true
+                        createdAt: true,
+                        _count: { select: { legalCases: { where: { status: 'active' } } } }
                     }
                 },
                 subscription: true
@@ -176,6 +177,8 @@ export const getLawyers = async (req: Request, res: Response) => {
                 isVerified: l.isVerified,
                 licenseNumber: l.licenseNumber,
                 subscriptionStatus: l.subscriptionStatus || 'inactive',
+                planExpiresAt: l.subscriptionEndDate,
+                activeCasesCount: l.user._count?.legalCases || 0,
                 createdAt: l.user.createdAt
             };
         });
@@ -403,7 +406,10 @@ export const getWorkers = async (req: Request, res: Response) => {
             include: {
                 workerSubscription: true,
                 _count: {
-                    select: { contactRequestsSent: true }
+                    select: { 
+                        contactRequestsSent: true,
+                        legalCases: { where: { status: 'active' } }
+                    }
                 }
             },
             orderBy: { createdAt: 'desc' }
@@ -414,6 +420,8 @@ export const getWorkers = async (req: Request, res: Response) => {
             fullName: worker.fullName,
             email: worker.email,
             subscriptionStatus: worker.workerSubscription?.status || 'free',
+            planExpiresAt: worker.workerSubscription?.endDate || null,
+            activeCasesCount: worker._count.legalCases,
             contactRequests: worker._count.contactRequestsSent,
             createdAt: worker.createdAt
         }));
@@ -430,7 +438,10 @@ export const getPymes = async (req: Request, res: Response) => {
         const pymes = await prisma.user.findMany({
             where: { role: 'pyme' },
             include: {
-                pymeProfile: true
+                pymeProfile: true,
+                _count: {
+                    select: { legalCases: { where: { status: 'active' } } }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -441,6 +452,8 @@ export const getPymes = async (req: Request, res: Response) => {
             companyName: pyme.pymeProfile?.razonSocial || 'Sin Razón Social',
             email: pyme.email,
             plan: pyme.plan || 'basic',
+            planExpiresAt: pyme.planExpiresAt,
+            activeCasesCount: pyme._count.legalCases,
             subscriptionLevel: pyme.subscriptionLevel || 'basic',
             industry: pyme.pymeProfile?.industry || 'N/A',
             createdAt: pyme.createdAt

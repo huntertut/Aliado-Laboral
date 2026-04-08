@@ -4,6 +4,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.20.5] - April 2026 (Phase 27)
+- **Feature (Web Admin):** Adición de columnas 'Vencimiento' y 'Caso Activo' a los directorios de Abogados, Trabajadores y PyMEs para un mejor control del vencimiento de suscripciones y tickets en seguimiento.
+- **Feature (Web Admin):** Inyección de un filtro reactivo en el Panel de Administración para ocultar de la lista a usuarios sin casos activos.
+- **Security (Mobile App):** Eliminación total de código puente muerto (antiguos menús de Contador, Supervisor, y Admin) en la compilación nativa para reducir vectores de ingeniería inversa y peso del binario.
+- **Build (Mobile):** Nuevo `versionCode` 17 y versión `1.20.5` para Google Play, con empaquetado optimizado del AAB.
+
 ## [v1.20.4] - April 2026 (Phase 24, 25 & 26)
 - **Feature (Mobile Forum):** Evolución del foro anónimo hacia una Bóveda de Glosario permanente. Eliminación de la extinción de posteos en 7 días y adición de un buscador de texto completo en la app para explorar dudas históricas.
 - **Feature (AI Integration):** Se actualizó el motor LLM (Groq / Llama 3.1) inyectando JWT directamente desde el middleware para permitir que los bots saluden y procesen datos usando el nombre real de los usuarios, generando respuestas profesionales y empáticas.
