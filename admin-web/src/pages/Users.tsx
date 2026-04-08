@@ -11,6 +11,7 @@ export default function Users() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterActiveCases, setFilterActiveCases] = useState(false);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -38,11 +39,17 @@ export default function Users() {
         fetchUsers();
     }, [activeTab]);
 
-    const filteredUsers = users.filter(u =>
-        (u.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (u.companyName || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredUsers = users.filter(u => {
+        const matchesSearch = (u.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (u.companyName || '').toLowerCase().includes(searchQuery.toLowerCase());
+            
+        if (filterActiveCases && (!u.activeCasesCount || u.activeCasesCount === 0)) {
+            return false;
+        }
+        
+        return matchesSearch;
+    });
 
     const toggleLawyerVerification = async (lawyerId: string, currentStatus: boolean) => {
         try {
@@ -92,6 +99,8 @@ export default function Users() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Abogado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Licencia / Cédula</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimiento</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Estado</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Acciones</th>
@@ -102,6 +111,8 @@ export default function Users() {
                 <>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Trabajador</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Suscripción</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimiento</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tickets Enviados</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
                 </>
@@ -112,6 +123,8 @@ export default function Users() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Contacto</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Razón Social</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Industria</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimiento</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
                 </>
             );
@@ -140,6 +153,18 @@ export default function Users() {
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.subscriptionStatus === 'active' ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>
                             {user.subscriptionStatus === 'active' ? 'Suscrito' : 'Inactivo'}
                         </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {user.planExpiresAt ? format(new Date(user.planExpiresAt), "d 'de' MMM, yyyy", { locale: es }) : 'No Asignado'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        {user.activeCasesCount > 0 ? (
+                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {user.activeCasesCount} Activo
+                            </span>
+                        ) : (
+                            <span className="text-sm text-slate-400 font-medium">0</span>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
@@ -191,6 +216,18 @@ export default function Users() {
                         </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {user.planExpiresAt ? format(new Date(user.planExpiresAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        {user.activeCasesCount > 0 ? (
+                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {user.activeCasesCount} Activo
+                            </span>
+                        ) : (
+                            <span className="text-sm text-slate-400 font-medium">0</span>
+                        )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.contactRequests || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
@@ -217,6 +254,18 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.industry || 'General'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        {user.planExpiresAt ? format(new Date(user.planExpiresAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        {user.activeCasesCount > 0 ? (
+                            <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {user.activeCasesCount} Activo
+                            </span>
+                        ) : (
+                            <span className="text-sm text-slate-400 font-medium">0</span>
+                        )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
@@ -274,6 +323,16 @@ export default function Users() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                
+                <label className="flex items-center ml-4 space-x-2 text-sm text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={filterActiveCases} 
+                        onChange={(e) => setFilterActiveCases(e.target.checked)} 
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" 
+                    />
+                    <span className="font-medium">Filtrar Activos</span>
+                </label>
                 
                 <button
                     onClick={fetchUsers}
