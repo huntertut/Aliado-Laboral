@@ -4,6 +4,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.20.6] - April 2026 (Phase 28)
+- **Feature (Mobile UX):** Eliminación de textos estructurales temporales (ZONA 1, ZONA 2, ZONA 3) de la pantalla de inicio y redundancia de logotipos.
+- **Privacy Policy (Legal):** Inyectado interceptor de perfil en la Pantalla de Privacidad (`PrivacyPolicyScreen.tsx`); los usuarios logueados sólo visualizarán directamente la política aplicable a ellos (Trabajador, PyME, o Abogado).
+- **Bugfix (Critical):** Solucionado error 500 al guardar perfiles de trabajadores enviando Strings Vacíos. Se añadió lógica 'Null Coalescing' en el JSON de Prisma en el backend (`workerProfileController.ts`) reparando envíos para el `monthlySalary`.
+- **Build (Mobile):** Generado de urgencia `versionCode` 18 v.1.20.6 tras las purgas.
+
+---
+
 ## [v1.20.5] - April 2026 (Phase 27)
 - **Feature (Web Admin):** Adición de columnas 'Vencimiento' y 'Caso Activo' a los directorios de Abogados, Trabajadores y PyMEs para un mejor control del vencimiento de suscripciones y tickets en seguimiento.
 - **Feature (Web Admin):** Inyección de un filtro reactivo en el Panel de Administración para ocultar de la lista a usuarios sin casos activos.
