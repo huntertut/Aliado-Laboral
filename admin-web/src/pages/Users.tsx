@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle } from 'lucide-react';
+import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -12,24 +12,29 @@ export default function Users() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            setLoading(true);
-            try {
-                let endpoint = '';
-                if (activeTab === 'lawyers') endpoint = '/admin/lawyers';
-                else if (activeTab === 'workers') endpoint = '/admin/workers';
-                else if (activeTab === 'pymes') endpoint = '/admin/pymes';
+    const fetchUsers = async () => {
+        setLoading(true);
+        try {
+            let endpoint = '';
+            if (activeTab === 'lawyers') endpoint = '/admin/lawyers';
+            else if (activeTab === 'workers') endpoint = '/admin/workers';
+            else if (activeTab === 'pymes') endpoint = '/admin/pymes';
 
-                const response = await api.get(endpoint);
-                setUsers(response.data);
-            } catch (error) {
-                console.error(`Error fetching ${activeTab}:`, error);
-            } finally {
-                setLoading(false);
+            const response = await api.get(endpoint);
+            setUsers(response.data);
+        } catch (error: any) {
+            console.error(`Error fetching ${activeTab}:`, error);
+            if (error?.response?.status === 401 || error?.response?.status === 403) {
+                 localStorage.removeItem('admin_token');
+                 localStorage.removeItem('admin_user');
+                 window.location.href = '/login';
             }
-        };
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchUsers();
     }, [activeTab]);
 
@@ -233,6 +238,14 @@ export default function Users() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                
+                <button
+                    onClick={fetchUsers}
+                    className="ml-3 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex shrink-0"
+                    title="Recargar Datos"
+                >
+                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {/* Table Card */}
