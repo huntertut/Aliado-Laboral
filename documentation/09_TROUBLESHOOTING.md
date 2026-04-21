@@ -130,3 +130,60 @@ npx prisma generate
 npm run build
 pm2 restart aliado-api
 ```
+
+---
+
+## 8. INCIDENT POST-MORTEM: Interrupción Total de Producción — Abril 2026 ⚠️ CRÍTICO
+
+**Fecha:** 15–16 de Abril 2026 | **Duración:** ~24 horas | **Severidad:** CRÍTICO
+**Afectados:** Panel de administración, API pública, OTA updates, registro en app móvil
+
+### Causa Raíz
+```
+Error: /root/Aliado-Laboral/backend/node_modules/bcrypt/lib/binding/napi-v3/bcrypt_lib.node: invalid ELF header
+```
+El `node_modules/` compilado en **Windows** fue copiado al servidor **Linux**. Los binarios nativos de `bcrypt` no son portables — generan un ELF header inválido que hace crashear el proceso al iniciar.
+Adicionalmente: el comando de Docker enmascaraba este crash, por lo que parecía "en línea" pero en realidad estaba inactivo.
+
+### Solución Definitiva Aplicada
+1. Migración total de `bcrypt` a `bcryptjs` (pura implementación en JavaScript, libre de binarios nativos).
+2. Rebuild **nativo** en el servidor host:
+   ```bash
+   cd /root/Aliado-Laboral/backend
+   pm2 stop all 2>/dev/null; pm2 delete all 2>/dev/null
+   rm -rf node_modules
+   npm install      # Compilación local en Linux
+   npx prisma generate
+   npx tsc
+   pm2 start dist/index.js --name aliado-api
+   ```
+
+---
+
+## 9. Backend: Vault File Fetch Error (Firestore Missing Index)
+**Symptom:**
+Fetching vault files (`GET /api/vault/files`) returns a `500 Internal Server Error`.
+
+**Cause:**
+The Firestore query used both a `.where('userId', '==', ...)` filter and an `.orderBy('uploadedAt', 'desc')` clause. Firestore requires a **composite index** for queries using multiple fields (equality + range/order). If the index is missing, the Firebase SDK throws an error that crashes the backend.
+
+**Resolution:**
+Instead of relying on a composite index that might be missing in some environments, the backend was updated in `vaultController.ts` to perform the filtering in Firestore but the **sorting in memory** using JavaScript's `.sort()`.
+
+---
+
+## 10. Admin Panel: Gift Months 500/404 Error (ID Mismatch)
+**Symptom:**
+In the Admin Web, trying to "Gift Months" to a lawyer causes an `AxiosError: 500`, and for workers/pymes it causes a `404`.
+
+**Cause:**
+1. **Lawyer ID vs User ID:** The frontend was incorrectly sending the `Lawyer.id` (UUID) to the `/admin/users/:userId/subscription` endpoint. Since that endpoint expects a Record from the `User` table, Prisma failed to find the user and crashed.
+2. **Hardcoded Roles:** The frontend was hardcoding `role: 'lawyer'` for all users in the gift config logic.
+3. **Ghost Call:** The frontend was unconditionally calling the lawyer-only `/free-leads-quota` endpoint for workers and pymes.
+
+**Resolution:**
+Simplified the logic in `admin-web/src/pages/Users.tsx` to:
+- Capture both `userId` and `lawyerId` in the modal's state.
+- Conditionally call `/free-leads-quota` ONLY for lawyers.
+- Use the correct `User.id` for the subscription update.
+- Dynamically set the `role` based on the active tab.

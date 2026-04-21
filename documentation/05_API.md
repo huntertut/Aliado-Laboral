@@ -28,6 +28,8 @@ This document outlines the core backend endpoints. The API is built on `Express.
 - `PUT /admin/lawyers/:id/verify` - Approves a pending lawyer's license.
 - `POST /admin/lawyers/sync-firebase` - Scans Firebase for disconnected user records and creates "stubs" in the local DB.
 - `PUT /admin/security/password` - Updates the Super Admin bcrypt password.
+- `POST /admin/lawyers/:lawyerId/free-leads-quota` - Sets the monthly leads quota for a verified lawyer.
+- `PUT /admin/users/:userId/subscription` - Overrides a user's subscription (any role).
 
 ## 5. Promotions & Subscriptions (`/promotions`, `/payment`)
 - `GET /promotions/active` - Returns the currently active marketing campaigns.
