@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, RefreshCw } from 'lucide-react';
+import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, RefreshCw, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -12,6 +12,11 @@ export default function Users() {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterActiveCases, setFilterActiveCases] = useState(false);
+
+    // Gift Modal State
+    const [giftModal, setGiftModal] = useState({ isOpen: false, userId: '', lawyerId: '', name: '', currentQuota: 0 });
+    const [giftMonths, setGiftMonths] = useState<string>('');
+    const [giftQuota, setGiftQuota] = useState<string>('');
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -62,31 +67,63 @@ export default function Users() {
         }
     };
 
-    const handleGrantTrial = async (userId: string, name: string) => {
-        const months = window.prompt(`¿Cuántos meses de acceso PRO deseas regalar a ${name}? (Escribe un número, ej: 1 o 3)`);
-        if (!months) return;
+    const handleGrantFreeLeads = (userId: string, name: string, currentQuota: number, lawyerId?: string) => {
+        setGiftModal({ isOpen: true, userId, lawyerId: lawyerId || '', name, currentQuota });
+        setGiftMonths(''); // Start empty to force user to type if they want, 0 is valid to disable.
+        setGiftQuota(currentQuota.toString());
+    };
 
-        const durationMonths = parseInt(months, 10);
-        if (isNaN(durationMonths) || durationMonths <= 0) {
-            alert('Por favor, ingresa un número válido de meses (ej: 1, 3, 6).');
+    const handleDeleteUser = async (userId: string, name: string) => {
+        if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${name} y todos sus datos asociados?\nEsta acción NO se puede deshacer.`)) {
+            try {
+                setLoading(true);
+                await api.delete(`/admin/users/${userId}`);
+                alert(`✅ Usuario ${name} eliminado correctamente.`);
+                fetchUsers();
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Ocurrió un error al eliminar el usuario. Es posible que tenga datos muy arraigados vinculados y deba eliminarse de la Base de Datos directamente.');
+                setLoading(false);
+            }
+        }
+    };
+
+    const submitGiftConfig = async () => {
+        const quota = parseInt(giftQuota, 10);
+        let months = parseInt(giftMonths, 10);
+
+        if (isNaN(quota) || quota < 0) {
+            alert('Por favor ingresa un número de casos gratuito válido (>= 0).');
             return;
         }
 
         try {
             setLoading(true);
-            await api.put(`/admin/users/${userId}/subscription`, {
-                plan: 'pro',
-                role: 'lawyer',
-                durationMonths,
-            });
-            alert(`Suscripción PRO extendida exitosamente por ${durationMonths} meses.`);
             
-            // Reload user list to show active status
-            const response = await api.get('/admin/lawyers');
-            setUsers(response.data);
+            // 1. Update Free Leads Quota (ONLY for Lawyers)
+            if (activeTab === 'lawyers' && giftModal.lawyerId) {
+                await api.post(`/admin/lawyers/${giftModal.lawyerId}/free-leads-quota`, { freeLeadsMonthly: quota });
+            }
+            
+            // 2. Update Subscription Months (Only if provided and valid)
+            if (!isNaN(months) && months > 0) {
+                // Map activeTab to backend role
+                const targetRole = activeTab === 'lawyers' ? 'lawyer' : activeTab === 'workers' ? 'worker' : 'pyme';
+                
+                await api.put(`/admin/users/${giftModal.userId}/subscription`, {
+                    plan: targetRole === 'lawyer' ? 'pro' : 'premium',
+                    role: targetRole,
+                    durationMonths: months,
+                });
+            }
+
+            alert(`✅ Configuración de regalo actualizada para ${giftModal.name}.`);
+            
+            setGiftModal({ ...giftModal, isOpen: false });
+            fetchUsers();
         } catch (error) {
-            console.error('Error granting trial:', error);
-            alert('Ocurrió un error al regalar los meses de prueba. Asegúrate de tener permisos.');
+            console.error('Error updating gift config:', error);
+            alert('Ocurrió un error al actualizar los beneficios. Revisa los permisos.');
         } finally {
             setLoading(false);
         }
@@ -99,6 +136,7 @@ export default function Users() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Abogado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Licencia / Cédula</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Plan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">🎁 Cupo</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimiento</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
@@ -115,6 +153,7 @@ export default function Users() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tickets Enviados</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Acciones</th>
                 </>
             );
         } else {
@@ -154,6 +193,15 @@ export default function Users() {
                             {user.subscriptionStatus === 'active' ? 'Suscrito' : 'Inactivo'}
                         </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        {user.freeLeadsMonthly > 0 ? (
+                            <span className="px-2 py-1 inline-flex items-center gap-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                🎁 {(user.freeLeadsMonthly - (user.freeLeadsUsed || 0))}/{user.freeLeadsMonthly}
+                            </span>
+                        ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                        )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.planExpiresAt ? format(new Date(user.planExpiresAt), "d 'de' MMM, yyyy", { locale: es }) : 'No Asignado'}
                     </td>
@@ -182,16 +230,23 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                            onClick={() => handleGrantTrial(user.id, user.fullName || 'Abogado')}
+                            onClick={() => handleGrantFreeLeads(user.userId, user.fullName || 'Abogado', user.freeLeadsMonthly || 0, user.id)}
                             className="mr-2 px-3 py-1 rounded-md transition-colors text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
                         >
-                            Regalar
+                            🎁 Cupo
                         </button>
                         <button
                             onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
                             className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
                         >
                             {user.isVerified ? 'Revocar' : 'Aprobar'}
+                        </button>
+                        <button
+                            onClick={() => handleDeleteUser(user.id, user.fullName || 'Abogado')}
+                            className="px-3 py-1 rounded-md transition-colors text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 ml-2"
+                            title="Eliminar permanentemente a este usuario"
+                        >
+                            🗑️
                         </button>
                     </td>
                 </tr>
@@ -232,6 +287,21 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                            onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Trabajador', user.freeLeadsMonthly || 0)}
+                            className="mr-2 px-3 py-1 rounded-md transition-colors text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                        >
+                            🎁 Regalar PRO
+                        </button>
+                        <button
+                            onClick={() => handleDeleteUser(user.id, user.fullName || 'Trabajador')}
+                            className="px-3 py-1 rounded-md transition-colors text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 ml-2"
+                            title="Eliminar permanentemente a este usuario"
+                        >
+                            🗑️
+                        </button>
                     </td>
                 </tr>
             );
@@ -389,6 +459,80 @@ export default function Users() {
                     </div>
                 </div>
             </div>
+
+            {/* Gift Modal */}
+            {giftModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                🎁 Regalos y Beneficios
+                            </h3>
+                            <button
+                                onClick={() => setGiftModal({ ...giftModal, isOpen: false })}
+                                className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div>
+                                <p className="text-sm font-medium text-slate-500 mb-1">{activeTab === 'lawyers' ? 'Abogado' : activeTab === 'workers' ? 'Trabajador' : 'Usuario'} Seleccionado:</p>
+                                <p className="text-base font-semibold text-slate-900">{giftModal.name}</p>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                        Tiempo de Plan PRO Gratuito (Meses)
+                                    </label>
+                                    <p className="text-xs text-slate-500 mb-2">Deja en blanco si no deseas dar u otorgar meses PRO.</p>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={giftMonths}
+                                        onChange={(e) => setGiftMonths(e.target.value)}
+                                        placeholder="Ej. 1, 3, 6"
+                                        className="w-full rounded-lg border-slate-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2.5 border outline-none"
+                                    />
+                                </div>
+
+                                {activeTab === 'lawyers' && (
+                                    <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                            Cupo de Casos Gratuitos (Mensual)
+                                        </label>
+                                        <p className="text-xs text-slate-500 mb-2">Cupo actual: <span className="font-bold">{giftModal.currentQuota}</span> casos/mes.</p>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={giftQuota}
+                                            onChange={(e) => setGiftQuota(e.target.value)}
+                                            placeholder="Ej. 10, 15"
+                                            className="w-full rounded-lg border-slate-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 p-2.5 border outline-none"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                            <button
+                                onClick={() => setGiftModal({ ...giftModal, isOpen: false })}
+                                className="px-4 py-2 rounded-lg font-medium text-slate-600 hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                disabled={loading}
+                                onClick={submitGiftConfig}
+                                className="px-4 py-2 rounded-lg font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all disabled:opacity-70"
+                            >
+                                {loading ? 'Guardando...' : 'Aplicar Beneficios'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -140,7 +140,7 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-400 mb-4">Los ingresos reales aparecerán aquí cuando se procesen pagos.</p>
                 )}
                 <div className="h-72 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <BarChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />

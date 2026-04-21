@@ -4,6 +4,39 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.21.4] - February 2026 (Admin Panel Fixes)
+- **Bugfix (Admin Web):** Corregido error 404/500 al regalar meses o cupos desde el panel de usuarios. Ahora el sistema diferencia correctamente entre `userId` y `lawyerId`, y utiliza roles dinámicos según la pestaña activa.
+- **Bugfix (Admin UI):** Corregido error de renderizado en gráficas de Recharts (`width(-1)`) mediante la inicialización forzada de dimensiones en `ResponsiveContainer`.
+
+---
+
+## [v1.21.3] - February 2026 (Premium Access & Vault Fixes)
+- **Bugfix (Auth):** Se corrigió lógica en `AuthContext.tsx` donde el plan de trabajadores premium en modo demo se asignaba incorrectamente como `worker_premium` en lugar de `premium`, rompiendo las validaciones de UI.
+- **Bugfix (UI):** Reparación de candados PRO en "Mi Kit Laboral" (`MyChestScreen.tsx`). Ahora las plantillas de CV y cartas detectan correctamente el estado premium del usuario.
+- **Bugfix (Backend):** Resolución de error 500 en el endpoint de archivos del baúl (`vaultController.ts`). Se implementó ordenamiento en memoria para evitar la dependencia de índices compuestos faltantes en Firestore.
+- **Bugfix (Backend):** Se relajaron los filtros públicos de abogados (`lawyerProfileController.ts`) para permitir que las cuentas de prueba aparezcan en las búsquedas iniciales (removiendo requisito obligatorio de 2 casos ganados).
+- **Navigation:** Registro de pantallas faltantes (`LiquidationCalculator`, `GenerateAct`) en `AppNavigator.tsx`.
+
+---
+
+## [v1.21.2] - April 2026 (Emergency Production Recovery)
+- **Bugfix (Critical / DevOps):** Resolución a caída total de los servicios (Caída de API 503, Panel Admin caído). El servidor de producción crasheaba silenciosamente debido a binarios nativos de \node_modules/bcrypt\ compilados en Windows. Se migró la arquitectura criptográfica a `bcryptjs` (JavaScript puro) en todos los scripts de backend garantizando la portabilidad del código.
+- **DevOps:** Extracción forzada del backend de contenedores problemáticos en Podman hacia gestión nativa con PM2 sobre el host en Node 20.20.1 y 153MB RAM estables. Restauración manual del acceso super-admin. 
+
+## [v1.21.1] - April 2026 (Phase 34 - Registration Outage & Sync)
+- **Feature (Backend):** Evolución del sistema de recuperación `syncFirebaseLawyers` a `syncFirebaseUsers`. Ahora es universal y permite sincronizar Trabajadores y PyMEs desde Firebase hacia SQL, reparando registros huérfanos por errores de red.
+- **Bugfix (Critical / Backend):** Implementación de lógica de auto-recuperación robusta en el Admin para usuarios que ya existen en Firebase pero fallaron en la persistencia inicial.
+- **Maintenance (DevOps):** Creación del script `clean_production.sh` para la eliminación de procesos PM2 "rogue" (huerfanos) en el host y la regeneración forzada de Prisma Client en contenedores.
+
+## [v1.21.0] - April 2026 (Phase 29 - Free Leads & App Icon)
+- **Feature (Backend):** Sistema de cupo mensual de casos gratuitos para abogados con plan regalado. Se añadieron 3 campos al modelo `Lawyer` (`freeLeadsMonthly`, `freeLeadsUsed`, `freeLeadsResetAt`). El endpoint `POST /admin/lawyers/:id/free-leads-quota` permite asignar el cupo desde el panel admin.
+- **Feature (Backend Logic):** `acceptContactRequest` ahora verifica el cupo mensual antes de cobrar via Stripe. Si el abogado tiene cupo disponible, el caso se acepta sin cargo ($0) y el contador se decrementa. Si el cupo se agotó, el flujo normal de Stripe continúa. El contador se resetea automáticamente cada 1° de mes.
+- **Feature (Admin Web):** El panel "Regalar" fue modernizado (Modal Tailwind) reemplazando alertas web nativas. Ahora permite configurar simultáneamente el **tiempo PRO en meses** y el **cupo de casos gratuitos**. Esto ahora *también está habilitado para Trabajadores*, no solo para Abogados. Se añadió ícono de mostrar/ocultar ("ojito") en login administrativo.
+- **UI & App Build (Mobile):** Renvoación del Logo Principal en el `ic_launcher` del sistema operativo Android con diseño fusionado en cian/magenta. Actualización del Gradle a `v1.21.0` (`versionCode 19`), y generación de paquete AAB firmado.
+- **DevOps:** Migración SQLite aplicada directamente en producción vía SSH (`ALTER TABLE Lawyer ADD COLUMN`). 4 archivos subidos via SFTP. PM2 reiniciado exitosamente. Admin Web vite deploy actualizado vía zip+sh.
+
+---
+
 ## [v1.20.7] - April 2026 (Phase 28 - Final)
 - **Bugfix (Critical / Backend):** Implementación de "Parsing Defensivo" para fechas en `workerProfileController.ts`. Ahora el backend detecta y corrige automáticamente fechas en formato latino (DD/MM/YYYY) enviadas por la App, evitando el colapso de Prisma (Invalid Date Error 500).
 - **Maintenance (DevOps):** Resolución de desajuste de binarios en DigitalOcean (`invalid ELF header`). Se forzó la reconstrucción nativa de `bcrypt` en el servidor y se corrigieron permisos de ejecución en `node_modules/.bin` para permitir la regeneración de Prisma.
