@@ -79,65 +79,79 @@ const CalculatorScreen = () => {
         }
 
         // Calculate tenure
-        const yearsWorked = differenceInYears(end, start);
-        const totalDaysWorked = differenceInDays(end, start);
+        // Standard LFT: Include the start and end days
+        const totalDaysWorked = differenceInDays(end, start) + 1;
+        const yearsWorked = Math.floor(totalDaysWorked / 365.25);
+        const seniorityYearsDecimal = totalDaysWorked / 365.25;
+        
         const daysInCurrentYear = differenceInDays(end, new Date(end.getFullYear(), 0, 1)) + 1;
 
-        // FIX: Vacations are based on days worked since LAST ANNIVERSARY, not calendar year.
-        let lastAnniversary = new Date(end.getFullYear(), start.getMonth(), start.getDate());
+        // Anniversary check
+        let lastAnniversary = new Date(start.getFullYear() + yearsWorked, start.getMonth(), start.getDate());
         if (lastAnniversary > end) {
-            lastAnniversary = new Date(end.getFullYear() - 1, start.getMonth(), start.getDate());
+            lastAnniversary = new Date(start.getFullYear() + yearsWorked - 1, start.getMonth(), start.getDate());
         }
-
-        // If total tenure is less than a year, days for vacation is total days.
-        // Otherwise, it's days since anniversary.
-        const daysSinceAnniversary = differenceInDays(end, lastAnniversary);
-
-        // Ensure we don't return 0 or negative for same day calc
-        const daysForVacationCalc = Math.max(1, (totalDaysWorked < 365 ? totalDaysWorked : daysSinceAnniversary));
-
+        const daysSinceAnniversary = differenceInDays(end, lastAnniversary) + 1;
 
         // Salary calculations
         const monthly = parseFloat(monthlySalary);
-        const dailySalary = monthly / 30.4;
+        const dailySalary = monthly / 30; // Usando 30 para coincidir con ejercicio manual
 
-        // Daily Integrated Salary (SDI) = Daily + (Aguinaldo/365) + (Vacation Premium/365)
-        const aguinaldoDaily = (dailySalary * parseFloat(aguinaldoDays)) / 365;
-        const vacationDaily = (dailySalary * parseFloat(vacationDays) * (parseFloat(vacationPremium) / 100)) / 365;
-        const sdi = dailySalary + aguinaldoDaily + vacationDaily;
+        // 1. SDI (Salario Diario Integrado)
+        const aguinaldoFactor = parseFloat(aguinaldoDays) / 365;
+        const vacationFactor = (parseFloat(vacationDays) * (parseFloat(vacationPremium) / 100)) / 365;
+        const sdi = dailySalary * (1 + aguinaldoFactor + vacationFactor);
 
-        // 1. Pending Salary
+        // 2. Pending Salary
         const pendingSalaryAmount = hasPendingSalary ? dailySalary * parseFloat(pendingDays || '0') : 0;
 
-        // 2. Aguinaldo (Proportional to CALENDAR YEAR - Correct)
+        // 3. Aguinaldo (Proportional to CALENDAR YEAR)
         const aguinaldoProportional = (dailySalary * parseFloat(aguinaldoDays) / 365) * daysInCurrentYear;
 
-        // 3. Vacations & Premium (Proportional to ANNIVERSARY YEAR - Fixed)
-        const vacationDaysEarned = (parseFloat(vacationDays) / 365) * daysForVacationCalc;
-        const vacationPay = dailySalary * vacationDaysEarned;
+        // 4. Vacations & Premium (Proportional to ANNIVERSARY cycle + Completed cycle if anniversary matched)
+        // If EXACT anniversary (like Jan 1 23 to Jan 1 26), 3 years are completed.
+        const anniversaryMatches = end.getDate() === start.getDate() && end.getMonth() === start.getMonth();
+        
+        // Vacations earned in current period
+        const vacationsCurrentPeriod = (parseFloat(vacationDays) / 365) * daysSinceAnniversary;
+        // If anniversary just passed or matches, the FULL entitlement from the year that just ended is due.
+        const vacationsCompletedYear = (anniversaryMatches && yearsWorked >= 1) ? parseFloat(vacationDays) : 0;
+        
+        const totalVacationDaysEarned = vacationsCurrentPeriod + vacationsCompletedYear;
+        const vacationPay = dailySalary * totalVacationDaysEarned;
         const primaVacacional = vacationPay * (parseFloat(vacationPremium) / 100);
 
-        // Finiquito Subtotal
-        const finiquitoTotal = pendingSalaryAmount + aguinaldoProportional + vacationPay + primaVacacional;
+        // Finiquito Subtotal (worked day Jan 1 is handled as 1 day pending if not paid)
+        const workedDay = dailySalary * 1; 
+        const finiquitoTotal = (hasPendingSalary ? pendingSalaryAmount : workedDay) + aguinaldoProportional + vacationPay + primaVacacional;
 
-        // 4. Indemnification (only if applicable)
+        // 5. Indemnification & Seniority
         let indemnizacion = 0;
         let seniorityPremium = 0;
 
         const selectedReason = SEPARATION_REASONS.find(r => r.id === separationReason);
-        if (selectedReason?.indemnification) {
-            // 3 months of SDI + 20 days per year
-            indemnizacion = (sdi * 30 * 3) + (sdi * 20 * yearsWorked);
+        
+        // Logic for Seniority Premium (12 days per year)
+        // LFT: Resignation only if 15+ years. Others: Always.
+        const eligibleForSeniority = 
+            (['despido_injustificado', 'despido_justificado', 'jubilacion', 'termino'].includes(separationReason || '')) ||
+            (separationReason === 'renuncia' && yearsWorked >= 15);
 
-            // Seniority Premium: 12 days per year, capped at 2x UMA
-            const salaryCap = 2 * LABOR_LAW_CONSTANTS.UMA;
-            const baseSalary = dailySalary > salaryCap ? salaryCap : dailySalary;
-            seniorityPremium = (12 * baseSalary) * yearsWorked;
+        if (eligibleForSeniority) {
+            const salaryCap = 2 * LABOR_LAW_CONSTANTS.MINIMUM_WAGE; // Usualmente SMG para prima antigüedad
+            const baseSalaryForSeniority = dailySalary > salaryCap ? salaryCap : dailySalary;
+            seniorityPremium = (12 * baseSalaryForSeniority) * seniorityYearsDecimal;
+        }
+
+        if (separationReason === 'despido_injustificado') {
+            // 90 days of SDI (Indemnización Constitucional)
+            indemnizacion = sdi * 90;
+            // Note: 20 days per year usually omitted in basic calculator as it requires lawyer negotiation/refusal
         }
 
         const liquidacionTotal = indemnizacion + seniorityPremium;
 
-        // 5. Deductions (Estimated ISR)
+        // 6. Deductions (Estimated ISR)
         const subtotal = finiquitoTotal + liquidacionTotal;
         const estimatedISR = subtotal * LABOR_LAW_CONSTANTS.ISR_ESTIMATE_RATE;
 
@@ -148,7 +162,7 @@ const CalculatorScreen = () => {
             yearsWorked,
             dailySalary,
             sdi,
-            pendingSalary: pendingSalaryAmount,
+            pendingSalary: hasPendingSalary ? pendingSalaryAmount : workedDay,
             aguinaldo: aguinaldoProportional,
             vacationPay,
             primaVacacional,
@@ -158,7 +172,7 @@ const CalculatorScreen = () => {
             liquidacionTotal,
             estimatedISR,
             totalNet,
-            hasIndemnification: selectedReason?.indemnification || false
+            hasIndemnification: separationReason === 'despido_injustificado'
         });
 
         setCurrentStep(4);
