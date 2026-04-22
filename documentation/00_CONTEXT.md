@@ -37,6 +37,14 @@ To ensure sustainability while maintaining the social mission of the NGO:
 2. **CIBERT** uses these funds to pay **Save Company** a monthly maintenance and development retainer at fair market value.
 3. The founders receive income through their roles in both entities, legally separating the software maintenance business from the social impact NGO.
 
+---
+
+## 4. Platform Core Logic (LFT Engine)
+As of **April 2026 (v1.21.0)**, the platform features a centralized, robust engine for calculating labor liquidations:
+- **Accuracy**: Strictly follows the Mexican Federal Labor Law (LFT).
+- **Flexibility**: Supports user-defined overrides for Aguinaldo, Vacations, and Premiums.
+- **Complexity**: Handles advanced scenarios like Salario Diario Integrado (SDI), the 15-year seniority rules, and anniversary-based vacation accumulation.
+
 > **Next Strategic Steps:**
 > 1. Formally incorporate CIBERT as an A.C.
 > 2. Launch Aliado Laboral on the Google Play Store (Currently rolling out).

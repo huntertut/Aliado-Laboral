@@ -4,6 +4,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.21.9] - May 2026 (Admin Consistency & Bugfix)
+- **Fix (Admin / Data):** Corregida duplicidad de usuarios en pestañas de Abogados/Trabajadores mediante sincronización forzada de `User.role`.
+- **Fix (Admin / Logic):** Implementada corrección automática de roles en `updateUserSubscription` (Gifts). Al asignar un plan, el sistema ahora asegura que el rol del usuario coincida con la categoría seleccionada.
+- **Maintenance (Database):** Ejecutada limpieza SQL masiva para migrar abogados marcados como `worker` al rol correcto de `lawyer`.
+- **Optimization (Sync):** Mejorado el script `syncFirebaseLawyers` para detectar abogados por nombre/título (`Lic.`, `Abog.`), reduciendo la pérdida de usuarios en la sincronización.
+
+---
+
 ## [v1.21.4] - February 2026 (Admin Panel Fixes)
 - **Bugfix (Admin Web):** Corregido error 404/500 al regalar meses o cupos desde el panel de usuarios. Ahora el sistema diferencia correctamente entre `userId` y `lawyerId`, y utiliza roles dinámicos según la pestaña activa.
 - **Bugfix (Admin UI):** Corregido error de renderizado en gráficas de Recharts (`width(-1)`) mediante la inicialización forzada de dimensiones en `ResponsiveContainer`.
@@ -23,54 +31,21 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 - **Bugfix (Critical / DevOps):** Resolución a caída total de los servicios (Caída de API 503, Panel Admin caído). El servidor de producción crasheaba silenciosamente debido a binarios nativos de \node_modules/bcrypt\ compilados en Windows. Se migró la arquitectura criptográfica a `bcryptjs` (JavaScript puro) en todos los scripts de backend garantizando la portabilidad del código.
 - **DevOps:** Extracción forzada del backend de contenedores problemáticos en Podman hacia gestión nativa con PM2 sobre el host en Node 20.20.1 y 153MB RAM estables. Restauración manual del acceso super-admin. 
 
+---
+
 ## [v1.21.1] - April 2026 (Phase 34 - Registration Outage & Sync)
 - **Feature (Backend):** Evolución del sistema de recuperación `syncFirebaseLawyers` a `syncFirebaseUsers`. Ahora es universal y permite sincronizar Trabajadores y PyMEs desde Firebase hacia SQL, reparando registros huérfanos por errores de red.
 - **Bugfix (Critical / Backend):** Implementación de lógica de auto-recuperación robusta en el Admin para usuarios que ya existen en Firebase pero fallaron en la persistencia inicial.
 - **Maintenance (DevOps):** Creación del script `clean_production.sh` para la eliminación de procesos PM2 "rogue" (huerfanos) en el host y la regeneración forzada de Prisma Client en contenedores.
 
-## [v1.21.0] - April 2026 (Phase 29 - Free Leads & App Icon)
-- **Feature (Backend):** Sistema de cupo mensual de casos gratuitos para abogados con plan regalado. Se añadieron 3 campos al modelo `Lawyer` (`freeLeadsMonthly`, `freeLeadsUsed`, `freeLeadsResetAt`). El endpoint `POST /admin/lawyers/:id/free-leads-quota` permite asignar el cupo desde el panel admin.
-- **Feature (Backend Logic):** `acceptContactRequest` ahora verifica el cupo mensual antes de cobrar via Stripe. Si el abogado tiene cupo disponible, el caso se acepta sin cargo ($0) y el contador se decrementa. Si el cupo se agotó, el flujo normal de Stripe continúa. El contador se resetea automáticamente cada 1° de mes.
-- **Feature (Admin Web):** El panel "Regalar" fue modernizado (Modal Tailwind) reemplazando alertas web nativas. Ahora permite configurar simultáneamente el **tiempo PRO en meses** y el **cupo de casos gratuitos**. Esto ahora *también está habilitado para Trabajadores*, no solo para Abogados. Se añadió ícono de mostrar/ocultar ("ojito") en login administrativo.
-- **UI & App Build (Mobile):** Renvoación del Logo Principal en el `ic_launcher` del sistema operativo Android con diseño fusionado en cian/magenta. Actualización del Gradle a `v1.21.0` (`versionCode 19`), y generación de paquete AAB firmado.
-- **DevOps:** Migración SQLite aplicada directamente en producción vía SSH (`ALTER TABLE Lawyer ADD COLUMN`). 4 archivos subidos via SFTP. PM2 reiniciado exitosamente. Admin Web vite deploy actualizado vía zip+sh.
-
 ---
 
-## [v1.20.7] - April 2026 (Phase 28 - Final)
-- **Bugfix (Critical / Backend):** Implementación de "Parsing Defensivo" para fechas en `workerProfileController.ts`. Ahora el backend detecta y corrige automáticamente fechas en formato latino (DD/MM/YYYY) enviadas por la App, evitando el colapso de Prisma (Invalid Date Error 500).
-- **Maintenance (DevOps):** Resolución de desajuste de binarios en DigitalOcean (`invalid ELF header`). Se forzó la reconstrucción nativa de `bcrypt` en el servidor y se corrigieron permisos de ejecución en `node_modules/.bin` para permitir la regeneración de Prisma.
-- **Build (Mobile):** Generado **VersionCode 19 (v.1.20.7)**. Esta versión incluye alertas de diagnóstico extendidas para interceptar errores de red y respuestas 502/500 con mayor claridad.
-
-## [v1.20.6] - April 2026 (Phase 28)
-- **Feature (Mobile UX):** Eliminación de textos estructurales temporales (ZONA 1, ZONA 2, ZONA 3) de la pantalla de inicio y redundancia de logotipos. Deshabilitado el Action Header nativo de React Navigation (`headerShown: false`) para erradicar el doble cintillo azul, ahorrando valioso espacio de pantalla.
-- **Privacy Policy (Legal):** Inyectado interceptor de perfil en la Pantalla de Privacidad (`PrivacyPolicyScreen.tsx`); los usuarios logueados sólo visualizarán directamente la política aplicable a ellos (Trabajador, PyME, o Abogado).
-- **Bugfix (Critical):** Solucionado error 500 al guardar perfiles de trabajadores enviando Strings Vacíos. Se añadió lógica 'Null Coalescing' en el JSON de Prisma en el backend (`workerProfileController.ts`) reparando envíos para el `monthlySalary`.
-- **Bugfix (Critical):** Solucionado Crash `ReferenceError: Property 'TextInput' doesn't exist` que mataba la aplicación al ingresar al Foro Anónimo (producto de falta de importación en la Fase 25).
-- **Build (Mobile):** Generado de urgencia `versionCode` 18 v.1.20.6 tras las purgas.
-
----
-
-## [v1.20.5] - April 2026 (Phase 27)
-- **Feature (Web Admin):** Adición de columnas 'Vencimiento' y 'Caso Activo' a los directorios de Abogados, Trabajadores y PyMEs para un mejor control del vencimiento de suscripciones y tickets en seguimiento.
-- **Feature (Web Admin):** Inyección de un filtro reactivo en el Panel de Administración para ocultar de la lista a usuarios sin casos activos.
-- **Security (Mobile App):** Eliminación total de código puente muerto (antiguos menús de Contador, Supervisor, y Admin) en la compilación nativa para reducir vectores de ingeniería inversa y peso del binario.
-- **Build (Mobile):** Nuevo `versionCode` 17 y versión `1.20.5` para Google Play, con empaquetado optimizado del AAB.
-
-## [v1.20.4] - April 2026 (Phase 24, 25 & 26)
-- **Feature (Mobile Forum):** Evolución del foro anónimo hacia una Bóveda de Glosario permanente. Eliminación de la extinción de posteos en 7 días y adición de un buscador de texto completo en la app para explorar dudas históricas.
-- **Feature (AI Integration):** Se actualizó el motor LLM (Groq / Llama 3.1) inyectando JWT directamente desde el middleware para permitir que los bots saluden y procesen datos usando el nombre real de los usuarios, generando respuestas profesionales y empáticas.
-- **Feature (Documents):** Refactor de generación de documentos dinámicos (Contratos, Renuncias, Actas Administrativas) optimizando la integración.
-- **Feature (Web Admin):** Inyección del módulo "Regalar Meses" de forma directa y nativa en el panel VITE Web, permitiendo extender suscripciones PRO a abogados con sistema de alertas prompt.
-- **UX/Bugfix (Web Admin):** Integración de mecanismos de resiliencia de sesión: ahora cuando el JWT token expira (401 Unauthorized), la web no se vacía ni muestra listas vacías, sino que dispara modal y expulsa al usuario (auto-logout) elegantemente. Adicionado un botón 'Refresh' manual cerca a la barra de búsqueda.
-- **Build:** Actualización masiva de `versionCode` a 16 y version `1.20.4` debido al desfase de binarios Play Store. Nuevos APK/AAB generados.
-
----
-
-## [v1.20.3] - April 2026 (Phase 22 & 23)
-- **Feature (Admin/Mobile):** Creación del botón "Regalar Plan" en la interfaz de Administración desde el dispositivo móvil para extender hasta 1 o 3 meses a Abogados pioneros sin cobro de la mensualidad.
-- **Maintenance:** Re-arquitectura del cronService para los envíos programados y noticias.
-- **Build:** AAB Version Code 15 para Google Play.
+## [v1.21.0] - April 2026 (Logic Refactor & Security)
+- **Feature (Calculator/Backend):** Overhauled `PymeService` with a robust LFT-compliant engine. Supports Salario Diario Integrado (SDI), the 15-year seniority rule, and dynamic/custom benefits (Aguinaldo, Vacations, Premium).
+- **Feature (Mobile UI):** Refactored `CalculatorScreen.tsx` to handle anniversary cycles correctly and support custom labor parameters.
+- **Maintenance (Security):** Performed a surgical purge of sensitive tokens and large binary artifacts from the entire Git history using `git-filter-branch` and manual index cleaning.
+- **Bugfix (Admin):** Resolved 404/500 errors in the "Gift Months" flow by fixing ID role resolution. Restored password visibility toggle in the Login screen.
+- **Bugfix (UI):** Fixed "The width(-1) and height(-1) of chart" error in the Admin Panel by providing explicit container constraints.
 
 ---
 
