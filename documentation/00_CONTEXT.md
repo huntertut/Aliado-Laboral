@@ -45,6 +45,12 @@ As of **April 2026 (v1.21.0)**, the platform features a centralized, robust engi
 - **Flexibility**: Supports user-defined overrides for Aguinaldo, Vacations, and Premiums.
 - **Complexity**: Handles advanced scenarios like Salario Diario Integrado (SDI), the 15-year seniority rules, and anniversary-based vacation accumulation.
 
+### 4.1 Admin Panel Maintenance Rules
+To avoid regressions in the Admin Dashboard:
+- **Individual Gifts**: Always preserve the "Regalo" (Gift) button in `Users.tsx`. It interfaces with `/admin/users/:userId/subscription`.
+- **ID Resolution**: For Lawyers, use `userId`. For Workers/Pymes, use `id`.
+- **Security**: Never remove the password visibility toggle in `Login.tsx`.
+
 > **Next Strategic Steps:**
 > 1. Formally incorporate CIBERT as an A.C.
 > 2. Launch Aliado Laboral on the Google Play Store (Currently rolling out).

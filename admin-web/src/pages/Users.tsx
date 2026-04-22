@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle } from 'lucide-react';
+import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -11,6 +11,10 @@ export default function Users() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedUser, setSelectedUser] = useState<any | null>(null);
+    const [showGiftModal, setShowGiftModal] = useState(false);
+    const [giftConfig, setGiftConfig] = useState({ months: 1, plan: 'premium' });
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -47,6 +51,41 @@ export default function Users() {
         } catch (error) {
             console.error('Error verifying lawyer:', error);
             alert('Error al cambiar el estado de verificación. Revisa permisos.');
+        }
+    };
+
+    const handleUpdateSubscription = async () => {
+        if (!selectedUser) return;
+        setSubmitting(true);
+        try {
+            // Determine the role for the backend
+            let role = 'worker';
+            let targetId = selectedUser.id;
+            
+            if (activeTab === 'lawyers') {
+                role = 'lawyer';
+                targetId = selectedUser.userId;
+            } else if (activeTab === 'pymes') {
+                role = 'pyme';
+            }
+
+            await api.put(`/admin/users/${targetId}/subscription`, {
+                plan: giftConfig.plan,
+                role: role,
+                durationMonths: giftConfig.months
+            });
+
+            alert(`Suscripción de ${selectedUser.fullName} actualizada con éxito.`);
+            setShowGiftModal(false);
+            
+            // Refresh current tab
+            const response = await api.get(activeTab === 'lawyers' ? '/admin/lawyers' : activeTab === 'workers' ? '/admin/workers' : '/admin/pymes');
+            setUsers(response.data);
+        } catch (error) {
+            console.error('Error gifting months:', error);
+            alert('Error al regalar meses. Verifica la conexión con el servidor.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -121,12 +160,25 @@ export default function Users() {
                         )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                            onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
-                            className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
-                        >
-                            {user.isVerified ? 'Revocar' : 'Aprobar'}
-                        </button>
+                        <div className="flex items-center justify-end space-x-2">
+                            <button
+                                onClick={() => {
+                                    setSelectedUser(user);
+                                    setGiftConfig({ months: 1, plan: 'pro' });
+                                    setShowGiftModal(true);
+                                }}
+                                className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                title="Regalar Acceso"
+                            >
+                                <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
+                                className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
+                            >
+                                {user.isVerified ? 'Revocar' : 'Aprobar'}
+                            </button>
+                        </div>
                     </td>
                 </tr>
             );
@@ -149,11 +201,18 @@ export default function Users() {
                             {user.subscriptionStatus === 'active' ? 'Premium' : 'Gratuito'}
                         </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {user.contactRequests || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">
+                        <button
+                            onClick={() => {
+                                setSelectedUser(user);
+                                setGiftConfig({ months: 1, plan: 'premium' });
+                                setShowGiftModal(true);
+                            }}
+                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
+                            title="Regalar Premium"
+                        >
+                            <Gift className="w-4 h-4 inline" />
+                        </button>
                     </td>
                 </tr>
             );
@@ -174,11 +233,18 @@ export default function Users() {
                     <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-slate-900">{user.companyName || 'N/A'}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {user.industry || 'General'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                        {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">
+                        <button
+                            onClick={() => {
+                                setSelectedUser(user);
+                                setGiftConfig({ months: 1, plan: 'premium' });
+                                setShowGiftModal(true);
+                            }}
+                            className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
+                            title="Regalar Plan"
+                        >
+                            <Gift className="w-4 h-4 inline" />
+                        </button>
                     </td>
                 </tr>
             );
@@ -281,6 +347,74 @@ export default function Users() {
                     </div>
                 </div>
             </div>
+
+            {/* Gift Modal */}
+            {showGiftModal && selectedUser && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                            <div className="absolute inset-0 bg-slate-500 opacity-75"></div>
+                        </div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                            <div>
+                                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                                    <Gift className="h-6 w-6 text-indigo-600" aria-hidden="true" />
+                                </div>
+                                <div className="mt-3 text-center sm:mt-5">
+                                    <h3 className="text-lg leading-6 font-medium text-slate-900">Regalar Meses Gratis</h3>
+                                    <div className="mt-2 text-sm text-slate-500">
+                                        Vas a actualizar la suscripción de <strong>{selectedUser.fullName}</strong>.
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700">Duración</label>
+                                    <select
+                                        value={giftConfig.months}
+                                        onChange={(e) => setGiftConfig({ ...giftConfig, months: parseInt(e.target.value) })}
+                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                    >
+                                        <option value={1}>1 mes</option>
+                                        <option value={3}>3 meses</option>
+                                        <option value={6}>6 meses</option>
+                                        <option value={12}>12 meses (1 año)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700">Plan a asignar</label>
+                                    <select
+                                        value={giftConfig.plan}
+                                        onChange={(e) => setGiftConfig({ ...giftConfig, plan: e.target.value })}
+                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                    >
+                                        <option value={activeTab === 'lawyers' ? 'pro' : 'premium'}>Premium / Pro</option>
+                                        <option value={activeTab === 'lawyers' ? 'basic' : 'free'}>Básico / Gratuito</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="mt-8 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                                <button
+                                    type="button"
+                                    disabled={submitting}
+                                    onClick={handleUpdateSubscription}
+                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm disabled:opacity-50"
+                                >
+                                    {submitting ? 'Procesando...' : 'Confirmar Regalo'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowGiftModal(false)}
+                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
