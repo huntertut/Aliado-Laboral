@@ -5,6 +5,7 @@ import * as mercadopagoService from '../services/mercadopagoService';
 import * as storageService from '../services/storageService';
 import * as ocrService from '../services/ocrService'; // Import OCR
 import { checkBothPaymentsSuccess } from '../services/webhookHandlerService';
+import moment from 'moment';
 
 const prisma = new PrismaClient();
 
@@ -284,6 +285,30 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
 
         if (!contactRequest) {
             return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        // 1.5. CHECK MONTHLY LIMITS (Fair Use Policy)
+        const startOfMonth = moment().startOf('month').toDate();
+        const endOfMonth = moment().endOf('month').toDate();
+        
+        const acceptedThisMonth = await prisma.contactRequest.count({
+            where: {
+                lawyerProfileId: lawyer.profile.id,
+                status: 'accepted',
+                acceptedAt: {
+                    gte: startOfMonth,
+                    lte: endOfMonth
+                }
+            }
+        });
+
+        const planLimit = lawyer.subscription?.plan === 'pro' ? 30 : 5;
+        if (acceptedThisMonth >= planLimit) {
+            return res.status(403).json({
+                error: 'Límite mensual alcanzado',
+                message: `Has alcanzado tu límite de ${planLimit} casos mensuales para el plan ${lawyer.subscription?.plan?.toUpperCase() || 'BÁSICO'}. ${lawyer.subscription?.plan === 'pro' ? 'Contacta a soporte para extender tu límite de uso justo.' : 'Actualiza a Plan PRO para aceptar hasta 30 casos.'}`,
+                limitReached: true
+            });
         }
 
         // 2. CHECK BUSINESS RULES: HOT CASE RESTRICTION

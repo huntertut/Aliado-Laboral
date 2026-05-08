@@ -49,7 +49,14 @@ As of **April 2026 (v1.21.0)**, the platform features a centralized, robust engi
 To avoid regressions in the Admin Dashboard:
 - **Individual Gifts**: Always preserve the "Regalo" (Gift) button in `Users.tsx`. It interfaces with `/admin/users/:userId/subscription`.
 - **ID Resolution**: For Lawyers, use `userId`. For Workers/Pymes, use `id`.
+- **Role Consistency**: The `User.role` field must always match the user's active profile. Manual subscription updates (Gifts) must enforce this change to avoid users appearing in multiple dashboard tabs.
 - **Security**: Never remove the password visibility toggle in `Login.tsx`.
+
+### 4.2 Maintenance & Deployment Rules
+- **ZIP Generation**: When updating the server, ALWAYS generate a "light" ZIP from the `dist` folder only.
+  - Command: `Compress-Archive -Path dist\* -DestinationPath admin-dist.zip`
+- **Heavy ZIPs**: Never upload a ZIP containing `node_modules` or `.git` to the production server. These are for backups only.
+- **Verification**: Always check the version number in the Sidebar (e.g., `v1.21.1-prod`) after refreshing to confirm the update was successful.
 
 > **Next Strategic Steps:**
 > 1. Formally incorporate CIBERT as an A.C.

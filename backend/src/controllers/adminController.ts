@@ -280,9 +280,12 @@ export const syncFirebaseLawyers = async (req: Request, res: Response) => {
 
             if (existingUser && existingUser.role === 'lawyer') {
                 isLawyer = true;
-            } else if (!existingUser && (email.includes('abogado') || email.includes('lawyer'))) {
-                // He's a lawyer in Firebase, but missing entirely in Postgres. 
-                // That's an edge case, but we can flag it for sync.
+            } else if (!existingUser && (
+                email.includes('abogado') || 
+                email.includes('lawyer') || 
+                fbUser.displayName?.toLowerCase().includes('lic') ||
+                fbUser.displayName?.toLowerCase().includes('abog')
+            )) {
                 isLawyer = true;
             }
 
@@ -1030,6 +1033,15 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         } else if (role === 'pyme') {
             // For Pymes, we just rely on User.subscriptionLevel for now, but good to keep consistent
             // Future: PymeSubscription table
+        }
+
+        // 3. 🛡️ ENSURE ROLE CONSISTENCY (Strict Policy)
+        // A worker can NEVER be a lawyer and vice versa.
+        if (user.role !== role) {
+            return res.status(400).json({
+                error: 'Incompatibilidad de Roles',
+                message: `Este usuario ya está registrado como ${user.role.toUpperCase()}. Un ${user.role} nunca podrá ser ${role.toUpperCase()} según la política de plataforma.`
+            });
         }
 
         res.json({ success: true, message: `Plan actualizado a ${plan}`, user });

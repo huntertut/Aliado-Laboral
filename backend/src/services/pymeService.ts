@@ -229,7 +229,7 @@ export const PymeService = {
                 dailySalary: Number(emp.dailySalary) || 248.93, // Default to min wage if 0
                 startDate: emp.joinDate,
                 endDate: today,
-                separationType: 'layoff', // Worst case scenario
+                separationReason: 'despido_injustificado', // Worst case scenario
                 vacationsTaken: 0 // Worst case: assume no vacations taken
             });
 
