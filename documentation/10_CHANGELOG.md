@@ -33,9 +33,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-## [v1.21.1] - April 2026 (Phase 34 - Registration Outage & Sync)
+## [v1.21.1] - April 2026 (Phase 34 - Registration Outage, Sync & Gift Refinement)
 - **Feature (Backend):** Evolución del sistema de recuperación `syncFirebaseLawyers` a `syncFirebaseUsers`. Ahora es universal y permite sincronizar Trabajadores y PyMEs desde Firebase hacia SQL, reparando registros huérfanos por errores de red.
 - **Bugfix (Critical / Backend):** Implementación de lógica de auto-recuperación robusta en el Admin para usuarios que ya existen en Firebase pero fallaron en la persistencia inicial.
+- **Fix (Admin UI):** Restored the individual "Gift Months" feature in `Users.tsx` which was accidentally omitted in the previous update.
+- **Fix (Logic):** Resolved 404 errors in the gift flow by correctly mapping `userId` for lawyers and `id` for workers/pymes in the frontend API calls.
+- **Documentation:** Added "Admin Panel Maintenance Rules" to `00_CONTEXT.md` to safeguard critical features (individual gifts, password toggles) against future regressions.
 - **Maintenance (DevOps):** Creación del script `clean_production.sh` para la eliminación de procesos PM2 "rogue" (huerfanos) en el host y la regeneración forzada de Prisma Client en contenedores.
 
 ---

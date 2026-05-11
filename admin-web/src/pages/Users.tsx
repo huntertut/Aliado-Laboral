@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, RefreshCw, X } from 'lucide-react';
+import { Users as UsersIcon, Search, Shield, Briefcase, Building2, CheckCircle, RefreshCw, X, Gift } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -165,6 +165,7 @@ export default function Users() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimiento</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Casos</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Registro</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Acciones</th>
                 </>
             );
         }
@@ -229,25 +230,28 @@ export default function Users() {
                         )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                            onClick={() => handleGrantFreeLeads(user.userId, user.fullName || 'Abogado', user.freeLeadsMonthly || 0, user.id)}
-                            className="mr-2 px-3 py-1 rounded-md transition-colors text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-                        >
-                            🎁 Cupo
-                        </button>
-                        <button
-                            onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
-                            className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
-                        >
-                            {user.isVerified ? 'Revocar' : 'Aprobar'}
-                        </button>
-                        <button
-                            onClick={() => handleDeleteUser(user.id, user.fullName || 'Abogado')}
-                            className="px-3 py-1 rounded-md transition-colors text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 ml-2"
-                            title="Eliminar permanentemente a este usuario"
-                        >
-                            🗑️
-                        </button>
+                        <div className="flex items-center justify-end space-x-2">
+                            <button
+                                onClick={() => handleGrantFreeLeads(user.userId, user.fullName || 'Abogado', user.freeLeadsMonthly || 0, user.id)}
+                                className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
+                                title="Regalar Acceso y Cupos"
+                            >
+                                <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => toggleLawyerVerification(user.id, user.isVerified)}
+                                className={`px-3 py-1 rounded-md transition-colors ${user.isVerified ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-blue-700 bg-blue-50 hover:bg-blue-100'}`}
+                            >
+                                {user.isVerified ? 'Revocar' : 'Aprobar'}
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(user.id, user.fullName || 'Abogado')}
+                                className="p-1.5 text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 rounded-md transition-colors"
+                                title="Eliminar permanentemente a este usuario"
+                            >
+                                🗑️
+                            </button>
+                        </div>
                     </td>
                 </tr>
             );
@@ -289,19 +293,22 @@ export default function Users() {
                         {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                            onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Trabajador', user.freeLeadsMonthly || 0)}
-                            className="mr-2 px-3 py-1 rounded-md transition-colors text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-                        >
-                            🎁 Regalar PRO
-                        </button>
-                        <button
-                            onClick={() => handleDeleteUser(user.id, user.fullName || 'Trabajador')}
-                            className="px-3 py-1 rounded-md transition-colors text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 ml-2"
-                            title="Eliminar permanentemente a este usuario"
-                        >
-                            🗑️
-                        </button>
+                        <div className="flex items-center justify-end space-x-2">
+                            <button
+                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Trabajador', user.freeLeadsMonthly || 0)}
+                                className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
+                                title="Regalar Premium"
+                            >
+                                <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(user.id, user.fullName || 'Trabajador')}
+                                className="p-1.5 text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 rounded-md transition-colors"
+                                title="Eliminar permanentemente a este usuario"
+                            >
+                                🗑️
+                            </button>
+                        </div>
                     </td>
                 </tr>
             );
@@ -339,6 +346,24 @@ export default function Users() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                         {user.createdAt ? format(new Date(user.createdAt), "d 'de' MMM, yyyy", { locale: es }) : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                            <button
+                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Representante', user.freeLeadsMonthly || 0)}
+                                className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
+                                title="Regalar Plan"
+                            >
+                                <Gift className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(user.id, user.fullName || 'Representante')}
+                                className="p-1.5 text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 rounded-md transition-colors"
+                                title="Eliminar permanentemente a este usuario"
+                            >
+                                🗑️
+                            </button>
+                        </div>
                     </td>
                 </tr>
             );
@@ -529,6 +554,10 @@ export default function Users() {
                             >
                                 {loading ? 'Guardando...' : 'Aplicar Beneficios'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
                         </div>
                     </div>
                 </div>
