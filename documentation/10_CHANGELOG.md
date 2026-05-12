@@ -4,6 +4,33 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.22.1] - 11 Mayo 2026 (OTA Activado + Push Noticias)
+
+- **Fix (Critical / Mobile):** Activadas actualizaciones OTA en `AndroidManifest.xml`. El flag `ENABLED` estaba en `false`. Ahora configurado con URL de EAS, canal `production`, y espera de 3s al arrancar.
+- **Fix (Mobile):** Agregada sección `updates` a `app.json` con URL de EAS Update y `checkAutomatically: ON_LOAD`.
+- **Fix (Backend / Notifications):** `newsController.ts` ahora envía push notification a todos los usuarios con token registrado al publicar una noticia manualmente desde el panel de admin. Antes solo el scheduler automático (RSS) enviaba notificaciones.
+- **Build:** Android AAB `versionCode 55`, `versionName 1.22.0`. Subir a Google Play Console → **Producción**.
+
+> ⚠️ **REGLA OTA:** Nunca ejecutar `npx expo prebuild --clean` en producción sin revisar que el `AndroidManifest.xml` conserve `ENABLED=true` y la URL de EAS. El `--clean` regenera el manifiesto desde cero y borra la configuración OTA.
+
+---
+
+
+### 🚨 INCIDENTE CRÍTICO RESUELTO — Raíz del problema
+Se identificó que el servidor de producción estaba usando la **base de datos incorrecta**. El `.env` apuntaba a `file:./dev.db` (copia incompleta en la raíz del backend), mientras que la DB real con todas las tablas y datos vive en `prisma/dev.db`. Esto causaba que **todos** los queries de Prisma fallaran con P2022 o errores de apertura de archivo.
+
+- **Fix (Critical / DevOps):** `DATABASE_URL` corregida a ruta absoluta `file:/root/Aliado-Laboral/backend/prisma/dev.db` en producción.
+- **Fix (Critical / Backend):** Restablecida contraseña de admin (`admin@test.com`) que se desincronizó durante las migraciones.
+- **Fix (Backend / Auth):** Corregido `socialLogin` en `authController.ts` para crear correctamente los registros de `Lawyer` con status `PENDING` al registrarse como abogado desde la app.
+- **Fix (Backend / Admin):** Corregida función `updateUserSubscription` para no usar `LawyerSubscription` de forma redundante — ahora actualiza directamente los campos en el modelo `Lawyer`.
+- **Fix (Backend / Sync):** Reescrita función `syncFirebaseLawyers` completamente. Ya **no** importa usuarios de Firebase por rol desconocido. Ahora solo repara abogados que ya existen en la DB pero les falta su registro en la tabla `Lawyer`.
+- **Fix (Critical / Auth):** Reparado un bug en `verifyFirebaseToken` donde la app móvil cargaba el rol del usuario desde la tabla de mapeo desactualizada (`UserRole`) en lugar del modelo central `User`, lo que causaba que usuarios como `elmisamouse` aparecieran como abogados en la app pero como trabajadores en el panel web. Se corrigieron 19 registros afectados en producción.
+- **Cleanup (DB):** Eliminados 19 registros de abogados falsos creados por la función de sync incorrecta. Todos los usuarios afectados fueron restaurados a su rol correcto (`worker`).
+- **Fix (Admin Web):** Restaurado botón "Sincronizar Firebase" en `Users.tsx` que se perdió en un merge anterior.
+- **Docs:** Añadido incidente #11 en `09_TROUBLESHOOTING.md` con procedimiento completo de recuperación.
+
+---
+
 ## [v1.21.9] - May 2026 (Admin Consistency & Bugfix)
 - **Fix (Admin / Data):** Corregida duplicidad de usuarios en pestañas de Abogados/Trabajadores mediante sincronización forzada de `User.role`.
 - **Fix (Admin / Logic):** Implementada corrección automática de roles en `updateUserSubscription` (Gifts). Al asignar un plan, el sistema ahora asegura que el rol del usuario coincida con la categoría seleccionada.

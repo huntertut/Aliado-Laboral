@@ -172,7 +172,7 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 uid: firebaseUid,
                 email: userRole.email,
                 fullName: user?.fullName || userRole.fullName,
-                role: userRole.role,
+                role: user?.role || userRole.role, // FIX: Use User.role as source of truth
                 plan: finalPlan,
                 subscriptionLevel: user?.subscriptionLevel || 'basic',
                 assignedLawyerId: user?.pymeProfile?.assignedLawyerId,
