@@ -5,6 +5,7 @@ import { AuthProvider } from './src/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { useNotifications } from './src/hooks/useNotifications';
 import UpdateRequired from './src/screens/UpdateRequired';
+import OTAUpdateScreen from './src/screens/OTAUpdateScreen';
 import * as Application from 'expo-application';
 
 const API_BASE = 'https://api.cibertmx.org/api';
@@ -24,6 +25,7 @@ export default function App() {
     const [needsUpdate, setNeedsUpdate] = useState(false);
     const [storeUrl, setStoreUrl] = useState('market://details?id=com.cibertmx.aliadolaboral');
     const [updateChecked, setUpdateChecked] = useState(false);
+    const [otaChecked, setOtaChecked] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE}/config/version`)
@@ -39,6 +41,7 @@ export default function App() {
             .finally(() => setUpdateChecked(true));
     }, []);
 
+    if (!otaChecked) return <OTAUpdateScreen onComplete={() => setOtaChecked(true)} />;
     if (!updateChecked) return null;
     if (needsUpdate) return <UpdateRequired storeUrl={storeUrl} />;
 
