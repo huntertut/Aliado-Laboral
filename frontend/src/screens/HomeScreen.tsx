@@ -134,7 +134,7 @@ const HomeScreen = () => {
                                 resizeMode="contain"
                             />
                             <View>
-                                <Text style={styles.brandText}>Aliado Laboral</Text>
+                                <Text style={styles.brandText}>Aliado Laboral v1.22.4</Text>
                                 <Text style={styles.greetingText} numberOfLines={1}>{greeting}</Text>
                             </View>
                         </View>
