@@ -3,7 +3,7 @@
     "name": "Aliado Laboral",
     "slug": "aliado-laboral",
     "version": "1.23.0",
-    "runtimeVersion": "1.19.4",
+    "runtimeVersion": "1.20.0",
     "updates": {
       "url": "https://u.expo.dev/edbaa94d-8deb-4e42-9eae-b9d597dcf595",
       "enabled": true,

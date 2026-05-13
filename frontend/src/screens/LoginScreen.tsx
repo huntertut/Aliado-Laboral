@@ -164,7 +164,7 @@ const LoginScreen = () => {
                 </TouchableOpacity>
                 <Text style={styles.title}>Aliado Laboral</Text>
                 <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
-                <Text style={styles.versionTextHeader}>v1.22.5 (OTA)</Text>
+                <Text style={styles.versionTextHeader}>v1.23.0</Text>
             </LinearGradient>
 
             <KeyboardAwareScrollView
