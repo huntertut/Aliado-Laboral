@@ -4,6 +4,7 @@ import * as newsAIService from '../services/newsAIService';
 import { fetchLaborNews } from '../services/newsScheduler';
 import { SocialService } from '../services/SocialService';
 import { ImageGeneratorService } from '../services/imageGenerator';
+import { sendPushNotification } from '../services/notificationService';
 
 const prisma = new PrismaClient();
 
@@ -67,11 +68,23 @@ export const createNews = async (req: Request, res: Response) => {
         // 3. Broadcast to Social Media (Async)
         SocialService.broadcastNewsToSocialMedia({
             title: news.titleClickable,
-            summary: news.summaryLawyer, // Use professional summary for LinkedIn
+            summary: news.summaryLawyer,
             category: 'Legal',
-            url: `https://aliadolaboral.com/news/${news.id}`, // Mock URL
+            url: `https://aliadolaboral.com/news/${news.id}`,
             processedAt: news.createdAt
         });
+
+        // 4. Push Notification a todos los usuarios con token (Async — no bloquea la respuesta)
+        prisma.user.findMany({
+            where: { pushToken: { not: null } },
+            select: { id: true }
+        }).then(users => {
+            console.log(`📢 [News] Enviando push a ${users.length} usuarios...`);
+            const title = '🗞️ Nueva Noticia Laboral';
+            const body = news.titleClickable || 'Revisa las últimas noticias laborales.';
+            const data = { type: 'news', newsId: news.id };
+            users.forEach(user => sendPushNotification(user.id, title, body, data));
+        }).catch(err => console.error('[News] Error enviando push:', err));
 
         res.status(201).json({
             message: 'Noticia creada, procesada y difundida con éxito',

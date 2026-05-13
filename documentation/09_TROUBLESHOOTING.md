@@ -187,3 +187,126 @@ Simplified the logic in `admin-web/src/pages/Users.tsx` to:
 - Conditionally call `/free-leads-quota` ONLY for lawyers.
 - Use the correct `User.id` for the subscription update.
 - Dynamically set the `role` based on the active tab.
+---
+
+## 11. Backend: "Error code 14: Unable to open the database file" ⚠️ CRÍTICO
+
+**Síntoma:**
+El backend arranca correctamente (`pm2 status` muestra `online`), pero todas las peticiones de login y datos devuelven un error 500. Los logs de PM2 muestran:
+```
+Error querying the database: Error code 14: Unable to open the database file
+```
+
+**Causa:**
+El archivo `.env` en producción usa una ruta **relativa** (`file:./dev.db` o `file:./prisma/dev.db`). Como PM2 ejecuta el proceso desde el directorio `dist/`, la ruta relativa se resuelve de forma incorrecta apuntando a un archivo inexistente.
+
+La base de datos real vive en:
+```
+/root/Aliado-Laboral/backend/prisma/dev.db
+```
+
+**Resolución:**
+Siempre usar la **ruta absoluta** en el `.env` de producción:
+```bash
+# SSH al servidor
+sed -i 's|DATABASE_URL=.*|DATABASE_URL="file:/root/Aliado-Laboral/backend/prisma/dev.db"|g' /root/Aliado-Laboral/backend/.env
+pm2 restart aliado-api
+# Verificar con:
+curl -s -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@test.com","password":"Veronica@2099"}'
+# Debe devolver un token JWT
+```
+
+**⚠️ REGLA PERMANENTE:**
+Nunca cambiar `DATABASE_URL` a una ruta relativa en producción. La ruta correcta y permanente es:
+```
+DATABASE_URL="file:/root/Aliado-Laboral/backend/prisma/dev.db"
+```
+
+**Archivos de DB en el servidor (referencia):**
+- ✅ `/root/Aliado-Laboral/backend/prisma/dev.db` — DB de **PRODUCCIÓN REAL** con todos los datos
+- ⚠️ `/root/Aliado-Laboral/backend/dev.db` — Copia incompleta/antigua, **NO USAR**
+- 📦 `/root/Aliado-Laboral/backend/recovered_apr15.db` — Backup de Abril 2026, solo para recuperación
+
+---
+---
+
+## 12. Mobile: OTA Updates no funcionan (ENABLED=false en AndroidManifest) ⚠️
+
+**Síntoma:**
+La app NO descarga actualizaciones automáticamente al arrancar, aunque se publiquen con `eas update`. La pantalla `OTAUpdateScreen.tsx` nunca detecta una actualización disponible.
+
+**Causa:**
+El `AndroidManifest.xml` tiene el meta-data de expo-updates con `android:value="false"`:
+```xml
+<!-- ❌ MAL — así estaba en producción -->
+<meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
+```
+Esto ocurre porque `npx expo prebuild --clean` regenera el manifiesto desde cero y lo deja desactivado. También faltaban la URL de EAS y el nombre del canal.
+
+**Resolución — Configuración correcta y permanente:**
+```xml
+<!-- ✅ CORRECTO — lo que debe tener AndroidManifest.xml -->
+<meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>
+<meta-data android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="https://u.expo.dev/edbaa94d-8deb-4e42-9eae-b9d597dcf595"/>
+<meta-data android:name="expo.modules.updates.EXPO_RUNTIME_VERSION" android:value="@string/expo_runtime_version"/>
+<meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
+<meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="3000"/>
+<meta-data android:name="expo.modules.updates.EXPO_CHANNEL_NAME" android:value="production"/>
+```
+
+Y en `app.json`:
+```json
+"updates": {
+  "url": "https://u.expo.dev/edbaa94d-8deb-4e42-9eae-b9d597dcf595",
+  "enabled": true,
+  "fallbackToCacheTimeout": 3000,
+  "checkAutomatically": "ON_LOAD"
+}
+```
+
+**⚠️ REGLA CRÍTICA:** Cada vez que se ejecute `npx expo prebuild --clean`, verificar inmediatamente que `AndroidManifest.xml` tenga `ENABLED=true` y todos los meta-data de updates antes de compilar el AAB.
+
+**Importante sobre runtimeVersion y OTA:**
+- Los OTA solo llegan a usuarios que tienen instalado un AAB con el mismo `runtimeVersion`.
+- Si cambias `runtimeVersion` en `app.json`, los usuarios con versiones anteriores NO recibirán OTA hasta actualizar desde Play Store.
+- Para publicar un OTA sin nuevo AAB: `eas update --channel production --runtime-version 1.22.0`
+
+---
+
+## 13. Mobile: "Version code ya existe" al subir a Google Play Production ⚠️
+
+**Síntoma:**
+Al intentar subir un nuevo AAB a Google Play Console (producción), rechaza el archivo con el error: *"El código de versión X ya existe"* o *"El código de versión debe ser mayor que Y"*.
+
+**Causa:**
+El `versionCode` en `build.gradle` y `app.json` no estaba sincronizado con el versionCode real de Google Play. La documentación local estaba desactualizada y no reflejaba el número actual en la consola de producción.
+
+**Resolución:**
+1. Antes de compilar cualquier AAB, verificar en **Google Play Console → Producción → Versiones** cuál es el último versionCode activo.
+2. El nuevo AAB debe tener `versionCode = último_activo + 1`.
+3. Actualizar SIEMPRE los dos archivos juntos:
+
+```gradle
+// frontend/android/app/build.gradle
+versionCode 55   // ← último_en_play + 1
+versionName "1.22.0"
+```
+```json
+// frontend/app.json
+"version": "1.22.0",
+"runtimeVersion": "1.22.0",
+"versionCode": 55
+```
+
+**Historial de versionCodes en producción (mantener actualizado):**
+
+| versionCode | versionName | Fecha | Notas |
+|------------|-------------|-------|-------|
+| 54 | 1.21.8 | 7 Mayo 2026 | Última versión antes de este fix |
+| 55 | 1.22.0 | 11 Mayo 2026 | OTA activado + push noticias + estabilización DB |
+
+> ⚠️ Actualizar esta tabla cada vez que se publique un nuevo AAB en producción.
+
+---

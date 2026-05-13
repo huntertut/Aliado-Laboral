@@ -1,7 +1,9 @@
 # Guía de Despliegue: Subir AAB a Google Play Store
 
 **Proyecto:** Aliado Laboral  
-**Última actualización:** 15 de marzo de 2026
+**Última actualización:** 11 de mayo de 2026  
+**Último versionCode en Producción:** 55 (v1.22.0) — publicado 11 mayo 2026  
+**Anterior en Producción:** 54 (v1.21.8) — publicado 7 mayo 2026
 
 ---
 

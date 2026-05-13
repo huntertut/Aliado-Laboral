@@ -10,11 +10,16 @@ The business relies on a hybrid model combining the stability of SaaS with the s
 ### A. Recurring Subscriptions (SaaS)
 Predictable revenue designed to cover operational costs and continuous development.
 
+**Política de Uso Justo (Fair Use) para Abogados:**
+- **Registro Inicial:** Sin plan activo (Inactivo). No puede recibir casos.
+- **Plan Basic:** Límite máximo de **5 casos mensuales** (Excluye el acceso a casos HOT).
+- **Plan PRO:** Límite máximo de **20 casos mensuales** (Incluye acceso a casos HOT).
+
 | Plan | Monthly Cost | Audience | Value Added |
 | :--- | :--- | :--- | :--- |
 | **Worker Premium** | **$29.00 MXN** | Worker | Priority queuing, unlimited AI Chatbot, ad-free experience. |
-| **Lawyer Basic** | **$99.00 MXN** | Lawyer | Basic public profile, access to the severance calculator. |
-| **Lawyer PRO** | **$299.00 MXN** | Lawyer | **Access to HOT Cases**, advanced CRM, highlighted profile. |
+| **Lawyer Basic** | **$99.00 MXN** | Lawyer | Basic public profile, access to the severance calculator. (Limit: 5 leads/mo) |
+| **Lawyer PRO** | **$299.00 MXN** | Lawyer | **Access to HOT Cases**, advanced CRM, highlighted profile. (Limit: 20 leads/mo) |
 | **PyME Shield** | **$999.00 MXN** | Company | Continuous labor audits, unlimited legal documents, preventive advice. |
 
 ### B. Transactional Fees (Lead Generation)

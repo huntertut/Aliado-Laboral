@@ -14,9 +14,9 @@ export default function Users() {
     const [filterActiveCases, setFilterActiveCases] = useState(false);
 
     // Gift Modal State
-    const [giftModal, setGiftModal] = useState({ isOpen: false, userId: '', lawyerId: '', name: '', currentQuota: 0 });
+    const [giftModal, setGiftModal] = useState({ isOpen: false, userId: '', lawyerId: '', name: '' });
     const [giftMonths, setGiftMonths] = useState<string>('');
-    const [giftQuota, setGiftQuota] = useState<string>('');
+    const [giftPlan, setGiftPlan] = useState<string>('pro');
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -67,10 +67,10 @@ export default function Users() {
         }
     };
 
-    const handleGrantFreeLeads = (userId: string, name: string, currentQuota: number, lawyerId?: string) => {
-        setGiftModal({ isOpen: true, userId, lawyerId: lawyerId || '', name, currentQuota });
+    const handleGrantFreeLeads = (userId: string, name: string, lawyerId?: string) => {
+        setGiftModal({ isOpen: true, userId, lawyerId: lawyerId || '', name });
         setGiftMonths(''); // Start empty to force user to type if they want, 0 is valid to disable.
-        setGiftQuota(currentQuota.toString());
+        setGiftPlan('pro');
     };
 
     const handleDeleteUser = async (userId: string, name: string) => {
@@ -88,30 +88,40 @@ export default function Users() {
         }
     };
 
-    const submitGiftConfig = async () => {
-        const quota = parseInt(giftQuota, 10);
-        let months = parseInt(giftMonths, 10);
-
-        if (isNaN(quota) || quota < 0) {
-            alert('Por favor ingresa un número de casos gratuito válido (>= 0).');
-            return;
+    const handleSyncFirebase = async () => {
+        if (window.confirm('¿Forzar sincronización de Abogados desde Firebase? Esto puede tomar unos segundos.')) {
+            try {
+                setLoading(true);
+                const res = await api.post('/admin/lawyers/sync-firebase');
+                alert(`✅ Sincronización completada. Se añadieron ${res.data.stats?.newLawyers || 0} abogados nuevos.`);
+                fetchUsers();
+            } catch (error) {
+                console.error('Error syncing firebase:', error);
+                alert('Ocurrió un error al sincronizar con Firebase.');
+                setLoading(false);
+            }
         }
+    };
+
+    const submitGiftConfig = async () => {
+        let months = parseInt(giftMonths, 10);
 
         try {
             setLoading(true);
             
-            // 1. Update Free Leads Quota (ONLY for Lawyers)
-            if (activeTab === 'lawyers' && giftModal.lawyerId) {
-                await api.post(`/admin/lawyers/${giftModal.lawyerId}/free-leads-quota`, { freeLeadsMonthly: quota });
+            // 1. Determine Plan and Quota
+            let targetPlan = 'premium'; // default for workers/pymes
+
+            if (activeTab === 'lawyers') {
+                targetPlan = giftPlan; // 'basic' or 'pro'
             }
             
-            // 2. Update Subscription Months (Only if provided and valid)
+            // 2. Update Subscription Plan and Months (Only if months > 0)
             if (!isNaN(months) && months > 0) {
-                // Map activeTab to backend role
                 const targetRole = activeTab === 'lawyers' ? 'lawyer' : activeTab === 'workers' ? 'worker' : 'pyme';
                 
                 await api.put(`/admin/users/${giftModal.userId}/subscription`, {
-                    plan: targetRole === 'lawyer' ? 'pro' : 'premium',
+                    plan: targetPlan,
                     role: targetRole,
                     durationMonths: months,
                 });
@@ -121,9 +131,11 @@ export default function Users() {
             
             setGiftModal({ ...giftModal, isOpen: false });
             fetchUsers();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating gift config:', error);
-            alert('Ocurrió un error al actualizar los beneficios. Revisa los permisos.');
+            const errResponse = error.response?.data;
+            const errorDetails = errResponse ? (errResponse.details || errResponse.rawError || errResponse.error) : error.message;
+            alert('Ocurrió un error al actualizar los beneficios. Detalles: ' + JSON.stringify(errorDetails).substring(0, 200));
         } finally {
             setLoading(false);
         }
@@ -232,7 +244,7 @@ export default function Users() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                             <button
-                                onClick={() => handleGrantFreeLeads(user.userId, user.fullName || 'Abogado', user.freeLeadsMonthly || 0, user.id)}
+                                onClick={() => handleGrantFreeLeads(user.userId, user.fullName || 'Abogado', user.id)}
                                 className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-colors"
                                 title="Regalar Acceso y Cupos"
                             >
@@ -295,7 +307,7 @@ export default function Users() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                             <button
-                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Trabajador', user.freeLeadsMonthly || 0)}
+                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Trabajador')}
                                 className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-md transition-colors"
                                 title="Regalar Premium"
                             >
@@ -350,7 +362,7 @@ export default function Users() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                             <button
-                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Representante', user.freeLeadsMonthly || 0)}
+                                onClick={() => handleGrantFreeLeads(user.id, user.fullName || 'Representante')}
                                 className="p-1.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
                                 title="Regalar Plan"
                             >
@@ -429,13 +441,23 @@ export default function Users() {
                     <span className="font-medium">Filtrar Activos</span>
                 </label>
                 
-                <button
-                    onClick={fetchUsers}
-                    className="ml-3 p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex shrink-0"
-                    title="Recargar Datos"
-                >
-                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                <div className="flex items-center space-x-3 ml-3 shrink-0">
+                    <button
+                        onClick={handleSyncFirebase}
+                        className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors flex items-center shadow-sm"
+                        title="Sincronizar Abogados de Firebase"
+                    >
+                        <RefreshCw className={`w-5 h-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        <span className="font-medium text-sm hidden sm:inline">Sincronizar Firebase</span>
+                    </button>
+                    <button
+                        onClick={fetchUsers}
+                        className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center shadow-sm"
+                        title="Recargar Datos"
+                    >
+                        <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Table Card */}
@@ -509,9 +531,9 @@ export default function Users() {
                             <div className="space-y-4">
                                 <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                                     <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                        Tiempo de Plan PRO Gratuito (Meses)
+                                        Tiempo del Plan (Meses)
                                     </label>
-                                    <p className="text-xs text-slate-500 mb-2">Deja en blanco si no deseas dar u otorgar meses PRO.</p>
+                                    <p className="text-xs text-slate-500 mb-2">Deja en blanco si no deseas asignar meses de suscripción.</p>
                                     <input
                                         type="number"
                                         min="0"
@@ -525,17 +547,17 @@ export default function Users() {
                                 {activeTab === 'lawyers' && (
                                     <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                                         <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                            Cupo de Casos Gratuitos (Mensual)
+                                            Plan a Asignar (Aplica Política de Uso Justo)
                                         </label>
-                                        <p className="text-xs text-slate-500 mb-2">Cupo actual: <span className="font-bold">{giftModal.currentQuota}</span> casos/mes.</p>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={giftQuota}
-                                            onChange={(e) => setGiftQuota(e.target.value)}
-                                            placeholder="Ej. 10, 15"
-                                            className="w-full rounded-lg border-slate-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 p-2.5 border outline-none"
-                                        />
+                                        <p className="text-xs text-slate-500 mb-2">Selecciona el plan para asignar la cuota de casos correspondiente.</p>
+                                        <select
+                                            value={giftPlan}
+                                            onChange={(e) => setGiftPlan(e.target.value)}
+                                            className="w-full rounded-lg border-slate-200 shadow-sm focus:border-amber-500 focus:ring-amber-500 p-2.5 border outline-none bg-white"
+                                        >
+                                            <option value="pro">Plan PRO (20 Casos/mes + Accesos HOT)</option>
+                                            <option value="basic">Plan BASIC (5 Casos/mes)</option>
+                                        </select>
                                     </div>
                                 )}
                             </div>
@@ -554,10 +576,6 @@ export default function Users() {
                             >
                                 {loading ? 'Guardando...' : 'Aplicar Beneficios'}
                             </button>
-                        </div>
-                    </div>
-                </div>
-            )}
                         </div>
                     </div>
                 </div>

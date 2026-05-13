@@ -166,7 +166,7 @@ export const login = async (req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({
             where: { email },
-            include: { lawyerProfile: true } // Include lawyer relation to check verification
+            include: { lawyerProfile: true } // lawyerProfile relation = Lawyer model (UserAsLawyer)
         });
 
         if (!user) {
@@ -273,7 +273,8 @@ export const socialLogin = async (req: Request, res: Response) => {
                             userId: newUser.id,
                             licenseNumber: 'PENDING_' + newUser.id, // Placeholder to satisfy unique constraint
                             isVerified: false,
-                            specialty: 'General'
+                            specialty: 'General',
+                            status: 'PENDING'
                         }
                     });
 

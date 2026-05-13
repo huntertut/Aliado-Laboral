@@ -261,140 +261,50 @@ export const syncFirebaseLawyers = async (req: Request, res: Response) => {
     try {
         console.log('[Admin] Starting Firebase Lawyer Sync...');
         let syncedCount = 0;
+        let skippedCount = 0;
         let errorsCount = 0;
 
-        // Fetch all Firebase users (up to 1000 for simplicity in MVP)
-        const listUsersResult = await admin.auth().listUsers(1000);
-        
-        for (const fbUser of listUsersResult.users) {
-            const email = fbUser.email;
-            if (!email) continue;
+        // Only process users who are ALREADY marked as 'lawyer' in the SQL database
+        // but are missing their Lawyer profile record.
+        // We NEVER create new User records from Firebase alone — the role is not stored in Firebase.
+        const lawyerUsers = await prisma.user.findMany({
+            where: { role: 'lawyer' },
+            include: { lawyerProfile: true }
+        });
 
-            // 1. Determine if this user in our DB is supposed to be a lawyer
-            // Or if the email forces them to be a lawyer in our test environments
-            let isLawyer = false;
-
-            const existingUser = await prisma.user.findUnique({
-                where: { email }
-            });
-
-            if (existingUser && existingUser.role === 'lawyer') {
-                isLawyer = true;
-            } else if (!existingUser && (
-                email.includes('abogado') || 
-                email.includes('lawyer') || 
-                fbUser.displayName?.toLowerCase().includes('lic') ||
-                fbUser.displayName?.toLowerCase().includes('abog')
-            )) {
-                isLawyer = true;
+        for (const user of lawyerUsers) {
+            if (user.lawyerProfile) {
+                // Already has a Lawyer profile — nothing to do
+                skippedCount++;
+                continue;
             }
 
-            if (!isLawyer) continue;
-
-            // 2. We know they are a lawyer. Check if Lawyer model exists.
-            if (existingUser) {
-                const lawyerRecord = await prisma.lawyer.findUnique({
-                    where: { userId: existingUser.id }
-                });
-
-                if (!lawyerRecord) {
-                    console.log(`[Admin] Sincronizando abogado perdido: ${email}`);
-                    try {
-                        const newLawyer = await prisma.lawyer.create({
-                            data: {
-                                userId: existingUser.id,
-                                licenseNumber: `SYNC_${existingUser.id.substring(0, 8)}`,
-                                professionalName: existingUser.fullName,
-                                specialty: 'Pendiente de asignar',
-                                status: 'PENDING',
-                                isVerified: false
-                            }
-                        });
-
-                        await prisma.lawyerProfile.create({
-                            data: {
-                                lawyerId: newLawyer.id,
-                                bio: 'Perfil en revisión/Sincronizado desde Firebase (Admin)'
-                            }
-                        });
-
-                        await prisma.lawyerSubscription.create({
-                            data: {
-                                lawyerId: newLawyer.id,
-                                plan: 'free',
-                                status: 'active',
-                                startDate: new Date(),
-                                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                            }
-                        });
-                        syncedCount++;
-                    } catch (e) {
-                        console.error(`Error sincronizando ${email}:`, e);
-                        errorsCount++;
+            // User is marked as lawyer in DB but missing their Lawyer record
+            console.log(`[Admin] Fixing missing Lawyer profile for: ${user.email}`);
+            try {
+                await prisma.lawyer.create({
+                    data: {
+                        userId: user.id,
+                        licenseNumber: `SYNC_${user.id.substring(0, 8)}`,
+                        professionalName: user.fullName,
+                        specialty: 'Pendiente de asignar',
+                        status: 'PENDING',
+                        isVerified: false,
+                        subscriptionStatus: 'inactive'
                     }
-                }
-            } else {
-                // If the user doesn't even exist in the User table, the best way to handle this 
-                // is to let them login once so verifyFirebaseToken handles it. 
-                // Or we create the User here. Let's create the User here to be robust.
-                try {
-                    console.log(`[Admin] Creando User y Lawyer desde cero para: ${email}`);
-                    const createdUser = await prisma.user.create({
-                        data: {
-                            email,
-                            passwordHash: 'firebase_managed', 
-                            fullName: fbUser.displayName || email.split('@')[0],
-                            role: 'lawyer',
-                            plan: 'free'
-                        }
-                    });
-
-                    await prisma.userRole.create({
-                        data: {
-                            firebaseUid: fbUser.uid,
-                            role: 'lawyer',
-                            email,
-                            fullName: createdUser.fullName,
-                            userId: createdUser.id
-                        }
-                    });
-
-                    const newLawyer = await prisma.lawyer.create({
-                        data: {
-                            userId: createdUser.id,
-                            licenseNumber: `SYNC_${createdUser.id.substring(0, 8)}`,
-                            professionalName: createdUser.fullName,
-                            specialty: 'Pendiente de asignar',
-                            status: 'PENDING',
-                            isVerified: false
-                        }
-                    });
-
-                    await prisma.lawyerProfile.create({
-                        data: {
-                            lawyerId: newLawyer.id,
-                            bio: 'Perfil recuperado desde Firebase (Admin)'
-                        }
-                    });
-
-                    await prisma.lawyerSubscription.create({
-                        data: {
-                            lawyerId: newLawyer.id,
-                            plan: 'free',
-                            status: 'active',
-                            startDate: new Date(),
-                            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                        }
-                    });
-                    syncedCount++;
-                } catch(e) {
-                    console.error(`Error creando a ${email} completo:`, e);
-                    errorsCount++;
-                }
+                });
+                syncedCount++;
+            } catch (e) {
+                console.error(`Error fixing lawyer profile for ${user.email}:`, e);
+                errorsCount++;
             }
         }
 
-        res.json({ success: true, syncedCount, errorsCount, message: `Sincronización completada. ${syncedCount} recuperados.` });
+        res.json({
+            success: true,
+            stats: { newLawyers: syncedCount, skipped: skippedCount, errors: errorsCount },
+            message: `Sincronización completada. ${syncedCount} perfiles de abogado reparados.`
+        });
     } catch (error) {
         console.error('Error during Firebase sync:', error);
         res.status(500).json({ error: 'Failed to sync Firebase lawyers' });
@@ -959,19 +869,20 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
 
         console.log(`[Admin] Updating subscription for User ${userId} (${role}) to ${plan} for ${durationMonths} month(s)`);
 
+        const now = new Date();
+        const nextMonth = new Date();
+        const duration = Number(durationMonths) || 1;
+        nextMonth.setDate(now.getDate() + (30 * duration));
+
         // 1. Update User Record
         const user = await prisma.user.update({
             where: { id: userId },
             data: {
                 plan: plan,
-                subscriptionLevel: (plan === 'pro' || plan === 'premium') ? 'premium' : 'basic'
+                subscriptionLevel: (plan === 'pro' || plan === 'premium') ? 'premium' : 'basic',
+                planExpiresAt: (plan === 'pro' || plan === 'premium') ? nextMonth : null
             }
         });
-
-        const now = new Date();
-        const nextMonth = new Date();
-        const duration = Number(durationMonths) || 1;
-        nextMonth.setDate(now.getDate() + (30 * duration));
 
         // 2. Update Role Specific Tables
         if (role === 'worker') {
@@ -998,41 +909,30 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         } else if (role === 'lawyer') {
             const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
             if (lawyer) {
-                if (plan === 'pro') {
-                    await prisma.lawyerSubscription.upsert({
-                        where: { lawyerId: lawyer.id },
-                        update: { status: 'active', plan: 'pro', endDate: nextMonth },
-                        create: {
-                            lawyerId: lawyer.id,
-                            status: 'active',
-                            plan: 'pro',
-                            amount: 299.00,
-                            startDate: now,
-                            endDate: nextMonth
-                        }
-                    });
+                if (plan === 'pro' || plan === 'basic') {
                     // Also update lawyer table flags
                     await prisma.lawyer.update({
                         where: { id: lawyer.id },
-                        data: { acceptsPymeClients: true }
+                        data: { 
+                            acceptsPymeClients: plan === 'pro',
+                            subscriptionStatus: 'active',
+                            subscriptionEndDate: nextMonth
+                        }
                     });
-
                 } else {
-                    // Downgrade
-                    await prisma.lawyerSubscription.updateMany({
-                        where: { lawyerId: lawyer.id },
-                        data: { status: 'inactive', plan: 'basic' }
-                    });
                     // Remove privileges
                     await prisma.lawyer.update({
                         where: { id: lawyer.id },
-                        data: { acceptsPymeClients: false }
+                        data: { 
+                            acceptsPymeClients: false,
+                            subscriptionStatus: 'inactive',
+                            subscriptionEndDate: null
+                        }
                     });
                 }
             }
         } else if (role === 'pyme') {
-            // For Pymes, we just rely on User.subscriptionLevel for now, but good to keep consistent
-            // Future: PymeSubscription table
+            // For Pymes, we just rely on User.subscriptionLevel and User.planExpiresAt updated above
         }
 
         // 3. 🛡️ ENSURE ROLE CONSISTENCY (Strict Policy)
@@ -1045,8 +945,22 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         }
 
         res.json({ success: true, message: `Plan actualizado a ${plan}`, user });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Update subscription error:', error);
-        res.status(500).json({ error: 'Error al actualizar suscripción' });
+        
+        let errorDetails = 'Unknown error';
+        if (error instanceof Error) {
+            errorDetails = error.message;
+        } else if (typeof error === 'string') {
+            errorDetails = error;
+        } else {
+            try { errorDetails = JSON.stringify(error); } catch(e) {}
+        }
+
+        res.status(500).json({ 
+            error: 'Error crítico en el servidor', 
+            details: errorDetails,
+            rawError: String(error)
+        });
     }
 };

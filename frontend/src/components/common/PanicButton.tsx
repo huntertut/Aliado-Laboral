@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert, Animated } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
@@ -12,11 +12,32 @@ const PanicButton = () => {
     const [isRecording, setIsRecording] = useState(false);
     const [permissionResponse, requestPermission] = Audio.usePermissions();
 
+    // Pulse animation — latido cada 5 segundos
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const pulseOpacity = useRef(new Animated.Value(0.7)).current;
+
     useEffect(() => {
+        const runPulse = () => {
+            Animated.sequence([
+                Animated.parallel([
+                    Animated.timing(pulseAnim, { toValue: 1.55, duration: 400, useNativeDriver: true }),
+                    Animated.timing(pulseOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+                ]),
+                Animated.parallel([
+                    Animated.timing(pulseAnim, { toValue: 1, duration: 0, useNativeDriver: true }),
+                    Animated.timing(pulseOpacity, { toValue: 0.7, duration: 0, useNativeDriver: true }),
+                ]),
+            ]).start();
+        };
+
+        // Primera vez después de 1.5s
+        const initial = setTimeout(runPulse, 1500);
+        // Luego cada 5 segundos
+        const interval = setInterval(runPulse, 5000);
+
         return () => {
-            if (recording) {
-                stopRecording();
-            }
+            clearTimeout(initial);
+            clearInterval(interval);
         };
     }, []);
 
@@ -60,16 +81,20 @@ const PanicButton = () => {
 
     return (
         <>
-            {/* Floating Action Button */}
+            {/* Floating Action Button — SOS */}
             <TouchableOpacity
                 style={styles.fab}
                 onPress={toggleCrisisMode}
                 activeOpacity={0.8}
             >
+                {/* Pulse ring */}
+                <Animated.View style={[
+                    styles.fabRing,
+                    { transform: [{ scale: pulseAnim }], opacity: pulseOpacity }
+                ]} />
                 <View style={styles.fabInner}>
                     <MaterialCommunityIcons name="alarm-light-outline" size={28} color="#fff" />
                 </View>
-                <View style={styles.fabRing} />
             </TouchableOpacity>
 
             {/* Crisis Modal */}
@@ -149,32 +174,38 @@ const PanicButton = () => {
 const styles = StyleSheet.create({
     fab: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 22,
         right: 20,
-        width: 60,
-        height: 60,
+        width: 64,
+        height: 64,
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
     },
     fabInner: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#e74c3c', // Alarm Red
+        width: 58,
+        height: 58,
+        borderRadius: 29,
+        // Alto contraste: naranja vivo en lugar de rojo oscuro
+        backgroundColor: '#ff5e00',
         alignItems: 'center',
         justifyContent: 'center',
-        elevation: 6,
+        elevation: 10,
         zIndex: 2,
+        shadowColor: '#ff5e00',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.55,
+        shadowRadius: 8,
+        borderWidth: 2.5,
+        borderColor: '#fff',
     },
     fabRing: {
         position: 'absolute',
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: 'rgba(231, 76, 60, 0.3)',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(255, 94, 0, 0.45)',
         zIndex: 1,
-        // Optional: Animation here later
     },
     modalOverlay: {
         flex: 1,

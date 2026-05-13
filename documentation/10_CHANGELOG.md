@@ -4,6 +4,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+## [v1.22.2] - 13 Mayo 2026 (UI Cleanup + Fixed OTA)
+
+- **Fix (Mobile):** Eliminada duplicidad de título "Aliado Laboral" en el encabezado de `HomeScreen.tsx`.
+- **Fix (Mobile):** Corregida lógica de saludo para evitar redundancia con el nombre de la app.
+- **Feature (Mobile):** Activada oficialmente la calculadora desplegable en el Home mediante el despliegue del código local pendiente.
+- **Cleanup:** Limpieza masiva de 70 cambios pendientes y eliminación de scripts temporales del historial de Git.
+- **OTA:** Despliegue forzado al canal `production`.
+
 ## [v1.22.1] - 11 Mayo 2026 (OTA Activado + Push Noticias)
 
 - **Fix (Critical / Mobile):** Activadas actualizaciones OTA en `AndroidManifest.xml`. El flag `ENABLED` estaba en `false`. Ahora configurado con URL de EAS, canal `production`, y espera de 3s al arrancar.

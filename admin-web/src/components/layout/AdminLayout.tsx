@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { api } from '../../config/axios';
 import logo from '../../assets/logo.png';
+import { useAuth } from '../../context/AuthContext';
 import {
     Users,
     Settings,
@@ -16,6 +17,7 @@ import {
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
     
     const [pendingLawyersCount, setPendingLawyersCount] = useState(0);
 
@@ -36,9 +38,32 @@ export default function AdminLayout() {
     }, []);
 
     const handleLogout = () => {
-        // TODO: Clear tokens
+        logout();
         navigate('/login');
     };
+
+    // Auto-logout por inactividad (15 minutos)
+    useEffect(() => {
+        let inactivityTimer: ReturnType<typeof setTimeout>;
+
+        const resetTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                logout();
+                navigate('/login');
+            }, 15 * 60 * 1000); // 15 minutos
+        };
+
+        const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+        
+        events.forEach(event => document.addEventListener(event, resetTimer));
+        resetTimer(); // Iniciar temporizador al montar
+
+        return () => {
+            clearTimeout(inactivityTimer);
+            events.forEach(event => document.removeEventListener(event, resetTimer));
+        };
+    }, [logout, navigate]);
 
     const navItems = [
         { name: 'Dashboard', path: '/app', icon: LayoutDashboard },
