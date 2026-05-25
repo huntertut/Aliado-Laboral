@@ -1,0 +1,38 @@
+name: EAS Build Android
+
+on:
+  push:
+    branches:
+      - main
+      - clean-history-v2
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compilar AAB en Expo (Android)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: 🚀 Build on EAS
+        working-directory: ./frontend
+        run: eas build --platform android --profile production --non-interactive
