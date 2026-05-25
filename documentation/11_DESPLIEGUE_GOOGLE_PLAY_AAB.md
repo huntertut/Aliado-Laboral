@@ -23,6 +23,7 @@ Google Play utiliza un esquema de doble firma llamado **"Play App Signing"**:
 - [x] Upload Keystore generada: `frontend/android/app/aliado-upload-key.jks`
 - [x] `build.gradle` configurado con el `signingConfig` de release (ya está)
 - [x] Google Play App Signing activado en la consola (✅ aparece como "Versiones firmadas por Google Play")
+- [x] **Nivel de API:** Asegúrate de que `targetSdkVersion` sea **35** en `frontend/android/build.gradle` (Requisito obligatorio de Google Play).
 
 ---
 
