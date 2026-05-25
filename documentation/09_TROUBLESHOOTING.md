@@ -310,3 +310,56 @@ versionName "1.22.0"
 > ⚠️ Actualizar esta tabla cada vez que se publique un nuevo AAB en producción.
 
 ---
+
+## 14. Mobile: "Tu aplicación no admite tamaños de página de memoria de 16 kB" ⚠️ CRÍTICO
+
+**Síntoma:**
+Google Play Console rechaza el AAB con el error de alineación de 16KB, específicamente para dispositivos con Android 15.
+
+**Causa:**
+Las librerías nativas compiladas en arquitecturas modernas requieren una alineación de página de 16384 bytes. El comando `npx expo prebuild --clean` puede borrar configuraciones manuales del linker.
+
+**Resolución:**
+1.  **Linker Flags:** En `frontend/android/app/build.gradle`, añadir el bloque `externalNativeBuild` dentro de `defaultConfig`:
+    ```gradle
+    defaultConfig {
+        externalNativeBuild {
+            cmake {
+                cppFlags "-Wl,-z,max-page-size=16384"
+            }
+        }
+    }
+    ```
+2.  **Legacy Packaging:** En `frontend/android/gradle.properties`, asegurar que:
+    ```properties
+    expo.useLegacyPackaging=false
+    ```
+    Para SDK 52+, esto permite que AGP maneje la alineación de 16KB sin interferencia de compresión.
+
+**⚠️ REGLA PERMANENTE:** Si se vuelve a regenerar la carpeta `android`, verificar que estos dos cambios sigan presentes antes de compilar el release.
+
+---
+
+## 10. EAS Build (Expo en la nube): Error de rutas Windows (CXX1102)
+**Symptom:**
+La compilación de EAS falla en la fase Configure project :expo-av con el error: [CXX1102] Location specified by ndk.dir (C:\android-sdk...) did not contain a valid NDK.
+
+**Cause:**
+El archivo local.properties (que contiene rutas fijas de Windows) no estaba ignorado por Git y fue subido accidentalmente a la nube de Expo (Linux). Linux intentó buscar la unidad C:\.
+
+**Resolution:**
+Se agregó explícitamente ndroid/local.properties al .gitignore en la carpeta rontend/.
+
+---
+
+## 11. EAS Build (Expo en la nube): Error de npm ERESOLVE (Strict Peer Dependencies)
+**Symptom:**
+EAS falla en el primer paso con 
+pm error ERESOLVE could not resolve... peer react-native@>=0.82.0 from react-native-screens.
+
+**Cause:**
+La infraestructura de EAS usa npm v10+ en modo estricto, abortando ante conflictos de peer dependencies comunes en librerías nuevas como eact-native-screens en React Native 0.77.
+
+**Resolution:**
+Se creó un archivo .npmrc en la carpeta rontend/ con el contenido legacy-peer-deps=true.
+
