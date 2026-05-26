@@ -5,7 +5,15 @@ on:
     branches:
       - main
       - clean-history-v2
+    paths:
+      - 'frontend/android/**'
+      - 'frontend/ios/**'
+      - 'frontend/app.json'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/eas.json'
   workflow_dispatch:
+
 
 jobs:
   build:
