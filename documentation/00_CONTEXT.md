@@ -156,5 +156,5 @@ Antes de cada compilación de AAB para producción:
 - [ ] Actualizar la tabla de historial en `09_TROUBLESHOOTING.md` incidente #13
 - [ ] Actualizar el header de `11_DESPLIEGUE_GOOGLE_PLAY_AAB.md` con el nuevo versionCode
 
-**Último versionCode en Producción: 55 (v1.22.0) — 11 Mayo 2026**
+**Último versionCode en Producción: 72 (v1.23.14) — 18 Mayo 2026**
 

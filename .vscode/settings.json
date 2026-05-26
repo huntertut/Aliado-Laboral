@@ -1,4 +1,11 @@
 {
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/my-app/node_modules/**",
+        "**/frontend/node_modules/**"
+    ],
+    "java.project.referencedLibraries": [],
+    "java.autobuild.enabled": false
 }

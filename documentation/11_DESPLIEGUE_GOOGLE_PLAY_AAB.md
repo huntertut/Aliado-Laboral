@@ -143,3 +143,9 @@ Mejoras de estabilidad y correcciones de errores. Ahora los abogados pueden gest
 | Key Password | `AliadoLaboral2026!` |
 | Validez | 10,000 dÃ­as (~27 aÃ±os desde marzo 2026) |
 | Algoritmo | RSA 2048 bits |
+
+
+## Integración Continua (CI/CD) con GitHub Actions
+El proyecto cuenta con un pipeline automatizado para generar el AAB en la nube (EAS Expo).
+- Se activa automáticamente en push a las ramas \main\ y \clean-history-v2\.
+- **IMPORTANTE:** El proyecto exige explícitamente \kotlinVersion=2.0.21\ en \gradle.properties\ y el plugin \kotlin-gradle-plugin\ amarrado a dicha versión en \uild.gradle\ para evitar errores de compilación con KSP y Compose Compiler en la nube.

@@ -4,6 +4,25 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
+**Último versionCode en Producción: 72 (v1.23.14) — 18 Mayo 2026**
+
+## [v1.23.14] - 18 Mayo 2026 (Build 72: React Native 0.77.3 & Native 16KB Support)
+
+- **Upgrade (Mobile):** Actualizado React Native a v0.77.3 y Expo a SDK 52 (v52.0.25) para obtener compatibilidad y soporte nativo de alineación a 16KB exigido por Google Play para Android 15.
+- **Fix (Mobile):** Configurada la alineación de página a 16KB mediante `useLegacyPackaging false` en `build.gradle` y `gradle.properties`.
+- **Maintenance (Mobile):** Sincronización de `versionCode` a 72 y `versionName` a 1.23.14 en `app.json` y `build.gradle`.
+
+## [v1.23.2] - 16 Mayo 2026 (Fix 16KB Alignment Corrected)
+
+- **Fix (Critical / Mobile):** Corregido el error de alineación de 16KB. Se cambió `useLegacyPackaging` a `false` para permitir que el Android Gradle Plugin alinee correctamente las librerías nativas no comprimidas, cumpliendo con los requisitos de Android 15.
+- **Maintenance (Mobile):** Sincronización de `versionCode` a 59 y `versionName` a 1.23.2.
+
+## [v1.23.0] - 13 Mayo 2026 (Fix 16KB Alignment + Build 57)
+
+- **Fix (Critical / Mobile):** Resuelto error de "16KB page alignment" exigido por Google Play para Android 15.
+- **Maintenance (Mobile):** Sincronización de `versionCode` a 58 en `app.json` y `build.gradle` (v1.23.1).
+- **Maintenance (Mobile):** Sincronización de `versionName` y `runtimeVersion` a 1.23.0.
+
 ## [v1.22.2] - 13 Mayo 2026 (UI Cleanup + Fixed OTA)
 
 - **Fix (Mobile):** Eliminada duplicidad de título "Aliado Laboral" en el encabezado de `HomeScreen.tsx`.

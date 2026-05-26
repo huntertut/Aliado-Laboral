@@ -1,4 +1,6 @@
+// Production Build v1.23.1 - Stability Sync
 import React, { useState, useEffect } from 'react';
+import 'react-native-gesture-handler';
 import { Platform } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
