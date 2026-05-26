@@ -4,6 +4,81 @@ This document registers critical incidents and their established resolution proc
 
 ---
 
+## 0. Abogado siempre aparece como "Suscripción Inactiva" en la app
+
+**Síntoma:**
+El abogado aparece como "Inactivo" en la app móvil (dashboard muestra `Suscripción Inactiva` en rojo) aunque en el Admin Web figure como "Suscrito" y con fecha de vencimiento futura.
+
+**Causa Raíz:** Son 3 bugs encadenados en el backend.
+
+### Árbol de diagnóstico
+
+```
+App muestra "Inactiva"
+│
+├─► LawyerDashboardScreen llama a /my-metrics PRIMERO
+│       │
+│       ├─ Si /my-metrics responde 404 → early return → NUNCA llama a /subscription/status
+│       │    Causa: el abogado no tiene LawyerProfile (tabla separada de Lawyer)
+│       │    Fix: getMyMetrics() auto-crea LawyerProfile si no existe
+│       │
+│       └─ Si /my-metrics responde 200 → llama a /subscription/status
+│               │
+│               └─ Si LawyerSubscription no existe o status ≠ 'active' → hasSubscription: false
+│                    Causa: el Admin Gift solo actualizaba Lawyer, no LawyerSubscription
+│                    Fix: updateUserSubscription() hace upsert en LawyerSubscription
+```
+
+### Cómo verificar el estado en producción
+
+```bash
+# SSH al servidor
+ssh root@142.93.186.75
+
+# Verificar las 3 tablas relevantes para un abogado por email
+sqlite3 /root/Aliado-Laboral/backend/prisma/dev.db "
+SELECT
+  u.email,
+  l.subscriptionStatus AS lawyer_status,
+  datetime(l.subscriptionEndDate/1000,'unixepoch') AS lawyer_end,
+  lp.id AS lawyerProfile_exists,
+  ls.status AS lawyerSub_status,
+  datetime(ls.endDate/1000,'unixepoch') AS lawyerSub_end
+FROM User u
+JOIN Lawyer l ON l.userId = u.id
+LEFT JOIN LawyerProfile lp ON lp.lawyerId = l.id
+LEFT JOIN LawyerSubscription ls ON ls.lawyerId = l.id
+WHERE u.email LIKE '%samuel%';"
+```
+
+**Resultado esperado (todo OK):**
+- `lawyerProfile_exists` → debe tener un ID (no vacío)
+- `lawyerSub_status` → `active`
+- `lawyerSub_end` → fecha futura
+
+### Fix manual si LawyerProfile no existe
+
+```bash
+sqlite3 /root/Aliado-Laboral/backend/prisma/dev.db "
+INSERT INTO LawyerProfile (id, lawyerId, profileViews, successRate, totalCases, successfulCases, reputationScore, lifetimeCommissionSavings, createdAt, updatedAt)
+SELECT
+  lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6))),
+  id, 0, 0.0, 0, 0, 0, 0.0, datetime('now'), datetime('now')
+FROM Lawyer WHERE id = '<LAWYER_ID>'
+AND NOT EXISTS (SELECT 1 FROM LawyerProfile WHERE lawyerId = '<LAWYER_ID>');"
+```
+
+### Reglas permanentes para evitar recurrencia
+
+> ⚠️ **CRÍTICO:** El sistema usa 3 tablas distintas para abogados:
+> - `Lawyer` — estado base (subscriptionStatus, subscriptionEndDate)
+> - `LawyerSubscription` — lo que lee la app móvil via `/subscription/status`
+> - `LawyerProfile` — métricas, foto, bio (requerido para que el dashboard funcione)
+>
+> Toda operación de Admin que active/desactive suscripción DEBE actualizar `Lawyer` Y `LawyerSubscription`.
+
+---
+
 ## 1. Production Backend: The "Rogue PM2" Incident (Error 500)
 **Symptom:**
 The backend API intermittently returns `503 Service Unavailable` or `500 Internal Server Error`, specifically on the `/promotions` and `/api/health` endpoints, even right after a fresh Docker deployment.

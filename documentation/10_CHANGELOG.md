@@ -6,6 +6,31 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 76 (v1.23.16) — 26 Mayo 2026**
 
+## [Backend Hotfix] - 26 Mayo 2026 (Suscripción Abogado siempre "Inactiva")
+
+### Causa Raíz (3 bugs encadenados)
+
+**Bug 1 — Admin Gift no escribía en la tabla correcta:**
+El endpoint `PUT /api/admin/users/:userId/subscription` actualizaba `Lawyer.subscriptionStatus` y `Lawyer.subscriptionEndDate`, pero la app móvil lee de la tabla separada `LawyerSubscription`. El Gift nunca creaba/actualizaba el registro en `LawyerSubscription`.
+- **Fix:** `adminController.ts` → `updateUserSubscription()` ahora hace upsert en `LawyerSubscription` además de actualizar `Lawyer`.
+
+**Bug 2 — Dashboard crasheaba silenciosamente por `LawyerProfile` inexistente:**
+Los abogados creados via Admin o Firebase Sync solo tienen registro `Lawyer`, sin `LawyerProfile` (tabla separada para bio, foto, métricas). El endpoint `GET /api/lawyer-profile/my-metrics` devolvía **404** si faltaba `LawyerProfile`. El `LawyerDashboardScreen` hacía early return al detectar el error, nunca llamaba a `/subscription/status`, y el estado quedaba como `null` → mostraba "Inactiva".
+- **Fix:** `lawyerProfileController.ts` → `getMyMetrics()` ahora **auto-crea** el `LawyerProfile` si no existe y devuelve métricas vacías (0) en lugar de 404.
+
+**Bug 3 — LawyerProfile faltante en producción para abogados existentes:**
+Los abogados ya registrados (lic.samuel y potencialmente otros) no tenían `LawyerProfile`. Se creó el registro directamente en la DB de producción via SQLite.
+- **Fix:** Insert directo en producción. El Bug 2 previene que esto vuelva a ocurrir para cualquier abogado nuevo.
+
+### Archivos modificados
+- `backend/src/controllers/adminController.ts` — `updateUserSubscription()`
+- `backend/src/controllers/lawyerProfileController.ts` — `getMyMetrics()`
+
+### Regla permanente
+> ⚠️ Toda operación de Admin sobre abogados debe siempre actualizar TANTO la tabla `Lawyer` como `LawyerSubscription`. Son tablas distintas con roles distintos.
+
+---
+
 ## [v1.23.16] - 26 Mayo 2026 (Build 76: Expo SDK 53 / React Native 0.79.6 — Fix definitivo 16KB)
 
 - **Fix Crítico (Mobile):** Upgrade completo a **Expo SDK 53** y **React Native 0.79.6** para resolver de forma definitiva el error de Google Play "Tu aplicación no admite tamaños de página de memoria de 16 kB".
