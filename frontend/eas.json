@@ -1,7 +1,6 @@
 {
     "cli": {
-        "version": ">= 3.0.0",
-        "appVersionSource": "remote"
+        "version": ">= 3.0.0"
     },
     "build": {
         "preview": {
@@ -16,6 +15,14 @@
         "production": {
             "android": {
                 "buildType": "app-bundle"
+            },
+            "env": {
+                "EXPO_PUBLIC_ENV": "production"
+            }
+        },
+        "production-apk": {
+            "android": {
+                "buildType": "apk"
             },
             "env": {
                 "EXPO_PUBLIC_ENV": "production"
