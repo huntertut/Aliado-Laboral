@@ -4,9 +4,18 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 72 (v1.23.14) — 18 Mayo 2026**
+**Último versionCode en Producción: 76 (v1.23.16) — 26 Mayo 2026**
 
-## [v1.23.14] - 18 Mayo 2026 (Build 72: React Native 0.77.3 & Native 16KB Support)
+## [v1.23.16] - 26 Mayo 2026 (Build 76: Expo SDK 53 / React Native 0.79.6 — Fix definitivo 16KB)
+
+- **Fix Crítico (Mobile):** Upgrade completo a **Expo SDK 53** y **React Native 0.79.6** para resolver de forma definitiva el error de Google Play "Tu aplicación no admite tamaños de página de memoria de 16 kB".
+- **Por qué esto resuelve el problema:** Los binarios precompilados de Hermes y React Native en SDK 53 se distribuyeron por primera vez con alineación de 16KB, que es lo que Android 15 requiere. Los intentos anteriores de flags de CMake (`-Wl,-z,max-page-size=16384`) no funcionaban porque esos flags solo aplican a código compilado localmente, no a los `.so` precompilados de npm.
+- **Upgrade (Mobile):** React actualizado a v19.0.0, compatible con RN 0.79.6.
+- **Upgrade (Mobile):** Todas las dependencias nativas actualizadas a versiones compatibles con SDK 53 (`expo install --fix`).
+- **Maintenance (Mobile):** versionCode 76, versionName 1.23.16, runtimeVersion 1.23.16.
+- **⚠️ Regla permanente:** No bajar de Expo SDK 53 en ninguna versión futura.
+
+## [v1.23.14] - 18 Mayo 2026 (Build 72: React Native 0.77.3 — NOTA: 16KB NO resuelto)
 
 - **Upgrade (Mobile):** Actualizado React Native a v0.77.3 y Expo a SDK 52 (v52.0.25) para obtener compatibilidad y soporte nativo de alineación a 16KB exigido por Google Play para Android 15.
 - **Fix (Mobile):** Configurada la alineación de página a 16KB mediante `useLegacyPackaging false` en `build.gradle` y `gradle.properties`.
