@@ -440,31 +440,6 @@ export const getMyMetrics = async (req: Request, res: Response) => {
     }
 };
 
-
-        const requests = lawyer.profile.requests;
-
-        const metrics = {
-            profileViews: lawyer.profile.profileViews,
-            totalRequests: requests.length,
-            pendingRequests: requests.filter(r => r.status === 'pending').length,
-            acceptedRequests: requests.filter(r => r.status === 'accepted').length,
-            rejectedRequests: requests.filter(r => r.status === 'rejected').length,
-            successRate: lawyer.profile.successRate,
-            requestsThisMonth: requests.filter(r => {
-                const monthAgo = new Date();
-                monthAgo.setMonth(monthAgo.getMonth() - 1);
-                return r.createdAt > monthAgo;
-            }).length
-        };
-
-        res.json({ metrics });
-
-    } catch (error: any) {
-        console.error('Error al obtener métricas:', error);
-        res.status(500).json({ error: 'Error al obtener métricas' });
-    }
-};
-
 // ABOGADO - Obtener mi perfil completo (privado)
 export const getMyProfile = async (req: Request, res: Response) => {
     try {
