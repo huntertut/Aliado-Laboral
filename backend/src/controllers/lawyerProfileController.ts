@@ -383,9 +383,63 @@ export const getMyMetrics = async (req: Request, res: Response) => {
             }
         });
 
-        if (!lawyer || !lawyer.profile) {
-            return res.status(404).json({ error: 'Perfil no encontrado' });
+        if (!lawyer) {
+            return res.status(404).json({ error: 'Abogado no encontrado' });
         }
+
+        // ✅ If LawyerProfile doesn't exist yet, auto-create it instead of returning 404
+        // This prevents the dashboard from crashing silently for new lawyers
+        if (!lawyer.profile) {
+            console.log(`[getMyMetrics] Auto-creating missing LawyerProfile for lawyer ${lawyer.id}`);
+            await prisma.lawyerProfile.create({
+                data: {
+                    lawyerId: lawyer.id,
+                    profileViews: 0,
+                    successRate: 0,
+                    totalCases: 0,
+                    successfulCases: 0,
+                    reputationScore: 0,
+                    lifetimeCommissionSavings: 0
+                }
+            });
+            // Return empty metrics for the fresh profile
+            return res.json({
+                metrics: {
+                    profileViews: 0,
+                    totalRequests: 0,
+                    pendingRequests: 0,
+                    acceptedRequests: 0,
+                    rejectedRequests: 0,
+                    successRate: 0,
+                    requestsThisMonth: 0
+                }
+            });
+        }
+
+        const requests = lawyer.profile.requests;
+
+        const metrics = {
+            profileViews: lawyer.profile.profileViews,
+            totalRequests: requests.length,
+            pendingRequests: requests.filter(r => r.status === 'pending').length,
+            acceptedRequests: requests.filter(r => r.status === 'accepted').length,
+            rejectedRequests: requests.filter(r => r.status === 'rejected').length,
+            successRate: lawyer.profile.successRate,
+            requestsThisMonth: requests.filter(r => {
+                const monthAgo = new Date();
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return r.createdAt > monthAgo;
+            }).length
+        };
+
+        res.json({ metrics });
+
+    } catch (error: any) {
+        console.error('Error al obtener métricas:', error);
+        res.status(500).json({ error: 'Error al obtener métricas' });
+    }
+};
+
 
         const requests = lawyer.profile.requests;
 
