@@ -11,6 +11,7 @@ import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import DonationModal from '../components/DonationModal';
 import PanicButton from '../components/common/PanicButton';
+import Constants from 'expo-constants';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -150,7 +151,7 @@ const HomeScreen = () => {
                                 resizeMode="contain"
                             />
                             <View>
-                                <Text style={styles.brandText}>Aliado Laboral v1.22.4</Text>
+                                <Text style={styles.brandText}>Aliado Laboral v{Constants.expoConfig?.version || '1.23.16'}</Text>
                                 <Text style={styles.greetingText} numberOfLines={1}>{greeting}</Text>
                             </View>
                         </View>

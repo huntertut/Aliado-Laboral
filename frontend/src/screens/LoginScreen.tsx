@@ -164,7 +164,7 @@ const LoginScreen = () => {
                 </TouchableOpacity>
                 <Text style={styles.title}>Aliado Laboral</Text>
                 <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
-                <Text style={styles.versionTextHeader}>v1.23.0</Text>
+                <Text style={styles.versionTextHeader}>v{Constants.expoConfig?.version || '1.23.16'}</Text>
             </LinearGradient>
 
             <KeyboardAwareScrollView
