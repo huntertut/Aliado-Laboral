@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - clean-history-v2
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/eas-build.yml'
   workflow_dispatch:
 
 jobs:
