@@ -910,13 +910,34 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
             const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
             if (lawyer) {
                 if (plan === 'pro' || plan === 'basic') {
-                    // Also update lawyer table flags
+                    // Update direct Lawyer table fields
                     await prisma.lawyer.update({
                         where: { id: lawyer.id },
                         data: { 
                             acceptsPymeClients: plan === 'pro',
                             subscriptionStatus: 'active',
                             subscriptionEndDate: nextMonth
+                        }
+                    });
+
+                    // ✅ CRITICAL: Also upsert LawyerSubscription record
+                    // (This is the table the mobile app reads via /subscription/status)
+                    await prisma.lawyerSubscription.upsert({
+                        where: { lawyerId: lawyer.id },
+                        update: {
+                            status: 'active',
+                            plan: plan,
+                            endDate: nextMonth,
+                            autoRenew: false
+                        },
+                        create: {
+                            lawyerId: lawyer.id,
+                            status: 'active',
+                            plan: plan,
+                            startDate: now,
+                            endDate: nextMonth,
+                            amount: plan === 'pro' ? 299.00 : 99.00,
+                            autoRenew: false
                         }
                     });
                 } else {
@@ -928,6 +949,11 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
                             subscriptionStatus: 'inactive',
                             subscriptionEndDate: null
                         }
+                    });
+                    // Also deactivate LawyerSubscription record
+                    await prisma.lawyerSubscription.updateMany({
+                        where: { lawyerId: lawyer.id },
+                        data: { status: 'inactive' }
                     });
                 }
             }
