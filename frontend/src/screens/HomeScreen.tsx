@@ -40,8 +40,9 @@ class ErrorBoundary extends React.Component<any, any> {
 }
 
 // ─── Quick Calc Helper ──────────────────────────────────────────
-const calcFiniquito = (salary: string, startDate: string, endDate: string): string | null => {
-    const s = parseFloat(salary);
+const calcFiniquito = (salaryRaw: string, startDate: string, endDate: string): string | null => {
+    // Remove commas from formatted salary before parsing
+    const s = parseFloat(salaryRaw.replace(/,/g, ''));
     if (!s || !startDate || !endDate) return null;
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -53,6 +54,21 @@ const calcFiniquito = (salary: string, startDate: string, endDate: string): stri
     const indemnizacion = years >= 1 ? daily * 90 + daily * 20 * years : 0;
     const total = aguinaldo + vacaciones + indemnizacion;
     return total.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+};
+
+// ─── Salary formatter (adds thousands separators) ───────────────
+const formatSalaryDisplay = (raw: string): string => {
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) return '';
+    return parseInt(digits, 10).toLocaleString('es-MX');
+};
+
+// ─── Date auto-formatter (inserts hyphens: YYYY-MM-DD) ──────────
+const autoFormatDate = (text: string): string => {
+    const digits = text.replace(/[^0-9]/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
 };
 
 // ─── HomeScreen ────────────────────────────────────────────────
@@ -178,39 +194,53 @@ const HomeScreen = () => {
                         {/* Expanded Form */}
                         {calcOpen && (
                             <View style={styles.calcForm}>
+                                {/* ── Sueldo con prefijo $ y separadores ── */}
                                 <View style={styles.calcInputRow}>
                                     <View style={styles.calcInputWrap}>
-                                        <Text style={styles.calcLabel}>Sueldo Mensual ($)</Text>
-                                        <TextInput
-                                            style={styles.calcInput}
-                                            placeholder="Ej. 12000"
-                                            placeholderTextColor="rgba(255,255,255,0.45)"
-                                            keyboardType="numeric"
-                                            value={salary}
-                                            onChangeText={setSalary}
-                                        />
+                                        <Text style={styles.calcLabel}>💰 Sueldo Mensual</Text>
+                                        <View style={styles.calcInputPrefix}>
+                                            <Text style={styles.calcPrefixText}>$</Text>
+                                            <TextInput
+                                                style={styles.calcInputInner}
+                                                placeholder="12,000"
+                                                placeholderTextColor="rgba(255,255,255,0.4)"
+                                                keyboardType="numeric"
+                                                value={formatSalaryDisplay(salary)}
+                                                onChangeText={(t) => setSalary(t.replace(/[^0-9]/g, ''))}
+                                            />
+                                            <Text style={styles.calcSuffixText}>MXN</Text>
+                                        </View>
                                     </View>
                                 </View>
+                                {/* ── Fechas con auto-formato YYYY-MM-DD ── */}
                                 <View style={styles.calcInputRow}>
                                     <View style={[styles.calcInputWrap, { marginRight: 8 }]}>
-                                        <Text style={styles.calcLabel}>Fecha Ingreso</Text>
-                                        <TextInput
-                                            style={styles.calcInput}
-                                            placeholder="AAAA-MM-DD"
-                                            placeholderTextColor="rgba(255,255,255,0.45)"
-                                            value={startDate}
-                                            onChangeText={setStartDate}
-                                        />
+                                        <Text style={styles.calcLabel}>📅 Fecha Ingreso</Text>
+                                        <View style={styles.calcInputPrefix}>
+                                            <TextInput
+                                                style={[styles.calcInputInner, { flex: 1 }]}
+                                                placeholder="2018-03-15"
+                                                placeholderTextColor="rgba(255,255,255,0.4)"
+                                                keyboardType="numeric"
+                                                maxLength={10}
+                                                value={startDate}
+                                                onChangeText={(t) => setStartDate(autoFormatDate(t))}
+                                            />
+                                        </View>
                                     </View>
                                     <View style={styles.calcInputWrap}>
-                                        <Text style={styles.calcLabel}>Fecha Salida</Text>
-                                        <TextInput
-                                            style={styles.calcInput}
-                                            placeholder="AAAA-MM-DD"
-                                            placeholderTextColor="rgba(255,255,255,0.45)"
-                                            value={endDate}
-                                            onChangeText={setEndDate}
-                                        />
+                                        <Text style={styles.calcLabel}>📅 Fecha Salida</Text>
+                                        <View style={styles.calcInputPrefix}>
+                                            <TextInput
+                                                style={[styles.calcInputInner, { flex: 1 }]}
+                                                placeholder={new Date().toISOString().slice(0, 10)}
+                                                placeholderTextColor="rgba(255,255,255,0.4)"
+                                                keyboardType="numeric"
+                                                maxLength={10}
+                                                value={endDate}
+                                                onChangeText={(t) => setEndDate(autoFormatDate(t))}
+                                            />
+                                        </View>
                                     </View>
                                 </View>
 
@@ -458,12 +488,43 @@ const styles = StyleSheet.create({
     },
     calcLabel: {
         fontSize: 10,
-        fontWeight: '600',
-        color: 'rgba(255,255,255,0.7)',
-        marginBottom: 4,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        fontWeight: '700',
+        color: 'rgba(255,255,255,0.75)',
+        marginBottom: 6,
+        letterSpacing: 0.4,
     },
+    // ── New prefix-style input row ──
+    calcInputPrefix: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.25)',
+        paddingHorizontal: 10,
+        paddingVertical: 0,
+        minHeight: 44,
+    },
+    calcPrefixText: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 16,
+        fontWeight: '700',
+        marginRight: 6,
+    },
+    calcSuffixText: {
+        color: 'rgba(255,255,255,0.45)',
+        fontSize: 11,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    calcInputInner: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#fff',
+        paddingVertical: 8,
+    },
+    // Legacy (kept for compat)
     calcInput: {
         backgroundColor: 'rgba(255,255,255,0.15)',
         borderRadius: 12,
