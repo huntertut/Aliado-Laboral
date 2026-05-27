@@ -178,22 +178,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Sync Push Token on Mount/Resume (Ensures token exists even if DB was wiped)
         const syncToken = async () => {
-            const tokenStr = await AsyncStorage.getItem('authToken');
-            if (tokenStr) {
-                import('../services/PushNotificationService').then(async ({ registerForPushNotificationsAsync }) => {
-                    const token = await registerForPushNotificationsAsync();
-                    if (token) {
-                        try {
-                            console.log('[AuthContext] 🔄 Auto-Syncing Push Token:', token);
-                            await axios.post(`${API_URL}/auth/update-push-token`, { pushToken: token }, {
-                                headers: { Authorization: `Bearer ${tokenStr}` }
-                            });
-                        } catch (tokenErr) {
-                            console.error('[AuthContext] Failed to auto-sync push token:', tokenErr);
-                        }
-                    }
-                });
+            // Use a FRESH token from Firebase if available, NOT the stored AsyncStorage token
+            // (AsyncStorage tokens expire after 1 hour and cause auth/id-token-expired errors)
+            let freshToken: string | null = null;
+            try {
+                if (auth.currentUser) {
+                    freshToken = await auth.currentUser.getIdToken(/* forceRefresh */ false);
+                } else {
+                    // No Firebase session active — skip sync
+                    return;
+                }
+            } catch (e) {
+                console.warn('[AuthContext] Could not get fresh token for push sync:', e);
+                return;
             }
+
+            import('../services/PushNotificationService').then(async ({ registerForPushNotificationsAsync }) => {
+                const token = await registerForPushNotificationsAsync();
+                if (token) {
+                    try {
+                        console.log('[AuthContext] 🔄 Auto-Syncing Push Token:', token);
+                        await axios.post(`${API_URL}/auth/update-push-token`, { pushToken: token }, {
+                            headers: { Authorization: `Bearer ${freshToken}` }
+                        });
+                    } catch (tokenErr) {
+                        console.error('[AuthContext] Failed to auto-sync push token:', tokenErr);
+                    }
+                }
+            });
         };
         syncToken();
 

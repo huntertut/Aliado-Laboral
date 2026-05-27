@@ -77,13 +77,30 @@ export const createNews = async (req: Request, res: Response) => {
         // 4. Push Notification a todos los usuarios con token (Async — no bloquea la respuesta)
         prisma.user.findMany({
             where: { pushToken: { not: null } },
-            select: { id: true }
-        }).then(users => {
+            select: { id: true, pushToken: true }
+        }).then(async users => {
             console.log(`📢 [News] Enviando push a ${users.length} usuarios...`);
+            if (users.length === 0) return;
+
+            const { Expo } = await import('expo-server-sdk');
+            const expo = new Expo();
             const title = '🗞️ Nueva Noticia Laboral';
             const body = news.titleClickable || 'Revisa las últimas noticias laborales.';
             const data = { type: 'news', newsId: news.id };
-            users.forEach(user => sendPushNotification(user.id, title, body, data));
+
+            const messages = users
+                .filter(u => u.pushToken && Expo.isExpoPushToken(u.pushToken!))
+                .map(u => ({ to: u.pushToken!, sound: 'default' as const, title, body, data }));
+
+            const chunks = expo.chunkPushNotifications(messages);
+            for (const chunk of chunks) {
+                try {
+                    const tickets = await expo.sendPushNotificationsAsync(chunk);
+                    console.log(`🔔 [News] Push tickets:`, JSON.stringify(tickets));
+                } catch (err) {
+                    console.error('[News] Error sending push chunk:', err);
+                }
+            }
         }).catch(err => console.error('[News] Error enviando push:', err));
 
         res.status(201).json({
