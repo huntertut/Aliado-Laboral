@@ -5,6 +5,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { AppTheme } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { BiometricAuthService } from '../services/BiometricAuthService';
