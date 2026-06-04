@@ -30,19 +30,19 @@ export const registerForPushNotificationsAsync = async (): Promise<string | unde
         }
 
         try {
-            const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-            if (!projectId) {
-                console.warn("Project ID not found in Constants. skipping push token gen");
-                // Fallback or return
-            }
+            const projectId = Constants?.expoConfig?.extra?.eas?.projectId 
+                ?? Constants?.easConfig?.projectId
+                ?? 'edbaa94d-8deb-4e42-9eae-b9d597dcf595'; // Hardcoded fallback
+            
+            console.log('📲 [Push] Requesting token with projectId:', projectId);
 
             token = (await Notifications.getExpoPushTokenAsync({
-                projectId: projectId, // Ensure projectId is set in app.json/eas.json
+                projectId: projectId,
             })).data;
 
             console.log('📲 Expo Push Token:', token);
-        } catch (e) {
-            console.error('Error getting push token:', e);
+        } catch (e: any) {
+            console.error('Error getting push token:', e?.message || e);
         }
 
     } else {
