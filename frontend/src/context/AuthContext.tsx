@@ -283,20 +283,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AuthContext] 5. Setting User State inside Context...');
             setUser(userData);
 
-            // 6. Register for Push Notifications
-            import('../services/PushNotificationService').then(async ({ registerForPushNotificationsAsync }) => {
-                const token = await registerForPushNotificationsAsync();
-                if (token) {
-                    try {
-                        console.log('[AuthContext] 6. Syncing Push Token:', token);
-                        await axios.post(`${API_URL}/auth/update-push-token`, { pushToken: token }, {
-                            headers: { Authorization: `Bearer ${idToken}` }
-                        });
-                    } catch (tokenErr) {
-                        console.error('[AuthContext] Failed to sync push token:', tokenErr);
-                    }
+            // 6. Register for Push Notifications (with full diagnostics)
+            try {
+                console.log('[AuthContext] 6. Starting Push Token Registration...');
+                const { registerForPushNotificationsAsync } = await import('../services/PushNotificationService');
+                const pushToken = await registerForPushNotificationsAsync();
+                console.log('[AuthContext] 6. Push token result:', pushToken || 'NULL/UNDEFINED');
+                if (pushToken) {
+                    console.log('[AuthContext] 6. Sending push token to server...');
+                    const pushRes = await axios.post(`${API_URL}/auth/update-push-token`, { pushToken }, {
+                        headers: { Authorization: `Bearer ${idToken}` }
+                    });
+                    console.log('[AuthContext] 6. ✅ Push token synced! Server response:', pushRes.status);
+                } else {
+                    console.warn('[AuthContext] 6. ⚠️ No push token obtained - notifications will NOT work');
                 }
-            });
+            } catch (pushErr: any) {
+                console.error('[AuthContext] 6. ❌ Push token error:', pushErr?.message || pushErr);
+            }
 
             console.log('[AuthContext] Login complete.');
         } catch (e: any) {
