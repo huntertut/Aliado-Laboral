@@ -27,11 +27,11 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 77,
+      "versionCode": 78,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",
-        "backgroundColor": "#1e3799",
-        "googleServicesFile": "./google-services.json"
+        "backgroundColor": "#1e3799"
       },
       "usesCleartextTraffic": true,
       "permissions": [
@@ -57,7 +57,14 @@
       ],
       "expo-asset",
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/aliado_logo_new.png",
+          "color": "#1e3799"
+        }
+      ]
     ],
     "extra": {
       "eas": {
