@@ -295,11 +295,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         headers: { Authorization: `Bearer ${idToken}` }
                     });
                     console.log('[AuthContext] 6. ✅ Push token synced! Server response:', pushRes.status);
+                    Alert.alert('🔔 Notificaciones', '✅ Push token registrado correctamente.\n\n' + pushToken.substring(0, 40) + '...');
                 } else {
-                    console.warn('[AuthContext] 6. ⚠️ No push token obtained - notifications will NOT work');
+                    Alert.alert('⚠️ Notificaciones', 'No se obtuvo push token.\n\nRevisa permisos en:\nAjustes → Apps → Aliado Laboral → Notificaciones');
                 }
             } catch (pushErr: any) {
-                console.error('[AuthContext] 6. ❌ Push token error:', pushErr?.message || pushErr);
+                Alert.alert('❌ Error Push', 'Error: ' + (pushErr?.message || String(pushErr)));
             }
 
             console.log('[AuthContext] Login complete.');
