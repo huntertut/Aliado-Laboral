@@ -39,3 +39,7 @@ yarn-error.log*
 *.tsbuildinfo
 
 android/local.properties
+
+# Firebase credentials
+android/app/google-services.json
+ios/GoogleService-Info.plist
