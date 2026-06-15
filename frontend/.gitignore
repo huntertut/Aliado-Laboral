@@ -40,6 +40,5 @@ yarn-error.log*
 
 android/local.properties
 
-# Firebase credentials
-android/app/google-services.json
-ios/GoogleService-Info.plist
+# Firebase credentials (Admin SDK - keep secret)
+# ios/GoogleService-Info.plist
