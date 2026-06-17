@@ -4,7 +4,20 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 76 (v1.23.16) — 26 Mayo 2026**
+**Último versionCode en Producción: 80 (v1.23.17) — 15 Junio 2026**
+
+## [v1.23.17] - 15 Junio 2026 (Build 80: Firebase Initialized + FCM Push Notifications)
+
+- **Fix Crítico (Mobile):** Resuelto el crash inmediato en Android `Default FirebaseApp is not initialized` al agregar el archivo `google-services.json` a la ruta nativa `frontend/android/app/` y configurarlo en Git (eliminándolo del `.gitignore` para permitir que EAS Build compile con él).
+- **Notificaciones (Mobile):** El build 80 incluye el permiso `POST_NOTIFICATIONS` nativo en el manifiesto y el plugin de Google Services en Gradle para inicializar FCM correctamente.
+- **Registro de Token Exitoso:** Se validó que el dispositivo del usuario (Huawei Nova 12i) ahora puede registrar y guardar exitosamente su `ExponentPushToken` en el backend al iniciar sesión.
+- **EAS Build Optimization:** Implementada una lista de verificación obligatoria para prevenir la duplicación de builds y consumo innecesario del plan gratuito de Expo.
+
+## [SSL Hotfix] - 3 Junio 2026 (Certificado SSL Renovado y Auto-renovación automatizada)
+
+- **Fix (DevOps):** Corregido el "Network Error" en la app móvil mediante la renovación del certificado SSL para `api.cibertmx.org` que había expirado el 1 de junio.
+- **Procedimiento:** Detención temporal de Apache, renovación con Certbot y reinicio con `apachectl`.
+- **Automatización:** Configurado un script de renovación en `/root/renew-api-ssl.sh` y agregado al cron de root para ejecutarse automáticamente el 1 y 15 de cada mes a las 3:00 AM.
 
 ## [Backend Hotfix] - 26 Mayo 2026 (Suscripción Abogado siempre "Inactiva")
 

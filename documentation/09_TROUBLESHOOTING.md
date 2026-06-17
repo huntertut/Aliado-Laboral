@@ -677,3 +677,87 @@ La infraestructura de EAS usa npm v10+ en modo estricto, abortando ante conflict
 
 **Resolución:**
 Se creó un archivo `.npmrc` en la carpeta `frontend/` con el contenido `legacy-peer-deps=true`.
+
+---
+
+## 17. HTTPS/SSL: Expiración del Certificado en api.cibertmx.org (Network Error)
+**Síntoma:**
+La aplicación móvil se queda en blanco o arroja de inmediato un error de conexión a la red (`Network Error`) al intentar hacer login u otras peticiones HTTP, mientras que el backend local del servidor funciona correctamente.
+
+**Causa:**
+El certificado SSL de Let's Encrypt para el subdominio de la API (`api.cibertmx.org`) expiró (ocurrió el 1 de Junio de 2026). Android bloquea estrictamente conexiones a endpoints HTTPS que tengan certificados inválidos o expirados.
+
+**Resolución:**
+1. Conectarse al servidor CentOS mediante SSH.
+2. Detener temporalmente el servidor web Apache para liberar el puerto 80 (necesario para la validación de Certbot):
+   ```bash
+   systemctl stop httpd
+   killall -9 httpd
+   ```
+3. Ejecutar la renovación del certificado con Certbot:
+   ```bash
+   certbot renew --cert-name api.cibertmx.org --quiet
+   ```
+4. Volver a arrancar Apache utilizando el comando nativo de CWP (no `systemctl start`):
+   ```bash
+   /usr/local/apache/bin/apachectl start
+   ```
+
+**Configuración de Auto-renovación Permanente:**
+Se creó el script de automatización `/root/renew-api-ssl.sh` con el siguiente contenido:
+```bash
+#!/bin/bash
+# Auto-renewal script for api.cibertmx.org SSL certificate
+echo "[$(date)] Starting SSL renewal..."
+systemctl stop httpd 2>/dev/null
+killall -9 httpd 2>/dev/null
+sleep 2
+certbot renew --cert-name api.cibertmx.org --quiet
+/usr/local/apache/bin/apachectl start
+echo "[$(date)] SSL renewal complete."
+```
+Y se configuró una tarea programada en el `cron` del usuario root (`crontab -l`) para que corra el 1 y el 15 de cada mes a las 3:00 AM:
+```cron
+0 3 1,15 * * /root/renew-api-ssl.sh >> /var/log/ssl-renewal.log 2>&1
+```
+
+---
+
+## 18. Mobile: Crash "Default FirebaseApp is not initialized" en Android (FCM / Push Notifications)
+**Síntoma:**
+La aplicación compila correctamente pero crashea inmediatamente después de iniciar sesión o al arrancar, mostrando en los logs/Alerts de diagnóstico nativos:
+`Default FirebaseApp is not initialized in this process com.aliadolaboral.app. Make sure to call FirebaseApp.initializeApp(Context) first.`
+
+**Causa:**
+Se agregaron permisos y librerías para habilitar notificaciones push, pero la aplicación nativa de Android no estaba registrada en el proyecto de Firebase Console. Al no existir el archivo `google-services.json` dentro del directorio del módulo nativo (`frontend/android/app/`), el SDK de Firebase en Android no podía inicializarse en runtime.
+
+**Resolución:**
+1. Acceder a **Firebase Console** -> Tu Proyecto -> Configuración del Proyecto -> Pestaña **General**.
+2. En la parte inferior, hacer clic en **Agregar app** -> Elegir **Android**.
+3. Registrar el paquete exacto de la aplicación: `com.aliadolaboral.app`.
+4. Descargar el archivo de configuración **`google-services.json`**.
+5. Mover el archivo a la ruta nativa del proyecto:
+   `c:\dev\aliado-laboral\frontend\android\app\google-services.json`
+6. Asegurar que el plugin de servicios de Google esté configurado en `frontend/android/build.gradle` y `frontend/android/app/build.gradle`.
+7. **IMPORTANTE:** Para que la compilación en la nube de EAS Build funcione, el archivo `google-services.json` debe ser rastreado por Git. Asegurarse de quitarlo de `.gitignore` para que EAS pueda subirlo y compilar la app con el archivo presente.
+
+---
+
+## 19. EAS Build: Duplicación de Builds y Control de VersionCode en Planes Gratuitos
+**Síntoma:**
+Al generar builds en Expo EAS Cloud, se consumen múltiples ejecuciones (ej. dos builds seguidos por cada intento de actualización), lo cual reduce rápidamente el cupo gratuito de la cuenta (límite de 30 builds/mes).
+
+**Causa:**
+1. Desincronización del `versionCode` entre el archivo nativo (`android/app/build.gradle`) y el archivo de Expo (`app.json`).
+2. Lanzar la compilación (`eas build`) sin validar de forma previa que todos los archivos requeridos estén confirmados en Git o que falten dependencias críticas.
+
+**Resolución (Checklist obligatorio previo a la compilación):**
+Antes de ejecutar cualquier comando de `eas build`, se debe verificar manualmente y de manera estricta la siguiente lista de control para asegurar que el build compile en el primer intento:
+
+- [ ] **1. Sincronía del `versionCode`**: El `versionCode` en `frontend/app.json` y el `versionCode` en `frontend/android/app/build.gradle` deben ser idénticos y mayores al último versionCode aprobado en Google Play Console.
+- [ ] **2. Archivo `google-services.json`**: Confirmar que el archivo existe en `frontend/android/app/google-services.json` y que Git lo está rastreando (que no esté en el `.gitignore` del proyecto).
+- [ ] **3. Permisos en `AndroidManifest.xml`**: Verificar que estén declarados los permisos requeridos (por ejemplo, `POST_NOTIFICATIONS` para Android 13+).
+- [ ] **4. Plugin de Google Services en Gradle**: Confirmar que los classpath y complementos de `com.google.gms.google-services` estén presentes en los archivos `build.gradle`.
+- [ ] **5. Estado de Git**: Ejecutar `git status` y verificar que todos los cambios locales necesarios estén confirmados (staged) en el repositorio para que EAS Build los suba al servidor de compilación.
+- [ ] **6. Lanzar un solo build**: Únicamente tras marcar todos los puntos anteriores con éxito, lanzar la compilación con `eas build --platform android --profile production`.
+

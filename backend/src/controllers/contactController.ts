@@ -5,6 +5,7 @@ import * as mercadopagoService from '../services/mercadopagoService';
 import * as storageService from '../services/storageService';
 import * as ocrService from '../services/ocrService'; // Import OCR
 import { checkBothPaymentsSuccess } from '../services/webhookHandlerService';
+import { sendPushNotification } from '../services/notificationService';
 import moment from 'moment';
 
 const prisma = new PrismaClient();
@@ -432,6 +433,15 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
                 })
             ]);
 
+            // 🔔 PUSH NOTIFICATION: Notificar al trabajador que su caso fue aceptado
+            const lawyerName = lawyer.user?.fullName || lawyer.professionalName || 'Tu abogado';
+            sendPushNotification(
+                contactRequest.workerId,
+                '✅ ¡Caso Aceptado!',
+                `${lawyerName} aceptó tu solicitud. El chat ya está disponible.`,
+                { type: 'case_accepted', requestId: contactRequest.id }
+            ).catch(err => console.error('[Push] Error notifying worker on accept:', err));
+
             res.json({
                 message: 'Caso aceptado. Chat habilitado.',
                 contactUnlocked: true,
@@ -475,7 +485,7 @@ export const rejectContactRequest = async (req: Request, res: Response) => {
 
         const lawyer = await prisma.lawyer.findUnique({
             where: { userId },
-            include: { profile: true }
+            include: { profile: true, user: true }
         });
 
         if (!lawyer || !lawyer.profile) {
@@ -528,6 +538,15 @@ export const rejectContactRequest = async (req: Request, res: Response) => {
                 rejectionReason: reason
             }
         });
+
+        // 🔔 PUSH NOTIFICATION: Notificar al trabajador que su solicitud fue rechazada
+        const lawyerDisplayName = lawyer.user?.fullName || lawyer.professionalName || 'El abogado';
+        sendPushNotification(
+            contactRequest.workerId,
+            '❌ Solicitud No Aceptada',
+            `${lawyerDisplayName} no pudo aceptar tu solicitud en este momento. Se procesó tu reembolso.`,
+            { type: 'case_rejected', requestId: id }
+        ).catch(err => console.error('[Push] Error notifying worker on reject:', err))
 
         res.json({ message: 'Solicitud rechazada y pago reembolsado' });
 
@@ -743,11 +762,31 @@ export const updateCRMStatus = async (req: Request, res: Response) => {
 
         const updatedRequest = await prisma.contactRequest.update({
             where: { id },
-            data: { crmStatus: status }
+            data: { crmStatus: status },
+            include: { worker: true }
         });
 
+        // 🔔 PUSH NOTIFICATION: Notificar al trabajador del avance de su caso
+        const crmStatusMessages: Record<string, { title: string; body: string }> = {
+            'NEW':         { title: '📋 Tu caso está en revisión', body: 'Tu abogado está revisando los detalles de tu caso.' },
+            'CONTACTED':   { title: '📞 Tu abogado te ha contactado', body: 'Tu abogado marcó el inicio del contacto contigo.' },
+            'NEGOTIATING': { title: '🤝 Fase de Negociación', body: 'Tu caso ha entrado en fase de negociación. Mantente atento al chat.' },
+            'CLOSED_WON':  { title: '🏆 ¡Caso Ganado/Conciliado!', body: 'Tu abogado marcó tu caso como resuelto favorablemente. ¡Felicidades!' },
+            'CLOSED_LOST': { title: '📁 Caso Cerrado', body: 'Tu abogado cerró tu caso. Puedes contactarlo para más detalles.' }
+        };
+
+        const pushMsg = crmStatusMessages[status];
+        if (pushMsg && updatedRequest.worker?.id) {
+            sendPushNotification(
+                updatedRequest.worker.id,
+                pushMsg.title,
+                pushMsg.body,
+                { type: 'case_status_update', requestId: id, crmStatus: status }
+            ).catch(err => console.error('[Push] Error notifying worker on CRM update:', err));
+        }
+
         // NOTIFICACIÓN AL ADMIN SI ES GANADO (El Puente)
-        if (status === 'CLOSED_WON' || status === 'CLOSED_LOST') { // Podría ser conciliado también pero con CLOSED_WON abarcamos éxito
+        if (status === 'CLOSED_WON' || status === 'CLOSED_LOST') {
             if (status === 'CLOSED_WON') {
                 const rate = lawyer.subscription?.plan === 'pro' ? '5% o 7%' : '8% o 10%';
                 await prisma.adminAlert.create({

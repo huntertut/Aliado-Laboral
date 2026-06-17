@@ -292,21 +292,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('[AuthContext] 6. Push token result:', pushToken || 'NULL/UNDEFINED');
 
                 if (pushToken && pushToken.startsWith('__DENIED__')) {
-                    Alert.alert('⚠️ Permisos Denegados', 'Huawei rechaza el permiso internamente.\n\n' + pushToken);
+                    console.warn('[AuthContext] Push notifications permission denied:', pushToken);
                 } else if (pushToken && pushToken.startsWith('__ERROR__')) {
-                    Alert.alert('❌ Error Token', pushToken.replace('__ERROR__:', ''));
+                    console.error('[AuthContext] Push notifications token error:', pushToken.replace('__ERROR__:', ''));
                 } else if (pushToken) {
                     console.log('[AuthContext] 6. Sending push token to server...');
                     const pushRes = await axios.post(`${API_URL}/auth/update-push-token`, { pushToken }, {
                         headers: { Authorization: `Bearer ${idToken}` }
                     });
                     console.log('[AuthContext] 6. ✅ Push token synced! Server response:', pushRes.status);
-                    Alert.alert('🔔 Notificaciones', '✅ Push token registrado!\n\n' + pushToken.substring(0, 40) + '...');
                 } else {
-                    Alert.alert('⚠️ Sin Token', 'registerForPushNotificationsAsync() devolvió null/undefined');
+                    console.warn('[AuthContext] registerForPushNotificationsAsync() returned null/undefined');
                 }
             } catch (pushErr: any) {
-                Alert.alert('❌ Error Push', 'Error: ' + (pushErr?.message || String(pushErr)));
+                console.error('[AuthContext] Error in push notification sync:', pushErr);
             }
 
             console.log('[AuthContext] Login complete.');
