@@ -6,6 +6,7 @@ import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useStripe } from '@stripe/stripe-react-native';
 
 interface ContactPaymentModalProps {
     visible: boolean;
@@ -35,6 +36,7 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState<'select' | 'processing' | 'success'>('select');
     const [selectedGateway, setSelectedGateway] = useState<'stripe' | 'mercadopago'>('stripe');
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const handleConfirmPayment = async () => {
         setLoading(true);
@@ -60,8 +62,37 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
             const { contactRequest, payment } = response.data as any;
 
             if (selectedGateway === 'stripe') {
-                // STRIPE FLOW: Payment already processed
-                if (payment.success) {
+                if (payment && payment.clientSecret) {
+                    // Initialize Stripe Payment Sheet
+                    const { error: initError } = await initPaymentSheet({
+                        merchantDisplayName: 'Aliado Laboral',
+                        paymentIntentClientSecret: payment.clientSecret,
+                        defaultBillingDetails: {
+                            name: contactRequest?.worker?.fullName || 'Trabajador',
+                        },
+                        returnURL: 'derechoslaboralesmx://stripe-redirect',
+                    });
+
+                    if (initError) {
+                        Alert.alert('Error de Inicialización', initError.message);
+                        setStep('select');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Present Stripe Payment Sheet
+                    const { error: paymentError } = await presentPaymentSheet();
+
+                    if (paymentError) {
+                        if (paymentError.code !== 'Canceled') {
+                            Alert.alert('Error de Pago', paymentError.message);
+                        }
+                        setStep('select');
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Stripe payment completed successfully!
                     setStep('success');
                     setTimeout(() => {
                         Alert.alert(
@@ -78,6 +109,9 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                             ]
                         );
                     }, 500);
+                } else {
+                    Alert.alert('Error', 'No se pudo generar la clave de pago de Stripe');
+                    setStep('select');
                 }
             } else {
                 // MERCADOPAGO FLOW: Redirect to checkout
@@ -140,6 +174,10 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                 </View>
             </Modal>
         );
+    }
+
+    if (step === 'success') {
+        return null;
     }
 
     return (

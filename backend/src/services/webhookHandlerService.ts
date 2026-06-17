@@ -1,8 +1,38 @@
 import { PrismaClient } from '@prisma/client';
 import * as stripeService from './stripeService';
 import * as mercadopagoService from './mercadopagoService';
+import { sendPushNotification } from './notificationService';
 
 const prisma = new PrismaClient();
+
+/**
+ * Helper: Notify the lawyer of a new contact request via push notification
+ */
+export async function notifyLawyerNewRequest(contactRequestId: string): Promise<void> {
+    try {
+        const contactRequest = await prisma.contactRequest.findUnique({
+            where: { id: contactRequestId },
+            include: {
+                lawyerProfile: {
+                    include: { lawyer: { include: { user: true } } }
+                }
+            }
+        });
+
+        const lawyerUserId = contactRequest?.lawyerProfile?.lawyer?.user?.id;
+        if (lawyerUserId) {
+            await sendPushNotification(
+                lawyerUserId,
+                '📋 Nueva Solicitud de Caso',
+                'Tienes una nueva solicitud de caso pendiente de aceptación.',
+                { requestId: contactRequestId, type: 'NEW_REQUEST' }
+            );
+            console.log(`🔔 [Push] Notified lawyer ${lawyerUserId} of new request ${contactRequestId}`);
+        }
+    } catch (err) {
+        console.error('Error notifying lawyer of new request:', err);
+    }
+}
 
 /**
  * CRITICAL FUNCTION: Check if both payments (worker + lawyer) have succeeded
@@ -144,6 +174,7 @@ async function handleStripeCheckoutSessionCompleted(session: any): Promise<void>
                 workerTransactionId: session.id,
             },
         });
+        await notifyLawyerNewRequest(contactRequestId);
         await checkBothPaymentsSuccess(contactRequestId);
     } else if (type === 'lawyer_case_acceptance' && contactRequestId) {
         await prisma.contactRequest.update({
@@ -190,7 +221,8 @@ async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
             },
         });
 
-        // Check if both payments succeeded
+        // Notify lawyer and check if both payments succeeded
+        await notifyLawyerNewRequest(contactRequestId);
         await checkBothPaymentsSuccess(contactRequestId);
     } else if (type === 'lawyer_case_acceptance' && contactRequestId) {
         // Lawyer paid $150 via Stripe
@@ -401,7 +433,8 @@ async function handleMercadoPagoPaymentSuccess(payment: any): Promise<void> {
             },
         });
 
-        // Check if both payments succeeded
+        // Notify lawyer and check if both payments succeeded
+        await notifyLawyerNewRequest(externalReference);
         await checkBothPaymentsSuccess(externalReference);
 
         console.log(`✅ MercadoPago payment approved: ${payment.id}`);
