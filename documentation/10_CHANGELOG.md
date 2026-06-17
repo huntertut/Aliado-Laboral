@@ -4,7 +4,13 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 81 (v1.23.18) — 17 Junio 2026**
+**Último versionCode en Producción: 82 (v1.23.19) — 17 Junio 2026**
+
+## [v1.23.19] - 17 Junio 2026 (Build 82: Integración de Stripe Payment Sheet y Alerta de Notificación de Solicitudes)
+
+- **Feature Crítica (Mobile):** Se integró el SDK nativo de Stripe (`@stripe/stripe-react-native`) en `ContactPaymentModal.tsx` mediante `initPaymentSheet` y `presentPaymentSheet` para recolectar de forma real y segura los datos de pago con tarjeta del trabajador.
+- **Fix UI (Mobile):** Añadido retorno temprano nulo en el modal `ContactPaymentModal` al completarse el pago con éxito (estado `'success'`), previniendo que la UI de la app se quede bloqueada en un spinner infinito después de pagar.
+- **Notificaciones (Backend):** Implementado el helper `notifyLawyerNewRequest` en `webhookHandlerService.ts` para notificar mediante push notification al abogado asignado en cuanto el trabajador finaliza el pago y se crea la solicitud (procesado vía webhooks de Stripe/MercadoPago).
 
 ## [v1.23.18] - 17 Junio 2026 (Build 81: End-to-End Case Push Notifications & Contact Flow Fix)
 
