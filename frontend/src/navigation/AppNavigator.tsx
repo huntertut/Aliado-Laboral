@@ -9,6 +9,7 @@ import GuidesScreen from '../screens/GuidesScreen';
 import GuideDetailScreen from '../screens/GuideDetailScreen';
 import LawyersScreen from '../screens/LawyersScreen';
 import LawyerDetailScreen from '../screens/LawyerDetailScreen';
+import LawyerPublicProfileScreen from '../screens/LawyerPublicProfileScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import AddIncidentScreen from '../screens/AddIncidentScreen';
 import ChatScreen from '../screens/ChatScreen';
@@ -36,6 +37,7 @@ import WorkerRightsScreen from '../screens/WorkerRightsScreen';
 import ProfedetInfoWizardScreen from '../screens/ProfedetInfoWizardScreen';
 import BenefitsScreen from '../screens/BenefitsScreen';
 import CreateContactRequestScreen from '../screens/CreateContactRequestScreen';
+import MyContactRequestsScreen from '../screens/MyContactRequestsScreen';
 import LaborDocumentsScreen from '../screens/pyme/LaborDocumentsScreen';
 import LaborGuideScreen from '../screens/LaborGuideScreen';
 import ContractTypesScreen from '../screens/ContractTypesScreen';
@@ -119,6 +121,7 @@ const AppNavigator = () => {
                         <Stack.Screen name="GuideDetail" component={GuideDetailScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="Lawyers" component={LawyersScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LawyerDetail" component={LawyerDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="LawyerPublicProfile" component={LawyerPublicProfileScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="AddIncident" component={AddIncidentScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
@@ -138,6 +141,7 @@ const AppNavigator = () => {
                         <Stack.Screen name="ProfedetInfo" component={ProfedetInfoWizardScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="Benefits" component={BenefitsScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="CreateContactRequest" component={CreateContactRequestScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="MyContactRequests" component={MyContactRequestsScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LaborDocuments" component={LaborDocumentsScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LaborGuide" component={LaborGuideScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="ContractTypes" component={ContractTypesScreen} options={{ headerShown: false }} />

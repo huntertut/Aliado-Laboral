@@ -11,9 +11,12 @@ interface ContactPaymentModalProps {
     visible: boolean;
     onClose: () => void;
     lawyerName: string;
-    lawyerId: string;
+    lawyerId?: string;
     lawyerProfileId: string;
     caseSummary: string;
+    caseType?: string;
+    urgency?: string;
+    documents?: any[];
     onSuccess: () => void;
 }
 
@@ -24,6 +27,9 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
     lawyerId,
     lawyerProfileId,
     caseSummary,
+    caseType = 'general',
+    urgency = 'normal',
+    documents = [],
     onSuccess
 }) => {
     const [loading, setLoading] = useState(false);
@@ -43,14 +49,15 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                 {
                     lawyerProfileId,
                     caseSummary: caseSummary || 'Solicitud de contacto desde la app',
-                    caseType: 'general',
-                    urgency: 'normal',
+                    caseType: caseType,
+                    urgency: urgency,
+                    documents: documents,
                     paymentGateway: selectedGateway,
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            const { contactRequest, payment } = response.data;
+            const { contactRequest, payment } = response.data as any;
 
             if (selectedGateway === 'stripe') {
                 // STRIPE FLOW: Payment already processed

@@ -105,7 +105,7 @@ const LawyersScreen = () => {
 
     const handleLawyerPress = (lawyer: any) => {
         if (hasActiveSubscription) {
-            navigation.navigate('LawyerDetail' as never, { lawyer } as never);
+            navigation.navigate('LawyerPublicProfile' as never, { lawyerId: lawyer.id } as never);
         } else {
             setShowSubscriptionModal(true);
         }

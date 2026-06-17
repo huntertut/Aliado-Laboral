@@ -4,7 +4,17 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 80 (v1.23.17) — 15 Junio 2026**
+**Último versionCode en Producción: 81 (v1.23.18) — 17 Junio 2026**
+
+## [v1.23.18] - 17 Junio 2026 (Build 81: End-to-End Case Push Notifications & Contact Flow Fix)
+
+- **Fix Crítico (Mobile):** Corregida la navegación del directorio de abogados (`LawyersScreen.tsx`) que antes apuntaba a la pantalla estática mock `LawyerDetailScreen` (con botón de simulación roto). Ahora apunta correctamente a la pantalla real de base de datos `LawyerPublicProfileScreen`.
+- **Integración (Mobile):** Se registraron `LawyerPublicProfileScreen` y `MyContactRequestsScreen` en el `AppNavigator.tsx` principal.
+- **Flujo de Pago y IA (Mobile):** Se integró el modal `ContactPaymentModal` en la pantalla de redacción de caso `CreateContactRequestScreen.tsx`. Al enviar, se procesan los adjuntos a base64, se realiza el cobro del lead de $50 pesos (Stripe/MP) y se crea la solicitud real en el servidor.
+- **Notificaciones (Backend):** Implementado el envío de notificaciones push al trabajador en tiempo real ante eventos críticos del caso:
+  - Cuando el abogado acepta la solicitud de contacto (`✅ ¡Caso Aceptado!`).
+  - Cuando el abogado rechaza la solicitud de contacto (`❌ Solicitud No Aceptada`).
+  - Cuando el abogado cambia el estado en el CRM (`🤝 Fase de Negociación` / `🏆 ¡Caso Ganado/Conciliado!`).
 
 ## [v1.23.17] - 15 Junio 2026 (Build 80: Firebase Initialized + FCM Push Notifications)
 

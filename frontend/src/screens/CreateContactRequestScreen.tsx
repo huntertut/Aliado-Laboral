@@ -10,6 +10,7 @@ import * as FileSystem from 'expo-file-system';
 import { endpoints } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { PRIVACY_NOTICES } from '../data/legal/privacyNotices';
+import ContactPaymentModal from '../components/ContactPaymentModal';
 
 const CreateContactRequestScreen = () => {
     const route = useRoute();
@@ -23,6 +24,7 @@ const CreateContactRequestScreen = () => {
     const [loading, setLoading] = useState(false);
     const [hasConsent, setHasConsent] = useState(false);
     const [documents, setDocuments] = useState<any[]>([]);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
 
     const pickDocument = async () => {
         try {
@@ -45,6 +47,8 @@ const CreateContactRequestScreen = () => {
         setDocuments(prev => prev.filter((_, i) => i !== index));
     };
 
+    const [processedDocuments, setProcessedDocuments] = useState<any[]>([]);
+
     const handleSubmit = async () => {
         if (!caseSummary.trim()) {
             Alert.alert('Error', 'Por favor describe tu caso');
@@ -57,7 +61,7 @@ const CreateContactRequestScreen = () => {
                 '¿Estás seguro de enviar una descripción tan breve? Te recomendamos explicar mejor tu situación para que el abogado pueda evaluarla correctamente.',
                 [
                     { text: 'Editar', style: 'cancel' },
-                    { text: 'Enviar así', onPress: () => submitRequest() }
+                    { text: 'Enviar así', onPress: () => processDocsAndOpenModal() }
                 ]
             );
             return;
@@ -68,10 +72,10 @@ const CreateContactRequestScreen = () => {
             return;
         }
 
-        submitRequest();
+        processDocsAndOpenModal();
     };
 
-    const submitRequest = async () => {
+    const processDocsAndOpenModal = async () => {
         if (!user) {
             Alert.alert('Error', 'Debes iniciar sesión para enviar una solicitud');
             return;
@@ -79,10 +83,8 @@ const CreateContactRequestScreen = () => {
 
         setLoading(true);
         try {
-            const token = await getAccessToken();
-
             // Convert documents to base64
-            const processedDocs = await Promise.all(documents.map(async (doc) => {
+            const processed = await Promise.all(documents.map(async (doc) => {
                 const base64 = await FileSystem.readAsStringAsync(doc.uri, { encoding: 'base64' });
                 return {
                     name: doc.name,
@@ -92,41 +94,11 @@ const CreateContactRequestScreen = () => {
                 };
             }));
 
-            const response = await fetch(endpoints.contact.createRequest, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    lawyerProfileId,
-                    caseSummary,
-                    caseType,
-                    urgency,
-                    documents: processedDocs,
-                    hasAcceptedDataSharing: true // Enforced by UI validation
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert(
-                    '¡Solicitud enviada!',
-                    'El abogado recibirá tu solicitud. Te notificaremos cuando responda.',
-                    [
-                        {
-                            text: 'Ver mis solicitudes',
-                            onPress: () => navigation.navigate('MyContactRequests' as never)
-                        }
-                    ]
-                );
-            } else {
-                Alert.alert('Error', data.error || 'No se pudo enviar la solicitud');
-            }
+            setProcessedDocuments(processed);
+            setShowPaymentModal(true);
         } catch (error) {
-            console.error('Error al enviar solicitud:', error);
-            Alert.alert('Error', 'Hubo un problema al conectar con el servidor');
+            console.error('Error al procesar documentos:', error);
+            Alert.alert('Error', 'Hubo un problema al procesar tus archivos adjuntos');
         } finally {
             setLoading(false);
         }
@@ -298,6 +270,21 @@ const CreateContactRequestScreen = () => {
 
                 <View style={{ height: 30 }} />
             </ScrollView>
+
+            <ContactPaymentModal
+                visible={showPaymentModal}
+                onClose={() => setShowPaymentModal(false)}
+                lawyerName={lawyerName}
+                lawyerProfileId={lawyerProfileId}
+                caseSummary={caseSummary}
+                caseType={caseType}
+                urgency={urgency}
+                documents={processedDocuments}
+                onSuccess={() => {
+                    setShowPaymentModal(false);
+                    navigation.navigate('MyContactRequests' as never);
+                }}
+            />
         </View>
     );
 };

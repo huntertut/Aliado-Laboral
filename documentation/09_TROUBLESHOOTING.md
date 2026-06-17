@@ -761,3 +761,20 @@ Antes de ejecutar cualquier comando de `eas build`, se debe verificar manualment
 - [ ] **5. Estado de Git**: Ejecutar `git status` y verificar que todos los cambios locales necesarios estén confirmados (staged) en el repositorio para que EAS Build los suba al servidor de compilación.
 - [ ] **6. Lanzar un solo build**: Únicamente tras marcar todos los puntos anteriores con éxito, lanzar la compilación con `eas build --platform android --profile production`.
 
+---
+
+## 20. Mobile: Solicitud de contacto simulada y desconexión del flujo de pago de $50 MXN (Stripe / MercadoPago)
+**Síntoma:**
+El trabajador intenta contactar a un abogado y le sale la alerta *"Solicitud Enviada. Se ha notificado al abogado..."* de forma inmediata sin haber descrito su caso ni haber pasado por la pasarela de pago. Al revisar el panel del abogado en la tablet no aparece ninguna solicitud pendiente.
+
+**Causa:**
+1. La pantalla de directorio de abogados (`LawyersScreen.tsx`) navegaba a la pantalla estática y de simulación `LawyerDetailScreen.tsx` cuyo botón de contacto solo tenía un `Alert.alert` cableado que no creaba solicitudes reales.
+2. La pantalla real del perfil del abogado (`LawyerPublicProfileScreen.tsx`) y la bandeja de mis solicitudes del trabajador (`MyContactRequestsScreen.tsx`) no estaban registradas en el enrutador principal de la app (`AppNavigator.tsx`).
+3. La pantalla de redacción de caso (`CreateContactRequestScreen.tsx`) intentaba enviar el caso a una ruta de backend inexistente (`/contact/request` en lugar de `/contact/create-with-payment`) y no abría el modal de pago de $50 pesos.
+
+**Resolución:**
+1. Se registraron formalmente `LawyerPublicProfileScreen` y `MyContactRequestsScreen` en el `AppNavigator.tsx`.
+2. Se actualizó la navegación de `LawyersScreen.tsx` al presionar un abogado para que apunte a `LawyerPublicProfile` con su `lawyerId`.
+3. Se integró el modal de pago `ContactPaymentModal` en la pantalla de redacción de caso `CreateContactRequestScreen.tsx`. Ahora, tras redactar el caso y aceptar el consentimiento de datos, se abre el modal para elegir Stripe o MercadoPago, se procesan los documentos adjuntos a base64, y se crea la solicitud real en el backend en el endpoint `/contact/create-with-payment`, gatillando el análisis de IA de Groq en segundo plano y la posterior notificación push al abogado cuando se procesa el pago.
+
+
