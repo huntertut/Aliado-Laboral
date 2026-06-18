@@ -2,8 +2,8 @@
   "expo": {
     "name": "Aliado Laboral",
     "slug": "aliado-laboral",
-    "version": "1.23.19",
-    "runtimeVersion": "1.23.19",
+    "version": "1.23.20",
+    "runtimeVersion": "1.23.20",
     "updates": {
       "url": "https://u.expo.dev/edbaa94d-8deb-4e42-9eae-b9d597dcf595",
       "enabled": true,
@@ -27,7 +27,7 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 82,
+      "versionCode": 83,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",

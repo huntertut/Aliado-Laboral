@@ -4,7 +4,13 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 82 (v1.23.19) — 17 Junio 2026**
+**Último versionCode en Producción: 83 (v1.23.20) — 18 Junio 2026**
+
+## [v1.23.20] - 18 Junio 2026 (Build 83: UI Éxito de Pago Nativa y Acceso a Mis Solicitudes)
+
+- **Fix UI (Mobile):** Reemplazada la alerta nativa y el retorno nulo por una pantalla/tarjeta de éxito nativa (`step === 'success'`) dentro del modal `ContactPaymentModal.tsx` con un botón "Entendido" que maneja la navegación. Esto corrige definitivamente el error de pantalla en blanco/transparente atascada tras el pago de Stripe.
+- **Feature (Mobile):** Agregado acceso directo a "Mis Solicitudes" (pantalla `MyContactRequestsScreen`) en la lista de acciones rápidas de la pantalla de inicio (`HomeScreen.tsx`) y en el perfil del trabajador (`WorkerProfile.tsx`).
+- **Validación de Push:** Se probó y verificó con éxito el envío de notificaciones push de solicitudes al abogado Samuel en la base de datos de producción desde el droplet de backend.
 
 ## [v1.23.19] - 17 Junio 2026 (Build 82: Integración de Stripe Payment Sheet y Alerta de Notificación de Solicitudes)
 

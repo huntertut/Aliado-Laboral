@@ -125,6 +125,7 @@ const HomeScreen = () => {
     ];
 
     const infoActions = [
+        { label: 'Mis\nSolicitudes', icon: 'mail-open-outline', color: AppTheme.colors.primary, route: 'MyContactRequests' },
         { label: 'Noticias\nLegales', icon: 'newspaper-outline', color: AppTheme.colors.primary, route: 'NewsFeed' },
         { label: 'Foro\nAnónimo', icon: 'people-outline', color: AppTheme.colors.primary, route: 'Forum' },
         { label: 'IMSS', icon: 'medkit-outline', color: AppTheme.colors.primary, route: 'ImssNom' },

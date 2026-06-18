@@ -47,6 +47,23 @@ export const WorkerProfile = ({ data, onUpdateLaborData, isSaving }: Props) => {
                 <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
 
+            {/* MY SENT REQUESTS BUTTON */}
+            <TouchableOpacity
+                style={styles.thermometerButton}
+                onPress={() => navigation.navigate('MyContactRequests' as never)}
+            >
+                <View style={styles.thermometerContent}>
+                    <View style={[styles.iconContainer, { backgroundColor: AppTheme.colors.primary }]}>
+                        <Ionicons name="mail-open-outline" size={24} color="#fff" />
+                    </View>
+                    <View>
+                        <Text style={styles.thermoTitle}>Mis Solicitudes de Abogado</Text>
+                        <Text style={[styles.thermoSubtitle, { color: '#666' }]}>Ver el estado de tus casos enviados</Text>
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#666" />
+            </TouchableOpacity>
+
             <JurisdictionFinderModule laborData={laborData} />
 
             <ProfedetModule isActive={!!profedetData.isActive} />

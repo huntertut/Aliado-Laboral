@@ -94,21 +94,6 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
 
                     // Stripe payment completed successfully!
                     setStep('success');
-                    setTimeout(() => {
-                        Alert.alert(
-                            '¡Solicitud Enviada!',
-                            `Tu solicitud ha sido enviada a ${lawyerName}. Recibirás una notificación cuando el abogado responda.\n\nSi no acepta tu caso en 48 horas, se te reembolsará el 100% del monto.`,
-                            [
-                                {
-                                    text: 'Entendido',
-                                    onPress: () => {
-                                        onSuccess();
-                                        onClose();
-                                    }
-                                }
-                            ]
-                        );
-                    }, 500);
                 } else {
                     Alert.alert('Error', 'No se pudo generar la clave de pago de Stripe');
                     setStep('select');
@@ -177,7 +162,48 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
     }
 
     if (step === 'success') {
-        return null;
+        return (
+            <Modal
+                visible={visible}
+                animationType="fade"
+                transparent={true}
+                onRequestClose={() => {
+                    onSuccess();
+                    onClose();
+                }}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.processingContainer}>
+                        <View style={[styles.iconCircle, { backgroundColor: '#e8f5e9', width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 15 }]}>
+                            <Ionicons name="checkmark-circle" size={50} color="#2e7d32" />
+                        </View>
+                        <Text style={[styles.title, { fontSize: 20, textAlign: 'center' }]}>¡Pago Completado!</Text>
+                        <Text style={[styles.processingText, { textAlign: 'center', marginHorizontal: 10, fontSize: 14, marginTop: 12, lineHeight: 20 }]}>
+                            Tu solicitud ha sido enviada con éxito a {lawyerName}. Recibirás una notificación cuando el abogado responda.
+                        </Text>
+                        <Text style={{ textAlign: 'center', fontSize: 12, color: '#e74c3c', marginTop: 12, fontStyle: 'italic', paddingHorizontal: 10 }}>
+                            * Si no acepta tu caso en 48 horas, se te reembolsará el 100% del monto automáticamente.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.confirmButton, { width: '80%', marginTop: 25, borderRadius: 12, overflow: 'hidden' }]}
+                            onPress={() => {
+                                onSuccess();
+                                onClose();
+                            }}
+                        >
+                            <LinearGradient
+                                colors={[AppTheme.colors.secondary, '#f9ca24']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.gradientButton}
+                            >
+                                <Text style={styles.confirmButtonText}>Entendido</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        );
     }
 
     return (
