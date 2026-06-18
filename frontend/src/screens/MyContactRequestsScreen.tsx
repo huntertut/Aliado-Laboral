@@ -31,7 +31,9 @@ const MyContactRequestsScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
 
-    // ...
+    useEffect(() => {
+        fetchRequests();
+    }, []);
 
     const fetchRequests = async () => {
         try {

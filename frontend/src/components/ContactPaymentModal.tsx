@@ -40,12 +40,11 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
 
     const handleConfirmPayment = async () => {
         setLoading(true);
-        setStep('processing');
 
         try {
             const token = await AsyncStorage.getItem('authToken');
 
-            // Create contact request with payment
+            // Create contact request with payment (show spinner only during API call)
             const response = await axios.post(
                 `${API_URL}/contact/create-with-payment`,
                 {
@@ -75,20 +74,21 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
 
                     if (initError) {
                         Alert.alert('Error de Inicialización', initError.message);
-                        setStep('select');
                         setLoading(false);
                         return;
                     }
 
-                    // Present Stripe Payment Sheet
+                    // Stop spinner BEFORE presenting the Payment Sheet (so no frozen UI)
+                    setLoading(false);
+
+                    // Present Stripe Payment Sheet (blocks until user completes or cancels)
                     const { error: paymentError } = await presentPaymentSheet();
 
                     if (paymentError) {
                         if (paymentError.code !== 'Canceled') {
                             Alert.alert('Error de Pago', paymentError.message);
                         }
-                        setStep('select');
-                        setLoading(false);
+                        // Cancelled or error: stay on select step, nothing to do
                         return;
                     }
 
@@ -96,9 +96,10 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
                     setStep('success');
                 } else {
                     Alert.alert('Error', 'No se pudo generar la clave de pago de Stripe');
-                    setStep('select');
+                    setLoading(false);
                 }
             } else {
+                setLoading(false);
                 // MERCADOPAGO FLOW: Redirect to checkout
                 if (payment.initPoint) {
                     Alert.alert(
@@ -131,8 +132,6 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
             console.error('Contact payment error:', error);
             const message = error.response?.data?.error || 'Error al procesar el pago';
             Alert.alert('Error', message);
-            setStep('select');
-        } finally {
             setLoading(false);
         }
     };
@@ -148,20 +147,9 @@ const ContactPaymentModal: React.FC<ContactPaymentModalProps> = ({
         onClose();
     };
 
-    if (step === 'processing') {
-        return (
-            <Modal visible={visible} animationType="fade" transparent={true}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.processingContainer}>
-                        <ActivityIndicator size="large" color={AppTheme.colors.primary} />
-                        <Text style={styles.processingText}>Procesando pago...</Text>
-                    </View>
-                </View>
-            </Modal>
-        );
-    }
 
     if (step === 'success') {
+
         return (
             <Modal
                 visible={visible}
