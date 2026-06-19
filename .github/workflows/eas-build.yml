@@ -12,6 +12,7 @@ on:
       - 'frontend/package.json'
       - 'frontend/package-lock.json'
       - 'frontend/eas.json'
+      - 'frontend/src/**'
   workflow_dispatch:
 
 
