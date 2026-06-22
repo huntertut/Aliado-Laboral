@@ -402,7 +402,8 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
                 {
                     contactRequestId: contactRequest.id,
                     lawyerId: lawyer.id,
-                }
+                },
+                true // confirmAuto = true (off-session auto charge)
             );
 
             if (lawyerPayment.status !== 'succeeded') {

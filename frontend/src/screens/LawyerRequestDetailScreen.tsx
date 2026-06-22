@@ -444,10 +444,9 @@ const LawyerRequestDetailScreen = () => {
                             Este es un caso {(request.isHot || request.classification === 'hot') ? 'HOT LEAD (Alta Prioridad)' : 'ESTÁNDAR'}.
                         </Text>
                         <Text style={styles.modalText}>
-                            Se cobrarán:
+                            Se cobrará:
                         </Text>
                         <Text style={styles.modalBullet}>• ${(request.isHot || request.classification === 'hot') ? 300 : 150} MXN a tu cuenta</Text>
-                        <Text style={styles.modalBullet}>• $50 MXN al trabajador</Text>
 
                         <Text style={[styles.modalText, { marginTop: 10, fontWeight: 'bold' }]}>
                             Al aceptar se desbloqueará el contacto completo.
