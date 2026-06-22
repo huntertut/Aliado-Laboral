@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Linking, Modal } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,9 @@ const LawyerRequestDetailScreen = () => {
     const [contactInfo, setContactInfo] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const [showAcceptModal, setShowAcceptModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -121,22 +124,14 @@ const LawyerRequestDetailScreen = () => {
     };
 
     const handleAccept = () => {
-        const isHot = request.isHot || request.classification === 'hot';
-        const fee = isHot ? 300 : 150;
-
-        Alert.alert(
-            `¿Aceptar esta solicitud?`,
-            `Este es un caso ${isHot ? 'HOT LEAD (Alta Prioridad)' : 'ESTÁNDAR'}.\n\nSe cobrarán:\n• $${fee} MXN a tu cuenta\n• $50 MXN al trabajador\n\nAl aceptar se desbloqueará el contacto completo.`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: `Aceptar y pagar $${fee}`, onPress: confirmAccept, style: 'default' }
-            ]
-        );
+        setActionError(null);
+        setShowAcceptModal(true);
     };
 
     const confirmAccept = async () => {
         if (!user) return;
         setActionLoading(true);
+        setActionError(null);
         try {
             const token = await getAccessToken();
 
@@ -148,34 +143,32 @@ const LawyerRequestDetailScreen = () => {
                 }
             });
 
+            const data = await response.json();
+
             if (response.ok) {
+                setShowAcceptModal(false);
                 Alert.alert('¡Solicitud aceptada!', 'Los datos de contacto han sido desbloqueados.');
                 fetchRequestDetail(); // Recargar para mostrar contacto
             } else {
-                Alert.alert('Error', 'No se pudo aceptar la solicitud');
+                setActionError(data.error || data.message || 'No se pudo aceptar la solicitud');
             }
         } catch (error) {
             console.error('Error al aceptar:', error);
-            Alert.alert('Error', 'Error de conexión');
+            setActionError('Error de conexión');
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleReject = () => {
-        Alert.alert(
-            'Rechazar solicitud',
-            'El trabajador será notificado. No se cobrará nada.',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Rechazar', onPress: confirmReject, style: 'destructive' }
-            ]
-        );
+        setActionError(null);
+        setShowRejectModal(true);
     };
 
     const confirmReject = async () => {
         if (!user) return;
         setActionLoading(true);
+        setActionError(null);
         try {
             const token = await getAccessToken();
 
@@ -188,13 +181,19 @@ const LawyerRequestDetailScreen = () => {
                 body: JSON.stringify({ reason: 'No puedo tomar este caso en este momento' })
             });
 
+            const data = await response.json();
+
             if (response.ok) {
+                setShowRejectModal(false);
                 Alert.alert('Solicitud rechazada', '', [
                     { text: 'OK', onPress: () => navigation.goBack() }
                 ]);
+            } else {
+                setActionError(data.error || data.message || 'No se pudo rechazar la solicitud');
             }
         } catch (error) {
             console.error('Error al rechazar:', error);
+            setActionError('Error de conexión');
         } finally {
             setActionLoading(false);
         }
@@ -419,13 +418,119 @@ const LawyerRequestDetailScreen = () => {
                             ) : (
                                 <>
                                     <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                                    <Text style={styles.acceptButtonText}>Aceptar ($150)</Text>
+                                    <Text style={styles.acceptButtonText}>Aceptar (${(request.isHot || request.classification === 'hot') ? 300 : 150})</Text>
                                 </>
                             )}
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
             )}
+
+            {/* Accept Modal */}
+            <Modal
+                visible={showAcceptModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => !actionLoading && setShowAcceptModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={styles.modalIconContainer}>
+                            <Ionicons name="checkmark-circle" size={50} color="#27ae60" />
+                        </View>
+                        <Text style={styles.modalTitle}>¿Aceptar esta solicitud?</Text>
+                        
+                        <Text style={styles.modalText}>
+                            Este es un caso {(request.isHot || request.classification === 'hot') ? 'HOT LEAD (Alta Prioridad)' : 'ESTÁNDAR'}.
+                        </Text>
+                        <Text style={styles.modalText}>
+                            Se cobrarán:
+                        </Text>
+                        <Text style={styles.modalBullet}>• ${(request.isHot || request.classification === 'hot') ? 300 : 150} MXN a tu cuenta</Text>
+                        <Text style={styles.modalBullet}>• $50 MXN al trabajador</Text>
+
+                        <Text style={[styles.modalText, { marginTop: 10, fontWeight: 'bold' }]}>
+                            Al aceptar se desbloqueará el contacto completo.
+                        </Text>
+
+                        {actionError && (
+                            <View style={styles.errorBox}>
+                                <Text style={styles.errorBoxText}>{actionError}</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.modalButtonRow}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalButtonCancel]}
+                                onPress={() => { setActionError(null); setShowAcceptModal(false); }}
+                                disabled={actionLoading}
+                            >
+                                <Text style={styles.modalButtonCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalButtonAccept]}
+                                onPress={confirmAccept}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.modalButtonAcceptText}>Aceptar y Pagar</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Reject Modal */}
+            <Modal
+                visible={showRejectModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => !actionLoading && setShowRejectModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <View style={[styles.modalIconContainer, { backgroundColor: '#ffeaa7' }]}>
+                            <Ionicons name="close-circle" size={50} color="#e17055" />
+                        </View>
+                        <Text style={styles.modalTitle}>Rechazar solicitud</Text>
+                        <Text style={styles.modalText}>
+                            El trabajador será notificado de que no puedes tomar su caso.
+                            No se te cobrará nada.
+                        </Text>
+
+                        {actionError && (
+                            <View style={styles.errorBox}>
+                                <Text style={styles.errorBoxText}>{actionError}</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.modalButtonRow}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalButtonCancel]}
+                                onPress={() => { setActionError(null); setShowRejectModal(false); }}
+                                disabled={actionLoading}
+                            >
+                                <Text style={styles.modalButtonCancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, styles.modalButtonReject]}
+                                onPress={confirmReject}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.modalButtonRejectText}>Rechazar</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
         </View>
     );
 };
@@ -520,7 +625,112 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 10,
     },
-    rejectButtonText: { color: '#e74c3c', fontSize: 16, fontWeight: 'bold' },
+    rejectButtonText: {
+        color: '#e74c3c',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+    },
+    modalContainer: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 24,
+        alignItems: 'center',
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10
+    },
+    modalIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#e8f8f5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 16
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#2d3436',
+        marginBottom: 12,
+        textAlign: 'center'
+    },
+    modalText: {
+        fontSize: 16,
+        color: '#636e72',
+        textAlign: 'center',
+        lineHeight: 22
+    },
+    modalBullet: {
+        fontSize: 16,
+        color: '#636e72',
+        textAlign: 'left',
+        alignSelf: 'flex-start',
+        marginLeft: 20,
+        marginTop: 4
+    },
+    modalButtonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 24
+    },
+    modalButton: {
+        flex: 1,
+        height: 50,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: 8
+    },
+    modalButtonCancel: {
+        backgroundColor: '#f1f2f6'
+    },
+    modalButtonCancelText: {
+        color: '#2d3436',
+        fontWeight: 'bold',
+        fontSize: 16
+    },
+    modalButtonAccept: {
+        backgroundColor: '#27ae60'
+    },
+    modalButtonAcceptText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16
+    },
+    modalButtonReject: {
+        backgroundColor: '#e74c3c'
+    },
+    modalButtonRejectText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16
+    },
+    errorBox: {
+        backgroundColor: '#ffeaa7',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 16,
+        width: '100%',
+        borderLeftWidth: 4,
+        borderLeftColor: '#e17055'
+    },
+    errorBoxText: {
+        color: '#d63031',
+        fontSize: 14,
+        fontWeight: '500'
+    },
     acceptButton: { flex: 2, borderRadius: 10, overflow: 'hidden' },
     acceptGradient: {
         flexDirection: 'row',

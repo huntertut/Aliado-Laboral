@@ -347,7 +347,25 @@ export const acceptContactRequest = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Esta solicitud ya fue procesada' });
         }
 
-        // CRITICAL: Check if worker already paid
+        // CRITICAL: Check if worker already paid (with on-demand Stripe verification fallback)
+        if (!contactRequest.workerPaid) {
+            if (contactRequest.workerPaymentGateway === 'stripe' && contactRequest.workerTransactionId) {
+                try {
+                    const pi = await stripeService.retrievePaymentIntent(contactRequest.workerTransactionId);
+                    if (pi.status === 'succeeded') {
+                        contactRequest.workerPaid = true;
+                        await prisma.contactRequest.update({
+                            where: { id: contactRequest.id },
+                            data: { workerPaid: true }
+                        });
+                        console.log(`Verified Stripe Payment Intent ${contactRequest.workerTransactionId} succeeded. Marked as paid.`);
+                    }
+                } catch (stripeError) {
+                    console.error('Failed to verify worker stripe payment intent:', stripeError);
+                }
+            }
+        }
+
         if (!contactRequest.workerPaid) {
             return res.status(400).json({
                 error: 'El trabajador aún no ha completado el pago',

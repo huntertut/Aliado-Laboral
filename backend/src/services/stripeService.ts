@@ -189,6 +189,20 @@ export async function getStripeSubscription(subscriptionId: string): Promise<Str
 }
 
 /**
+ * Retrieve a Stripe Payment Intent by ID
+ */
+export async function retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        return paymentIntent;
+    } catch (error: any) {
+        console.error('Error retrieving Stripe payment intent:', error);
+        throw new Error(`Stripe payment intent retrieval failed: ${error.message}`);
+    }
+}
+
+
+/**
  * Verify Stripe webhook signature
  */
 export function verifyStripeWebhookSignature(

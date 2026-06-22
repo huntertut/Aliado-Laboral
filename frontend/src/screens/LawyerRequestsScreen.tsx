@@ -105,8 +105,8 @@ const LawyerRequestsScreen = () => {
                 return;
             }
 
-            const response = await fetch(`${endpoints.contact.lawyerRequests}?status = ${status} `, {
-                headers: { 'Authorization': `Bearer ${token} ` }
+            const response = await fetch(`${endpoints.contact.lawyerRequests}?status=${status}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const data = await response.json();

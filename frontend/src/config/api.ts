@@ -11,8 +11,8 @@ export const endpoints = {
         createRequest: `${API_URL}/contact/request`,
         myRequests: `${API_URL}/contact/my-requests`,
         lawyerRequests: `${API_URL}/contact/lawyer/requests`,
-        acceptRequest: (id: string) => `${API_URL}/contact/lawyer/request/${id}/accept`,
-        rejectRequest: (id: string) => `${API_URL}/contact/lawyer/request/${id}/reject`,
-        getContact: (id: string) => `${API_URL}/contact/lawyer/request/${id}/contact`,
+        acceptRequest: (id: string) => `${API_URL}/contact/lawyer/${id}/accept`,
+        rejectRequest: (id: string) => `${API_URL}/contact/lawyer/${id}/reject`,
+        getContact: (id: string) => `${API_URL}/contact/lawyer/${id}/contact`,
     }
 };
