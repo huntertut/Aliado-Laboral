@@ -48,6 +48,7 @@ import HomePymeScreen from '../screens/pyme/HomePymeScreen';
 import LawyerRequestsScreen from '../screens/LawyerRequestsScreen';
 import LawyerCasesScreen from '../screens/LawyerCasesScreen';
 import LawyerRequestDetailScreen from '../screens/LawyerRequestDetailScreen';
+import CaseChatScreen from '../screens/CaseChatScreen';
 import ContractReviewScreen from '../screens/pyme/ContractReviewScreen';
 import LiquidationCalculatorView from '../screens/pyme/LiquidationCalculatorView';
 import GenerateActScreen from '../screens/pyme/GenerateActScreen';
@@ -159,6 +160,7 @@ const AppNavigator = () => {
                         <Stack.Screen name="LawyerRequests" component={LawyerRequestsScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LawyerCases" component={LawyerCasesScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LawyerRequestDetail" component={LawyerRequestDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="CaseChat" component={CaseChatScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
                     // Auth Stack — skip Welcome for returning users

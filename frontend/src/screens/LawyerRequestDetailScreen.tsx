@@ -352,6 +352,17 @@ const LawyerRequestDetailScreen = () => {
                                 <Text style={styles.contactButtonText}>WhatsApp</Text>
                             </TouchableOpacity>
                         )}
+
+                        <TouchableOpacity
+                            style={[styles.contactButton, { backgroundColor: '#6c5ce7', marginTop: 12 }]}
+                            onPress={() => navigation.navigate('CaseChat' as never, {
+                                requestId: request.id,
+                                workerName: request.worker.fullName
+                            } as never)}
+                        >
+                            <Ionicons name="chatbubbles" size={20} color="#fff" />
+                            <Text style={styles.contactButtonText}>Abrir Chat Interno</Text>
+                        </TouchableOpacity>
                     </View>
                 )}
 

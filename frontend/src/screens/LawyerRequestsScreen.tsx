@@ -39,7 +39,15 @@ const LawyerRequestsScreen = () => {
         if (user) {
             fetchRequests(activeTab);
         }
-    }, [activeTab, user]);
+
+        const unsubscribe = navigation.addListener('focus', () => {
+            if (user) {
+                fetchRequests(activeTab);
+            }
+        });
+
+        return unsubscribe;
+    }, [activeTab, user, navigation]);
 
     const fetchRequests = async (status: string) => {
         try {
