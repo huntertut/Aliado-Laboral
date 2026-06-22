@@ -92,7 +92,7 @@ android {
         applicationId 'com.aliadolaboral.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 85
+        versionCode 86
         versionName "1.23.22"
     }
     signingConfigs {
