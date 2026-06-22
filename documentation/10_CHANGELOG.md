@@ -6,6 +6,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 
+## [v1.23.22] - 22 Junio 2026 (Build 85/86: Fallback Stripe y Modales Premium Abogado)
+
+- **Fix Crítico (Backend):** Implementado un "fallback" de validación manual en tiempo real de Stripe en `acceptContactRequest` (usando `stripeService.retrievePaymentIntent`). Esto resuelve el problema en el que el webhook de Stripe no llegaba/fallaba al Droplet y la solicitud quedaba bloqueada indefinidamente como no pagada por el trabajador.
+- **Mejora Crítica (Mobile):** Reemplazadas las alertas nativas `Alert.alert` del flujo de aceptar/rechazar en `LawyerRequestDetailScreen.tsx` por **Modales Premium** personalizados. Estos modales muestran información estructurada de costos, soportan mostrar los errores reales del backend y mantienen consistencia visual premium.
+- **Fix (Mobile/Config):** Corregido formateo de query string en endpoints de API en `LawyerRequestsScreen.tsx` y `api.ts`.
+
 ## [v1.23.21] - 22 Junio 2026 (Build 84: Fix Imports, Modal Pago y Notificaciones Persistentes)
 
 - **Fix Crítico (Mobile/CI):** Corregida ruta de import de `AppTheme` en `WorkerProfile.tsx` (`../../../` → `../../../../theme/colors`). Era la causa raíz de todos los fallos de build 83 y las primeras dos tentativas de build 84.
