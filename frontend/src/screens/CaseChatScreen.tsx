@@ -1,6 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView, StatusBar, Modal, ScrollView, Alert, Linking } from 'react-native';
+import {
+    View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet,
+    KeyboardAvoidingView, Platform, ActivityIndicator, SafeAreaView,
+    StatusBar, Modal, ScrollView, Alert, Linking
+} from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppTheme } from '../theme/colors';
@@ -9,13 +13,15 @@ import axios from 'axios';
 import { API_URL } from '../config/constants';
 import moment from 'moment';
 import 'moment/locale/es';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 moment.locale('es');
 
 const CaseChatScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
-    const { requestId, workerName } = route.params as any; // Passed from navigation
+    const { requestId, workerName } = route.params as any;
     const { user, getAccessToken } = useAuth();
 
     const [messages, setMessages] = useState<any[]>([]);
@@ -25,11 +31,14 @@ const CaseChatScreen = () => {
     const [vaultModalVisible, setVaultModalVisible] = useState(false);
     const [vaultFiles, setVaultFiles] = useState<any[]>([]);
     const [fetchingVault, setFetchingVault] = useState(false);
+    const [attachMenuVisible, setAttachMenuVisible] = useState(false);
     const flatListRef = useRef<FlatList>(null);
+
+    const isLawyer = user?.role === 'lawyer';
+    const isWorker = !isLawyer; // worker or pyme
 
     useEffect(() => {
         fetchMessages();
-        // Poll for new messages every 10 seconds (Simple MVP real-time)
         const interval = setInterval(fetchMessages, 10000);
         return () => clearInterval(interval);
     }, []);
@@ -37,16 +46,12 @@ const CaseChatScreen = () => {
     const fetchMessages = async () => {
         try {
             const token = await getAccessToken();
-            const response = await axios.get(`${API_URL}/chat/${requestId}`, {
+            // FIX: correct route is /chat/messages/:contactRequestId
+            const response = await axios.get(`${API_URL}/chat/messages/${requestId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
-            // Backend returns chronological orders. FlatList inverted needs reverse order?
-            // Actually, usually we fetch desc or asc. 
-            // My backend currently: orderBy: { createdAt: 'asc' } (Oldest first)
-            // For inverted FlatList, we want Newest first (index 0).
-            // So we reverse the array.
-            const sortedMessages = response.data.reverse();
+            // Backend returns asc order, FlatList is inverted so we reverse
+            const sortedMessages = [...response.data].reverse();
             setMessages(sortedMessages);
         } catch (error) {
             console.error('Error fetching chat:', error);
@@ -55,12 +60,9 @@ const CaseChatScreen = () => {
         }
     };
 
+    // ─── Worker: open vault to share a file ──────────────────────────────────
     const openVaultPicker = async () => {
-        if (user?.role !== 'worker') {
-            Alert.alert('Acceso Denegado', 'Solo el cliente puede compartir archivos de su baúl personal.');
-            return;
-        }
-
+        setAttachMenuVisible(false);
         try {
             setFetchingVault(true);
             setVaultModalVisible(true);
@@ -71,6 +73,7 @@ const CaseChatScreen = () => {
             setVaultFiles(response.data);
         } catch (error) {
             console.error('Error fetching vault:', error);
+            setVaultModalVisible(false);
             Alert.alert('Error', 'No se pudieron cargar los archivos de tu baúl.');
         } finally {
             setFetchingVault(false);
@@ -84,7 +87,6 @@ const CaseChatScreen = () => {
             const token = await getAccessToken();
             const payload = {
                 requestId,
-                // We send a JSON-stringified object for document type
                 content: JSON.stringify({
                     fileId: file.id,
                     fileName: file.fileName,
@@ -92,11 +94,10 @@ const CaseChatScreen = () => {
                 }),
                 type: 'document'
             };
-
-            const response = await axios.post(`${API_URL}/chat`, payload, {
+            // FIX: correct route is /chat/messages
+            const response = await axios.post(`${API_URL}/chat/messages`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-
             setMessages(prev => [response.data, ...prev]);
         } catch (error) {
             console.error('Error sharing vault file:', error);
@@ -106,6 +107,96 @@ const CaseChatScreen = () => {
         }
     };
 
+    // ─── Lawyer: pick image from device ──────────────────────────────────────
+    const openLawyerImagePicker = async () => {
+        setAttachMenuVisible(false);
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permiso requerido', 'Necesitamos acceso a tu galería para adjuntar imágenes.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+            allowsEditing: false,
+        });
+
+        if (!result.canceled && result.assets.length > 0) {
+            const asset = result.assets[0];
+            await uploadLawyerFile(asset.uri, asset.fileName || 'imagen.jpg', 'image/jpeg');
+        }
+    };
+
+    // ─── Lawyer: pick document from device ───────────────────────────────────
+    const openLawyerDocumentPicker = async () => {
+        setAttachMenuVisible(false);
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf', 'image/*', 'application/msword',
+                       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets.length > 0) {
+                const asset = result.assets[0];
+                await uploadLawyerFile(asset.uri, asset.name, asset.mimeType || 'application/octet-stream');
+            }
+        } catch (error) {
+            console.error('Error picking document:', error);
+            Alert.alert('Error', 'No se pudo seleccionar el documento.');
+        }
+    };
+
+    // ─── Upload file to backend and send as chat message ─────────────────────
+    const uploadLawyerFile = async (uri: string, fileName: string, mimeType: string) => {
+        setSending(true);
+        try {
+            const token = await getAccessToken();
+
+            // Build multipart form data
+            const formData = new FormData();
+            formData.append('file', {
+                uri,
+                name: fileName,
+                type: mimeType,
+            } as any);
+            formData.append('requestId', requestId);
+
+            // Upload to chat upload endpoint
+            const uploadResponse = await axios.post(`${API_URL}/chat/upload`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+
+            const { fileUrl, storedFileName } = uploadResponse.data;
+
+            // Now send the message referencing the uploaded file
+            const payload = {
+                requestId,
+                content: JSON.stringify({
+                    fileUrl,
+                    fileName: storedFileName || fileName,
+                    fileType: mimeType,
+                }),
+                type: 'document'
+            };
+
+            const msgResponse = await axios.post(`${API_URL}/chat/messages`, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setMessages(prev => [msgResponse.data, ...prev]);
+        } catch (error: any) {
+            console.error('Error uploading file:', error?.response?.data || error);
+            Alert.alert('Error', 'No se pudo enviar el archivo. Intenta de nuevo.');
+        } finally {
+            setSending(false);
+        }
+    };
+
+    // ─── Send text message ────────────────────────────────────────────────────
     const sendMessage = async () => {
         if (!inputText.trim()) return;
 
@@ -117,34 +208,38 @@ const CaseChatScreen = () => {
                 content: inputText.trim(),
                 type: 'text'
             };
-
-            const response = await axios.post(`${API_URL}/chat`, payload, {
+            // FIX: correct route is /chat/messages
+            const response = await axios.post(`${API_URL}/chat/messages`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            // Optimistic update
-            const newMessage = response.data;
-            // Add to start of list (since it's inverted)
-            setMessages(prev => [newMessage, ...prev]);
+            setMessages(prev => [response.data, ...prev]);
             setInputText('');
-
-        } catch (error) {
-            console.error('Error sending message:', error);
+        } catch (error: any) {
+            console.error('Error sending message:', error?.response?.data || error);
             Alert.alert('Error', 'No se pudo enviar el mensaje.');
         } finally {
             setSending(false);
         }
     };
 
+    // ─── View shared document ─────────────────────────────────────────────────
     const handleViewDocument = async (message: any) => {
         try {
             const fileInfo = JSON.parse(message.content);
-            const token = await getAccessToken();
-            // Pass requestId so backend can verify lawyer access
-            const response = await axios.get(`${API_URL}/vault/files/${fileInfo.fileId}/download?requestId=${requestId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
 
+            // Lawyer-uploaded files have a direct fileUrl
+            if (fileInfo.fileUrl) {
+                Linking.openURL(fileInfo.fileUrl);
+                return;
+            }
+
+            // Worker vault files need a signed URL from backend
+            const token = await getAccessToken();
+            const response = await axios.get(
+                `${API_URL}/vault/files/${fileInfo.fileId}/download?requestId=${requestId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             const { downloadUrl } = response.data;
             Linking.openURL(downloadUrl);
         } catch (error) {
@@ -153,11 +248,17 @@ const CaseChatScreen = () => {
         }
     };
 
+    // ─── Attachment menu: different options by role ───────────────────────────
+    const handleAttachPress = () => {
+        setAttachMenuVisible(true);
+    };
+
+    // ─── Render message ───────────────────────────────────────────────────────
     const renderMessage = ({ item }: { item: any }) => {
         const isMyMessage = item.senderId === user?.id;
 
         if (item.type === 'document') {
-            let docInfo;
+            let docInfo: any = {};
             try {
                 docInfo = JSON.parse(item.content);
             } catch (e) {
@@ -168,7 +269,11 @@ const CaseChatScreen = () => {
                 <View style={[styles.messageContainer, isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer]}>
                     <View style={[styles.bubble, isMyMessage ? styles.myBubble : styles.theirBubble, styles.documentBubble]}>
                         <View style={styles.documentHeader}>
-                            <Ionicons name="document-text" size={32} color={isMyMessage ? '#fff' : AppTheme.colors.primary} />
+                            <Ionicons
+                                name={docInfo.fileType?.includes('image') ? 'image' : 'document-text'}
+                                size={32}
+                                color={isMyMessage ? '#fff' : AppTheme.colors.primary}
+                            />
                             <View style={styles.documentInfo}>
                                 <Text style={[styles.documentName, isMyMessage ? styles.myMessageText : styles.theirMessageText]}>
                                     {docInfo.fileName}
@@ -198,11 +303,18 @@ const CaseChatScreen = () => {
         return (
             <View style={[styles.messageContainer, isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer]}>
                 <View style={[styles.bubble, isMyMessage ? styles.myBubble : styles.theirBubble]}>
+                    {item.status === 'queued' && (
+                        <View style={styles.queuedBadge}>
+                            <Ionicons name="time-outline" size={12} color="#f39c12" />
+                            <Text style={styles.queuedText}>Programado</Text>
+                        </View>
+                    )}
                     <Text style={[styles.messageText, isMyMessage ? styles.myMessageText : styles.theirMessageText]}>
                         {item.content}
                     </Text>
                     <Text style={[styles.timestamp, isMyMessage ? styles.myTimestamp : styles.theirTimestamp]}>
                         {moment(item.createdAt).format('HH:mm')}
+                        {item.status === 'queued' ? ' · ⏰' : ''}
                     </Text>
                 </View>
             </View>
@@ -220,7 +332,9 @@ const CaseChatScreen = () => {
                 </TouchableOpacity>
                 <View style={styles.headerInfo}>
                     <Text style={styles.headerTitle}>{workerName || 'Chat del Caso'}</Text>
-                    <Text style={styles.headerSubtitle}>En línea</Text>
+                    <Text style={styles.headerSubtitle}>
+                        {isLawyer ? 'Vista del Abogado' : 'Chat con tu Abogado'}
+                    </Text>
                 </View>
                 <TouchableOpacity style={styles.optionButton}>
                     <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
@@ -240,6 +354,13 @@ const CaseChatScreen = () => {
                     contentContainerStyle={styles.listContent}
                     inverted
                     showsVerticalScrollIndicator={false}
+                    ListEmptyComponent={
+                        <View style={styles.emptyChat}>
+                            <Ionicons name="chatbubbles-outline" size={64} color="#ddd" />
+                            <Text style={styles.emptyChatText}>Aún no hay mensajes.</Text>
+                            <Text style={styles.emptyChatSub}>Envía el primero para comenzar.</Text>
+                        </View>
+                    }
                 />
             )}
 
@@ -248,7 +369,7 @@ const CaseChatScreen = () => {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 <View style={styles.inputContainer}>
-                    <TouchableOpacity style={styles.attachButton} onPress={openVaultPicker}>
+                    <TouchableOpacity style={styles.attachButton} onPress={handleAttachPress}>
                         <Ionicons name="add" size={28} color={AppTheme.colors.primary} />
                     </TouchableOpacity>
 
@@ -275,7 +396,61 @@ const CaseChatScreen = () => {
                 </View>
             </KeyboardAvoidingView>
 
-            {/* Vault Picker Modal */}
+            {/* ── Attachment Menu Modal ─────────────────────────────────── */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={attachMenuVisible}
+                onRequestClose={() => setAttachMenuVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setAttachMenuVisible(false)}
+                >
+                    <View style={styles.attachMenu}>
+                        <Text style={styles.attachMenuTitle}>Adjuntar archivo</Text>
+
+                        {isWorker ? (
+                            // Worker/Pyme: share from vault
+                            <TouchableOpacity style={styles.attachOption} onPress={openVaultPicker}>
+                                <View style={[styles.attachIcon, { backgroundColor: '#e8f4fd' }]}>
+                                    <Ionicons name="folder-open" size={28} color="#2980b9" />
+                                </View>
+                                <View style={styles.attachOptionText}>
+                                    <Text style={styles.attachOptionTitle}>Mi Baúl Personal</Text>
+                                    <Text style={styles.attachOptionSub}>Comparte documentos de tu baúl</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ) : (
+                            // Lawyer: upload from device
+                            <>
+                                <TouchableOpacity style={styles.attachOption} onPress={openLawyerImagePicker}>
+                                    <View style={[styles.attachIcon, { backgroundColor: '#e8f5e9' }]}>
+                                        <Ionicons name="image" size={28} color="#27ae60" />
+                                    </View>
+                                    <View style={styles.attachOptionText}>
+                                        <Text style={styles.attachOptionTitle}>Imagen / Foto</Text>
+                                        <Text style={styles.attachOptionSub}>Adjunta una imagen de tu galería</Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={styles.attachOption} onPress={openLawyerDocumentPicker}>
+                                    <View style={[styles.attachIcon, { backgroundColor: '#fef9e7' }]}>
+                                        <Ionicons name="document-text" size={28} color="#e67e22" />
+                                    </View>
+                                    <View style={styles.attachOptionText}>
+                                        <Text style={styles.attachOptionTitle}>Documento (PDF / Word)</Text>
+                                        <Text style={styles.attachOptionSub}>Sube un escrito, contrato o informe</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* ── Vault Picker Modal (Worker) ───────────────────────────── */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -308,7 +483,7 @@ const CaseChatScreen = () => {
                                             onPress={() => shareVaultFile(file)}
                                         >
                                             <Ionicons
-                                                name={file.fileType?.includes('pdf') ? "document-text" : "image"}
+                                                name={file.fileType?.includes('pdf') ? 'document-text' : 'image'}
                                                 size={24}
                                                 color={AppTheme.colors.primary}
                                             />
@@ -339,54 +514,23 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         paddingHorizontal: 16,
     },
-    backButton: {
-        padding: 8,
-        marginRight: 8,
-    },
-    headerInfo: {
-        flex: 1,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    headerSubtitle: {
-        fontSize: 12,
-        color: 'rgba(255,255,255,0.8)',
-    },
-    optionButton: {
-        padding: 8,
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    listContent: {
-        padding: 16,
-        paddingBottom: 24,
-    },
-    messageContainer: {
-        marginBottom: 12,
-        flexDirection: 'row',
-    },
-    myMessageContainer: {
-        justifyContent: 'flex-end',
-    },
-    theirMessageContainer: {
-        justifyContent: 'flex-start',
-    },
-    bubble: {
-        maxWidth: '80%',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-    },
-    myBubble: {
-        backgroundColor: AppTheme.colors.primary,
-        borderBottomRightRadius: 4,
-    },
+    backButton: { padding: 8, marginRight: 8 },
+    headerInfo: { flex: 1 },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+    headerSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+    optionButton: { padding: 8 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    listContent: { padding: 16, paddingBottom: 24 },
+    // Empty state
+    emptyChat: { alignItems: 'center', marginTop: 80 },
+    emptyChatText: { marginTop: 16, fontSize: 18, fontWeight: '600', color: '#999' },
+    emptyChatSub: { marginTop: 4, fontSize: 14, color: '#bbb' },
+    // Messages
+    messageContainer: { marginBottom: 12, flexDirection: 'row' },
+    myMessageContainer: { justifyContent: 'flex-end' },
+    theirMessageContainer: { justifyContent: 'flex-start' },
+    bubble: { maxWidth: '80%', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
+    myBubble: { backgroundColor: AppTheme.colors.primary, borderBottomRightRadius: 4 },
     theirBubble: {
         backgroundColor: '#fff',
         borderBottomLeftRadius: 4,
@@ -396,27 +540,16 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
         elevation: 1,
     },
-    messageText: {
-        fontSize: 16,
-        lineHeight: 22,
-    },
-    myMessageText: {
-        color: '#fff',
-    },
-    theirMessageText: {
-        color: '#333',
-    },
-    timestamp: {
-        fontSize: 10,
-        marginTop: 4,
-        alignSelf: 'flex-end',
-    },
-    myTimestamp: {
-        color: 'rgba(255,255,255,0.7)',
-    },
-    theirTimestamp: {
-        color: '#999',
-    },
+    messageText: { fontSize: 16, lineHeight: 22 },
+    myMessageText: { color: '#fff' },
+    theirMessageText: { color: '#333' },
+    timestamp: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
+    myTimestamp: { color: 'rgba(255,255,255,0.7)' },
+    theirTimestamp: { color: '#999' },
+    // Queued badge
+    queuedBadge: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    queuedText: { fontSize: 11, color: '#f39c12', marginLeft: 4, fontStyle: 'italic' },
+    // Input
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -425,9 +558,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#eee',
     },
-    attachButton: {
-        padding: 10,
-    },
+    attachButton: { padding: 10 },
     input: {
         flex: 1,
         backgroundColor: '#F2F2F7',
@@ -440,102 +571,65 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     sendButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 44, height: 44, borderRadius: 22,
         backgroundColor: AppTheme.colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center', alignItems: 'center',
     },
-    sendButtonDisabled: {
-        backgroundColor: '#ccc',
-    },
-    // Document Styles
-    documentBubble: {
-        width: '80%',
-    },
-    documentHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    documentInfo: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    documentName: {
-        fontSize: 15,
-        fontWeight: 'bold',
-    },
-    documentType: {
-        fontSize: 11,
-        marginTop: 2,
-    },
+    sendButtonDisabled: { backgroundColor: '#ccc' },
+    // Document bubble
+    documentBubble: { width: '80%' },
+    documentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    documentInfo: { marginLeft: 12, flex: 1 },
+    documentName: { fontSize: 15, fontWeight: 'bold' },
+    documentType: { fontSize: 11, marginTop: 2 },
     viewButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 8,
-        borderRadius: 8,
-        marginTop: 4,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        padding: 8, borderRadius: 8, marginTop: 4,
     },
-    viewButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        marginRight: 6,
+    viewButtonText: { fontSize: 13, fontWeight: '600', marginRight: 6 },
+    // Attach menu
+    attachMenu: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        padding: 20,
+        paddingBottom: 40,
     },
-    // Modal Styles
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'flex-end',
+    attachMenuTitle: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 20 },
+    attachOption: {
+        flexDirection: 'row', alignItems: 'center',
+        padding: 14, borderRadius: 14,
+        backgroundColor: '#FAFAFA',
+        marginBottom: 12,
+        borderWidth: 1, borderColor: '#F0F0F0',
     },
+    attachIcon: {
+        width: 52, height: 52, borderRadius: 14,
+        justifyContent: 'center', alignItems: 'center', marginRight: 16,
+    },
+    attachOptionText: { flex: 1 },
+    attachOptionTitle: { fontSize: 15, fontWeight: '600', color: '#333' },
+    attachOptionSub: { fontSize: 12, color: '#999', marginTop: 2 },
+    // Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     modalContent: {
         backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        minHeight: '40%',
-        maxHeight: '80%',
-        padding: 20,
+        borderTopLeftRadius: 20, borderTopRightRadius: 20,
+        minHeight: '40%', maxHeight: '80%', padding: 20,
     },
     modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
+        flexDirection: 'row', justifyContent: 'space-between',
+        alignItems: 'center', marginBottom: 20,
     },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    vaultList: {
-        paddingBottom: 20,
-    },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+    vaultList: { paddingBottom: 20 },
     vaultItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        backgroundColor: '#F8F9FA',
-        borderRadius: 12,
-        marginBottom: 10,
+        flexDirection: 'row', alignItems: 'center',
+        padding: 15, backgroundColor: '#F8F9FA',
+        borderRadius: 12, marginBottom: 10,
     },
-    vaultFileName: {
-        flex: 1,
-        marginLeft: 15,
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '500',
-    },
-    emptyVault: {
-        alignItems: 'center',
-        marginTop: 40,
-    },
-    emptyVaultText: {
-        marginTop: 10,
-        color: '#999',
-    },
+    vaultFileName: { flex: 1, marginLeft: 15, fontSize: 14, color: '#333', fontWeight: '500' },
+    emptyVault: { alignItems: 'center', marginTop: 40 },
+    emptyVaultText: { marginTop: 10, color: '#999' },
 });
 
 export default CaseChatScreen;
-

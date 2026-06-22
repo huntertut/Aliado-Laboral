@@ -2,8 +2,11 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import moment from 'moment';
+import admin from '../config/firebase';
 
 const prisma = new PrismaClient();
+const bucket = admin.storage().bucket();
+
 
 // Send a Message
 export const sendMessage = async (req: any, res: Response) => {
@@ -223,5 +226,58 @@ export const markMessagesAsRead = async (req: any, res: Response) => {
     } catch (error) {
         console.error('Error marking messages as read:', error);
         res.status(500).json({ error: 'Error al actualizar estado de lectura' });
+    }
+};
+
+// Upload a file from the Lawyer's device to Firebase Storage (for chat attachments)
+export const uploadChatFile = async (req: any, res: Response) => {
+    try {
+        const userId = req.user.id;
+        const { requestId } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'No se recibió ningún archivo' });
+        }
+
+        // Validate the lawyer is a participant in this request
+        if (requestId) {
+            const request = await prisma.contactRequest.findUnique({
+                where: { id: requestId },
+                include: { lawyerProfile: { include: { lawyer: true } } }
+            });
+            if (!request) {
+                return res.status(404).json({ error: 'Solicitud no encontrada' });
+            }
+            const isLawyer = request.lawyerProfile?.lawyer?.userId === userId;
+            const isWorker = request.workerId === userId;
+            if (!isLawyer && !isWorker) {
+                return res.status(403).json({ error: 'Sin permiso para subir archivos a este chat' });
+            }
+        }
+
+        const { originalname, mimetype, buffer } = req.file;
+        const safeName = `${Date.now()}_${originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const filePath = `chat/${requestId || userId}/${safeName}`;
+        const fileRef = bucket.file(filePath);
+
+        // Upload buffer to Firebase Storage
+        await fileRef.save(buffer, {
+            metadata: { contentType: mimetype },
+        });
+
+        // Make the file publicly accessible (read) so the other party can view it
+        await fileRef.makePublic();
+
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+        res.json({
+            fileUrl: publicUrl,
+            storedFileName: originalname,
+            fileType: mimetype,
+        });
+
+    } catch (error) {
+        console.error('Error uploading chat file:', error);
+        res.status(500).json({ error: 'Error al subir el archivo' });
     }
 };
