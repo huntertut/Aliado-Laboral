@@ -301,6 +301,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         headers: { Authorization: `Bearer ${idToken}` }
                     });
                     console.log('[AuthContext] 6. ✅ Push token synced! Server response:', pushRes.status);
+                    // Persist token locally so it survives logout/login cycles (like WhatsApp)
+                    await AsyncStorage.setItem('pushToken', pushToken);
                 } else {
                     console.warn('[AuthContext] registerForPushNotificationsAsync() returned null/undefined');
                 }
@@ -395,6 +397,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await signOut(auth); // Clear Firebase Session
             await AsyncStorage.removeItem('authToken');
             await AsyncStorage.removeItem('userData');
+            // NOTE: We intentionally keep 'pushToken' in AsyncStorage on logout.
+            // This allows the backend to keep sending push notifications to this device
+            // even when the user is logged out (same behavior as WhatsApp/Facebook).
+            // The token is still valid at the OS level and doesn't depend on session state.
             setUser(null);
         } catch (e) {
             console.error('Logout failed', e);

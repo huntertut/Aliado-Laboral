@@ -4,14 +4,15 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 84 (v1.23.21) — 18 Junio 2026**
+**Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 
-## [v1.23.21] - 18 Junio 2026 (Build 84: Fix Pantalla en Blanco en Pago y Fix Mis Solicitudes Vacías)
+## [v1.23.21] - 22 Junio 2026 (Build 84: Fix Imports, Modal Pago y Notificaciones Persistentes)
 
-- **Fix Crítico (Mobile):** Corregida la pantalla en blanco al hacer pago con Stripe en `ContactPaymentModal.tsx`. El spinner ya no bloquea el modal antes del Payment Sheet; ahora se detiene justo antes de presentarlo, evitando que la UI quede congelada si el usuario cancela o si hay un error.
-- **Fix Crítico (Mobile):** Corregido `MyContactRequestsScreen.tsx` que nunca cargaba datos porque le faltaba el `useEffect` inicial que llamara a `fetchRequests()`. El usuario veía siempre "0 solicitudes" aunque sí existían en la base de datos.
-- **Fix Build (CI/CD):** El build 83 falló porque `frontend/app.json` no estaba commiteado al repositorio. Se agregó correctamente al git tracking para que EAS Build lo lea.
-- **Cleanup:** Eliminado el bloque de renderizado de `step === 'processing'` que ya no se usaba en el modal de pago.
+- **Fix Crítico (Mobile/CI):** Corregida ruta de import de `AppTheme` en `WorkerProfile.tsx` (`../../../` → `../../../../theme/colors`). Era la causa raíz de todos los fallos de build 83 y las primeras dos tentativas de build 84.
+- **Fix Build (CI/CD):** `build.gradle` tenía `versionCode` hardcodeado en 83. Ahora sincronizado con `app.json` (versionCode 84, versionName 1.23.21). Agregado `frontend/android/**` a triggers del workflow.
+- **Fix Crítico (Mobile):** Corregida la pantalla en blanco al hacer pago con Stripe en `ContactPaymentModal.tsx`. El spinner ya no bloquea el modal antes del Payment Sheet.
+- **Fix Crítico (Mobile):** Corregido `MyContactRequestsScreen.tsx` que nunca cargaba datos (faltaba `useEffect` inicial con `fetchRequests()`).
+- **Mejora (Mobile):** Notificaciones push ahora persisten como WhatsApp/Facebook. El `pushToken` se guarda en `AsyncStorage` al registrarse y NO se elimina al hacer logout. El backend puede seguir enviando notificaciones al dispositivo aunque el usuario esté deslogueado.
 
 ## [v1.23.20] - 18 Junio 2026 (Build 83: UI Éxito de Pago Nativa y Acceso a Mis Solicitudes)
 
