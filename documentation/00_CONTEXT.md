@@ -156,5 +156,11 @@ Antes de cada compilación de AAB para producción:
 - [ ] Actualizar la tabla de historial en `09_TROUBLESHOOTING.md` incidente #13
 - [ ] Actualizar el header de `11_DESPLIEGUE_GOOGLE_PLAY_AAB.md` con el nuevo versionCode
 
+### 4.3 Sistema de Inactividad y Reasignación de Abogados (SLA V2)
+- **Aceptación de casos**: El abogado tiene **3 días hábiles** para aceptar una nueva solicitud (excluyendo sábados y domingos). De lo contrario, expira y se reasigna a la bolsa pública.
+- **Inactividad del Abogado**: Si el abogado no responde al trabajador en **5 días hábiles** (excluyendo sábados y domingos), el trabajador puede reasignar el caso a la bolsa pública de forma voluntaria.
+- **Inactividad del Trabajador**: Si el trabajador no responde al abogado en **7 días laborables** (excluyendo únicamente domingos), el abogado puede archivar el caso por inactividad.
+- **Bolsa Pública**: Los casos reasignados o expirados tienen `lawyerProfileId = null` y regresan al estado `pending`. Son visibles para todos los abogados activos y verificados en su pestaña de "Pendientes" (excepto para los abogados que previamente atendieron o dejaron expirar el caso, registrados en `previousLawyerIds`). Al ser aceptados, se cobra la cuota normal de $150/$300 y se asignan al nuevo abogado.
+
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 

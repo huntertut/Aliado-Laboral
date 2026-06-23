@@ -286,6 +286,7 @@ model ContactRequest {
   lastWorkerActivityAt  DateTime?         @default(now())
   lastLawyerActivityAt  DateTime?
   subStatus             String?
+  previousLawyerIds     String            @default("")
   isPaused              Boolean           @default(false)
   lastMessageContent    String?
   lastMessageSenderId   String?

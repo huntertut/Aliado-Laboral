@@ -31,4 +31,9 @@ router.patch('/lawyer/:id/status', authMiddleware, contactController.updateCRMSt
 // LAWYER - AI Suggest First Reply
 router.post('/lawyer/:id/suggest-reply', authMiddleware, contactController.suggestReply);
 
+// CASE INACTIVITY & REASSIGNMENT ROUTES
+router.get('/request/:id', authMiddleware, contactController.getRequestInfo);
+router.post('/request/:id/reassign-lawyer', authMiddleware, contactController.reassignLawyer);
+router.post('/request/:id/archive-case', authMiddleware, contactController.archiveInactiveCase);
+
 export default router;

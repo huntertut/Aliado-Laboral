@@ -6,7 +6,26 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 
-## [v1.23.22] - 22 Junio 2026 (Build 85/86: Fallback Stripe y Modales Premium Abogado)
+## [v1.23.23] - 22 Junio 2026 (SLA V2: Inactividad y Reasignación de Abogados)
+
+- **Feat (Backend):** Implementada biblioteca de días hábiles (`businessDays.ts`) que excluye sábados y domingos para el cálculo de SLAs de abogados y excluye solo domingos para trabajadores.
+- **Feat (Backend):** Modificado el plazo de expiración inicial de solicitudes a **3 días hábiles** desde su creación.
+- **Feat (Backend):** Modificada la consulta de solicitudes para abogados (`getLawyerRequests`) para que incluya las solicitudes de la bolsa pública (`lawyerProfileId = null`) y filtre aquellas donde el abogado actual sea el anterior que lo abandonó o dejó expirar.
+- **Feat (Backend):** Implementado endpoint `GET /api/contact/request/:id` para obtener detalles del caso y banderas de inactividad (`canReassignLawyer`, `canArchiveCase`).
+- **Feat (Backend):** Implementado endpoint `POST /api/contact/request/:id/reassign-lawyer` para que el trabajador reasigne el caso a la bolsa pública por inactividad del abogado (>= 5 días hábiles).
+- **Feat (Backend):** Implementado endpoint `POST /api/contact/request/:id/archive-case` para que el abogado o trabajador archiven el caso (el abogado puede hacerlo tras 7 días laborables de inactividad del cliente).
+- **Feat (Backend):** Modificado el cron nocturno de las 2:00 AM para verificar expiraciones de 3 días hábiles y reasignar automáticamente los casos sin aceptar a la bolsa pública, notificando a las partes y alertando a otros abogados.
+- **Feat (Mobile):** Integrado botón de opciones (`⋮`) en el encabezado de `CaseChatScreen.tsx` que despliega un modal con las acciones correspondientes de reasignación y archivado con indicación de días faltantes si no están habilitadas.
+
+## [v1.23.22-ota2] - 22 Junio 2026 (OTA: Fix Chat + Upload Abogado)
+
+- **Fix Crítico (Backend):** Corregidas rutas del chat. El frontend llamaba `POST /api/chat` y `GET /api/chat/:id` pero las rutas correctas del backend son `POST /api/chat/messages` y `GET /api/chat/messages/:contactRequestId`. Los mensajes de texto ahora se envían y reciben correctamente.
+- **Feat (Backend):** Instalado `multer` y creado endpoint `POST /api/chat/upload` para que el abogado pueda subir archivos (imágenes, PDF, Word) directamente desde su dispositivo al chat. Los archivos se almacenan en Firebase Storage y se comparten como mensaje de tipo `document`.
+- **Feat (Mobile):** El botón `+` en el chat ahora funciona diferenciado por rol: el cliente abre su Baúl Personal, el abogado elige entre Imagen/Foto o Documento del dispositivo.
+- **Feat (Mobile):** Los mensajes con horario programado (`status: queued`) muestran un badge `⏰ Programado` en el chat, indicando al cliente que será respondido en horario hábil.
+- **Mejora (Mobile):** Estado vacío visual cuando no hay mensajes en el chat.
+- **Seguridad:** Validación en el servidor de que quien sube un archivo al chat es participante activo del caso.
+
 
 - **Fix Crítico (Backend):** Implementado un "fallback" de validación manual en tiempo real de Stripe en `acceptContactRequest` (usando `stripeService.retrievePaymentIntent`). Esto resuelve el problema en el que el webhook de Stripe no llegaba/fallaba al Droplet y la solicitud quedaba bloqueada indefinidamente como no pagada por el trabajador.
 - **Fix Crítico (Backend/Stripe):** Corregido error en el cobro automático del abogado en `acceptContactRequest`. Ahora se fuerzan los parámetros `confirm: true` y `off_session: true` usando la tarjeta guardada del abogado. En entornos de prueba (Stripe Test Mode), si el abogado no tiene tarjeta registrada, se simula éxito para no bloquear las pruebas del flujo.

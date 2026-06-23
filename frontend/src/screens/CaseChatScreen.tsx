@@ -32,6 +32,8 @@ const CaseChatScreen = () => {
     const [vaultFiles, setVaultFiles] = useState<any[]>([]);
     const [fetchingVault, setFetchingVault] = useState(false);
     const [attachMenuVisible, setAttachMenuVisible] = useState(false);
+    const [caseInfo, setCaseInfo] = useState<any>(null);
+    const [optionsModalVisible, setOptionsModalVisible] = useState(false);
     const flatListRef = useRef<FlatList>(null);
 
     const isLawyer = user?.role === 'lawyer';
@@ -39,9 +41,25 @@ const CaseChatScreen = () => {
 
     useEffect(() => {
         fetchMessages();
-        const interval = setInterval(fetchMessages, 10000);
+        fetchCaseInfo();
+        const interval = setInterval(() => {
+            fetchMessages();
+            fetchCaseInfo();
+        }, 10000);
         return () => clearInterval(interval);
     }, []);
+
+    const fetchCaseInfo = async () => {
+        try {
+            const token = await getAccessToken();
+            const response = await axios.get(`${API_URL}/contact/request/${requestId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setCaseInfo((response.data as any).request);
+        } catch (error) {
+            console.error('Error fetching case info:', error);
+        }
+    };
 
     const fetchMessages = async () => {
         try {
@@ -51,12 +69,105 @@ const CaseChatScreen = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Backend returns asc order, FlatList is inverted so we reverse
-            const sortedMessages = [...response.data].reverse();
+            const sortedMessages = [...(response.data as any[])].reverse();
             setMessages(sortedMessages);
         } catch (error) {
             console.error('Error fetching chat:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleReassignLawyer = async () => {
+        setOptionsModalVisible(false);
+        Alert.alert(
+            'Solicitar Cambio de Abogado',
+            '¿Estás seguro de que deseas solicitar el cambio de tu abogado? Tu caso regresará a la bolsa pública para que otro abogado lo acepte.',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Confirmar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            const token = await getAccessToken();
+                            await axios.post(`${API_URL}/contact/request/${requestId}/reassign-lawyer`, {}, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            });
+                            Alert.alert('Solicitud enviada', 'Tu caso ha regresado a la bolsa pública de abogados. Recibirás una notificación cuando un nuevo abogado lo acepte.', [
+                                { text: 'OK', onPress: () => navigation.goBack() }
+                            ]);
+                        } catch (err: any) {
+                            console.error('Error reassigning lawyer:', err);
+                            Alert.alert('Error', err.response?.data?.error || 'No se pudo reasignar el caso.');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleArchiveCase = async () => {
+        setOptionsModalVisible(false);
+        const title = isLawyer ? 'Archivar por Inactividad' : 'Cerrar y Archivar Caso';
+        const msg = isLawyer 
+            ? '¿Estás seguro de que deseas archivar este caso debido a la inactividad prolongada del trabajador?'
+            : '¿Estás seguro de que deseas cerrar y archivar este caso?';
+
+        Alert.alert(
+            title,
+            msg,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Confirmar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            const token = await getAccessToken();
+                            await axios.post(`${API_URL}/contact/request/${requestId}/archive-case`, {}, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            });
+                            Alert.alert('Caso Archivado', 'El caso ha sido cerrado y archivado exitosamente.', [
+                                { text: 'OK', onPress: () => navigation.goBack() }
+                            ]);
+                        } catch (err: any) {
+                            console.error('Error archiving case:', err);
+                            Alert.alert('Error', err.response?.data?.error || 'No se pudo archivar el caso.');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleReassignPress = () => {
+        if (caseInfo?.canReassignLawyer) {
+            handleReassignLawyer();
+        } else {
+            const daysLeft = 5 - (caseInfo?.businessDaysSinceWorkerActivity || 0);
+            Alert.alert(
+                'Opción no disponible',
+                `Para cambiar de abogado, este debe estar inactivo por al menos 5 días hábiles.\n\nActualmente lleva: ${caseInfo?.businessDaysSinceWorkerActivity || 0} días hábiles sin actividad.\nFaltan aproximadamente: ${daysLeft > 0 ? daysLeft : 0} días hábiles.`
+            );
+        }
+    };
+
+    const handleArchivePress = () => {
+        if (caseInfo?.canArchiveCase) {
+            handleArchiveCase();
+        } else {
+            const daysLeft = 7 - (caseInfo?.workerDaysSinceLawyerActivity || 0);
+            Alert.alert(
+                'Opción no disponible',
+                `Para archivar por inactividad del cliente, este debe estar inactivo por al menos 7 días laborables.\n\nActualmente lleva: ${caseInfo?.workerDaysSinceLawyerActivity || 0} días sin responder.\nFaltan aproximadamente: ${daysLeft > 0 ? daysLeft : 0} días.`
+            );
         }
     };
 
@@ -70,7 +181,7 @@ const CaseChatScreen = () => {
             const response = await axios.get(`${API_URL}/vault/files`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setVaultFiles(response.data);
+            setVaultFiles(response.data as any[]);
         } catch (error) {
             console.error('Error fetching vault:', error);
             setVaultModalVisible(false);
@@ -170,7 +281,7 @@ const CaseChatScreen = () => {
                 }
             });
 
-            const { fileUrl, storedFileName } = uploadResponse.data;
+            const { fileUrl, storedFileName } = uploadResponse.data as any;
 
             // Now send the message referencing the uploaded file
             const payload = {
@@ -240,7 +351,7 @@ const CaseChatScreen = () => {
                 `${API_URL}/vault/files/${fileInfo.fileId}/download?requestId=${requestId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            const { downloadUrl } = response.data;
+            const { downloadUrl } = response.data as any;
             Linking.openURL(downloadUrl);
         } catch (error) {
             console.error('Error opening document:', error);
@@ -336,7 +447,7 @@ const CaseChatScreen = () => {
                         {isLawyer ? 'Vista del Abogado' : 'Chat con tu Abogado'}
                     </Text>
                 </View>
-                <TouchableOpacity style={styles.optionButton}>
+                <TouchableOpacity style={styles.optionButton} onPress={() => setOptionsModalVisible(true)}>
                     <Ionicons name="ellipsis-vertical" size={24} color="#fff" />
                 </TouchableOpacity>
             </View>
@@ -497,6 +608,106 @@ const CaseChatScreen = () => {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── Options Menu Modal (Worker & Lawyer) ──────────────────── */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={optionsModalVisible}
+                onRequestClose={() => setOptionsModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setOptionsModalVisible(false)}
+                >
+                    <View style={styles.optionsMenuContent}>
+                        <Text style={styles.optionsMenuTitle}>Opciones del Caso</Text>
+                        
+                        {isWorker ? (
+                            <>
+                                <TouchableOpacity 
+                                    style={styles.optionsMenuItem} 
+                                    onPress={handleReassignPress}
+                                >
+                                    <Ionicons 
+                                        name="refresh-circle-outline" 
+                                        size={24} 
+                                        color={caseInfo?.canReassignLawyer ? '#e74c3c' : '#7f8c8d'} 
+                                    />
+                                    <View style={styles.optionsMenuTextContainer}>
+                                        <Text style={[styles.optionsMenuItemTitle, !caseInfo?.canReassignLawyer && styles.disabledText]}>
+                                            Cambiar de Abogado
+                                        </Text>
+                                        <Text style={styles.optionsMenuItemSub}>
+                                            {caseInfo?.canReassignLawyer 
+                                                ? 'Reasignar caso por inactividad' 
+                                                : 'Requiere 5 días hábiles sin respuesta'
+                                            }
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.optionsMenuItem} 
+                                    onPress={handleArchiveCase}
+                                >
+                                    <Ionicons name="close-circle-outline" size={24} color="#e74c3c" />
+                                    <View style={styles.optionsMenuTextContainer}>
+                                        <Text style={styles.optionsMenuItemTitle}>Cerrar y Archivar Caso</Text>
+                                        <Text style={styles.optionsMenuItemSub}>Finalizar seguimiento voluntariamente</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity 
+                                    style={styles.optionsMenuItem} 
+                                    onPress={handleArchivePress}
+                                >
+                                    <Ionicons 
+                                        name="archive-outline" 
+                                        size={24} 
+                                        color={caseInfo?.canArchiveCase ? '#e74c3c' : '#7f8c8d'} 
+                                    />
+                                    <View style={styles.optionsMenuTextContainer}>
+                                        <Text style={[styles.optionsMenuItemTitle, !caseInfo?.canArchiveCase && styles.disabledText]}>
+                                            Archivar por Inactividad
+                                        </Text>
+                                        <Text style={styles.optionsMenuItemSub}>
+                                            {caseInfo?.canArchiveCase 
+                                                ? 'Archivar caso por inactividad del cliente' 
+                                                : 'Requiere 7 días laborables sin respuesta'
+                                            }
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity 
+                                    style={styles.optionsMenuItem} 
+                                    onPress={handleArchiveCase}
+                                >
+                                    <Ionicons name="close-circle-outline" size={24} color="#e74c3c" />
+                                    <View style={styles.optionsMenuTextContainer}>
+                                        <Text style={styles.optionsMenuItemTitle}>Cerrar y Archivar Caso</Text>
+                                        <Text style={styles.optionsMenuItemSub}>Finalizar seguimiento de mutuo acuerdo</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        )}
+
+                        <TouchableOpacity 
+                            style={[styles.optionsMenuItem, { borderBottomWidth: 0, marginTop: 8 }]} 
+                            onPress={() => setOptionsModalVisible(false)}
+                        >
+                            <Ionicons name="close" size={24} color="#333" />
+                            <Text style={[styles.optionsMenuItemTitle, { color: '#333', fontWeight: 'bold', marginLeft: 16 }]}>
+                                Cancelar
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -630,6 +841,45 @@ const styles = StyleSheet.create({
     vaultFileName: { flex: 1, marginLeft: 15, fontSize: 14, color: '#333', fontWeight: '500' },
     emptyVault: { alignItems: 'center', marginTop: 40 },
     emptyVaultText: { marginTop: 10, color: '#999' },
+    // Options Menu Modal Styles
+    optionsMenuContent: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    optionsMenuTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    optionsMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    optionsMenuTextContainer: {
+        marginLeft: 16,
+        flex: 1,
+    },
+    optionsMenuItemTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#e74c3c',
+    },
+    optionsMenuItemSub: {
+        fontSize: 12,
+        color: '#999',
+        marginTop: 2,
+    },
+    disabledText: {
+        color: '#7f8c8d',
+    },
 });
 
 export default CaseChatScreen;
