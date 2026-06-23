@@ -3,13 +3,17 @@ import { PrismaClient } from '@prisma/client';
 import * as stripeService from '../services/stripeService';
 import * as mercadopagoService from '../services/mercadopagoService';
 import * as storageService from '../services/storageService';
-import * as ocrService from '../services/ocrService'; // Import OCR
-import { checkBothPaymentsSuccess } from '../services/webhookHandlerService';
 import { sendPushNotification } from '../services/notificationService';
 import moment from 'moment';
-import { addBusinessDays, getBusinessDaysDiff, getWorkerDaysDiff } from '../utils/businessDays';
+import { addBusinessDays } from '../utils/businessDays';
+import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
+
+// Re-export modularized endpoints for backwards compatibility and router integrity
+export { acceptContactRequest, closeCaseWithCommission } from './contactPaymentController';
+export { uploadSettlementDoc, suggestReply } from './contactVaultController';
+export { getRequestInfo, reassignLawyer, archiveInactiveCase } from './contactSlaController';
 
 /**
  * WORKER: Create contact request with payment gateway selection
@@ -133,7 +137,6 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
         let paymentResult: any;
 
         if (paymentGateway === 'stripe') {
-            // ... (Stripe logic remains same)
             try {
                 // Get or create Stripe customer
                 let stripeCustomerId = worker.stripeCustomerId;
@@ -189,7 +192,6 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
             }
 
         } else {
-            // ... (MercadoPago logic remains same)
             try {
                 const preference = await mercadopagoService.createMercadoPagoPreference({
                     amount: 50,
@@ -247,258 +249,6 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
     } catch (error: any) {
         console.error('Error creating contact request:', error);
         res.status(500).json({ error: 'Error al crear solicitud' });
-    }
-};
-
-/**
- * LAWYER: Accept contact request (triggers DUAL CHARGE)
- * Charges: Worker $50 (already paid) + Lawyer $150 or $300 (charged now)
- */
-export const acceptContactRequest = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).user?.id;
-
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: {
-                profile: true,
-                user: true,
-                subscription: true
-            }
-        });
-
-        if (!lawyer || !lawyer.profile) {
-            return res.status(404).json({ error: 'Perfil de abogado no encontrado' });
-        }
-
-        // Verify active subscription
-        if (lawyer.subscriptionStatus !== 'active') { // Should check subscription endDate too
-            return res.status(403).json({
-                error: 'Necesitas una suscripción activa para aceptar solicitudes'
-            });
-        }
-
-        const contactRequest = await prisma.contactRequest.findUnique({
-            where: { id },
-            include: { worker: true }
-        });
-
-        if (!contactRequest) {
-            return res.status(404).json({ error: 'Solicitud no encontrada' });
-        }
-
-        // 1.5. CHECK MONTHLY LIMITS (Fair Use Policy)
-        const startOfMonth = moment().startOf('month').toDate();
-        const endOfMonth = moment().endOf('month').toDate();
-        
-        const acceptedThisMonth = await prisma.contactRequest.count({
-            where: {
-                lawyerProfileId: lawyer.profile.id,
-                status: 'accepted',
-                acceptedAt: {
-                    gte: startOfMonth,
-                    lte: endOfMonth
-                }
-            }
-        });
-
-        const planLimit = lawyer.subscription?.plan === 'pro' ? 30 : 5;
-        if (acceptedThisMonth >= planLimit) {
-            return res.status(403).json({
-                error: 'Límite mensual alcanzado',
-                message: `Has alcanzado tu límite de ${planLimit} casos mensuales para el plan ${lawyer.subscription?.plan?.toUpperCase() || 'BÁSICO'}. ${lawyer.subscription?.plan === 'pro' ? 'Contacta a soporte para extender tu límite de uso justo.' : 'Actualiza a Plan PRO para aceptar hasta 30 casos.'}`,
-                limitReached: true
-            });
-        }
-
-        // 2. CHECK BUSINESS RULES: HOT CASE RESTRICTION
-        // Only PRO lawyers can accept HOT cases
-        if (contactRequest.isHot) {
-            const isPro = lawyer.subscription?.plan === 'pro';
-            if (!isPro) {
-                return res.status(403).json({
-                    error: 'Este caso es clasificado como HOT (Alta Prioridad).',
-                    message: 'Solo abogados con Plan PRO pueden aceptar Casos Hot. Actualiza tu plan para aceptar este caso.',
-                    upgradeRequired: true
-                });
-            }
-        }
-
-        // 3. EL PUENTE: GAMIFICATION GUARD (Overdue Commissions)
-        // Check if lawyer has unpaid Success Fees > 5 days
-        if (lawyer.stripeCustomerId) {
-            const hasOverdue = await stripeService.checkOverdueInvoices(lawyer.stripeCustomerId);
-            if (hasOverdue) {
-                return res.status(402).json({
-                    error: 'Bloqueo por Comisiones Pendientes',
-                    message: 'Tienes facturas de "Comisión por Éxito" vencidas. Paga tus comisiones pendientes para desbloquear el acceso a nuevos leads.',
-                    paymentRequired: true,
-                    blockReason: 'overdue_commission'
-                });
-            }
-        }
-
-        if (contactRequest.lawyerProfileId !== lawyer.profile.id) {
-            if (contactRequest.lawyerProfileId !== null) {
-                return res.status(403).json({ error: 'No autorizado' });
-            }
-            if (contactRequest.previousLawyerIds) {
-                const prevIds = contactRequest.previousLawyerIds.split(',').map(id => id.trim());
-                if (prevIds.includes(lawyer.profile.id)) {
-                    return res.status(403).json({ error: 'No autorizado: ya has atendido o dejado expirar este caso anteriormente.' });
-                }
-            }
-        }
-
-        if (contactRequest.status !== 'pending') {
-            return res.status(400).json({ error: 'Esta solicitud ya fue procesada' });
-        }
-
-        // CRITICAL: Check if worker already paid (with on-demand Stripe verification fallback)
-        if (!contactRequest.workerPaid) {
-            if (contactRequest.workerPaymentGateway === 'stripe' && contactRequest.workerTransactionId) {
-                try {
-                    const pi = await stripeService.retrievePaymentIntent(contactRequest.workerTransactionId);
-                    if (pi.status === 'succeeded') {
-                        contactRequest.workerPaid = true;
-                        await prisma.contactRequest.update({
-                            where: { id: contactRequest.id },
-                            data: { workerPaid: true }
-                        });
-                        console.log(`Verified Stripe Payment Intent ${contactRequest.workerTransactionId} succeeded. Marked as paid.`);
-                    }
-                } catch (stripeError) {
-                    console.error('Failed to verify worker stripe payment intent:', stripeError);
-                }
-            }
-        }
-
-        if (!contactRequest.workerPaid) {
-            return res.status(400).json({
-                error: 'El trabajador aún no ha completado el pago',
-                message: 'Esperando confirmación de pago del trabajador'
-            });
-        }
-
-        // CHARGE LAWYER $150 via Stripe (lawyers ALWAYS use Stripe)
-        try {
-            // Get or create Stripe customer for lawyer
-            let stripeCustomerId = lawyer.stripeCustomerId;
-            if (!stripeCustomerId) {
-                const customer = await stripeService.createStripeCustomer({
-                    email: lawyer.user.email,
-                    name: lawyer.user.fullName || undefined,
-                    metadata: { lawyerId: lawyer.id, role: 'lawyer' }
-                });
-                stripeCustomerId = customer.id;
-
-                await prisma.lawyer.update({
-                    where: { id: lawyer.id },
-                    data: { stripeCustomerId }
-                });
-            }
-
-            // Charge lawyer the dynamic amount (150 or 300)
-            const feeAmount = Number(contactRequest.lawyerPaymentAmount);
-
-            const lawyerPayment = await stripeService.chargeStripeCustomer(
-                stripeCustomerId,
-                feeAmount,
-                'MXN',
-                `Case acceptance fee (${contactRequest.classification}) - Contact ${contactRequest.id}`,
-                {
-                    contactRequestId: contactRequest.id,
-                    lawyerId: lawyer.id,
-                },
-                true // confirmAuto = true (off-session auto charge)
-            );
-
-            if (lawyerPayment.status !== 'succeeded') {
-                throw new Error('El cargo al abogado no fue exitoso');
-            }
-
-            // 3. SUCCESS / ATOMIC TRANSACTION
-            // Update Request Status & Create Auto-Welcome Message
-            const now = new Date();
-
-            // 🔒 COMMISSION FREEZE: Snapshot the rate at the moment of acceptance
-            // This ensures plan upgrades do NOT retroactively lower the rate on this case
-            const isPro = lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active';
-            const snapshotCommissionRate = isPro ? 0.07 : 0.10; // 7% PRO / 10% BASIC
-
-            const [updatedRequest, initialMessage] = await prisma.$transaction([
-                // Update Contact Request
-                prisma.contactRequest.update({
-                    where: { id: contactRequest.id },
-                    data: {
-                        lawyerProfileId: lawyer.profile.id,
-                        status: 'accepted',
-                        acceptedAt: now,
-                        lawyerPaid: true,
-                        leadCostPaid: feeAmount,
-                        bothPaymentsSucceeded: true, // Worker already paid
-                        subStatus: 'chat_active',    // Enable Chat
-                        lastLawyerActivityAt: now,
-                        // 🔒 FREEZE the commission rate at acceptance time
-                        commissionRate: snapshotCommissionRate,
-                        commissionStatus: 'pending',
-                        // Update Chat Optimization Fields
-                        lastMessageAt: now,
-                        lastMessageContent: '¡Hola! He aceptado tu solicitud. ¿En qué puedo ayudarte?',
-                        lastMessageSenderId: lawyer.userId,
-                        unreadCountWorker: 1, // Worker sees 1 new message
-                    }
-                }),
-                // Create Auto-Welcome Message
-                prisma.chatMessage.create({
-                    data: {
-                        requestId: contactRequest.id,
-                        senderId: lawyer.userId,
-                        content: '¡Hola! He aceptado tu solicitud. ¿En qué puedo ayudarte?',
-                        createdAt: now
-                    }
-                })
-            ]);
-
-            // 🔔 PUSH NOTIFICATION: Notificar al trabajador que su caso fue aceptado
-            const lawyerName = lawyer.user?.fullName || lawyer.professionalName || 'Tu abogado';
-            sendPushNotification(
-                contactRequest.workerId,
-                '✅ ¡Caso Aceptado!',
-                `${lawyerName} aceptó tu solicitud. El chat ya está disponible.`,
-                { type: 'case_accepted', requestId: contactRequest.id }
-            ).catch(err => console.error('[Push] Error notifying worker on accept:', err));
-
-            res.json({
-                message: 'Caso aceptado. Chat habilitado.',
-                contactUnlocked: true,
-                paymentStatus: {
-                    worker: true,
-                    lawyer: true
-                },
-                chatId: updatedRequest.id
-            });
-
-        } catch (error: any) {
-            console.error('Lawyer payment error:', error);
-
-            // ROLLBACK: Refund worker if lawyer payment failed
-            if (contactRequest.workerPaymentGateway === 'stripe' && contactRequest.workerTransactionId) {
-                await stripeService.refundStripeCharge(contactRequest.workerTransactionId);
-            } else if (contactRequest.workerPaymentGateway === 'mercadopago' && contactRequest.workerTransactionId) {
-                await mercadopagoService.refundMercadoPagoPayment(contactRequest.workerTransactionId);
-            }
-
-            return res.status(500).json({
-                error: 'Error al procesar el cargo del abogado',
-                message: 'Se reembolsó el pago del trabajador'
-            });
-        }
-
-    } catch (error: any) {
-        console.error('Error accepting contact request:', error);
-        res.status(500).json({ error: 'Error al aceptar solicitud' });
     }
 };
 
@@ -650,8 +400,8 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
                     select: {
                         id: true,
                         fullName: true,
-                        email: true, // Fetch masked later
-                        phoneNumber: true // Fetch masked later
+                        email: true,
+                        phoneNumber: true
                     }
                 },
             },
@@ -673,13 +423,9 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
         const isPro = lawyer.subscription?.plan === 'pro';
 
         const processedRequests = filteredRequests.map(req => {
-            // Is unlocked if: (PRO or PAID) AND (User CONSENTED)
-            // Note: In MVP, we might treat "Creating Request" as implicit consent, but we enforce strict check if we had the field.
-            // Since we just added 'hasAcceptedDataSharing', we assume it's true for new requests or check the field.
-
             const isTrialView = filteredRequests.length <= 3;
             const isPaid = req.status === 'accepted' || req.bothPaymentsSucceeded;
-            const hasConsent = (req.worker as any).hasAcceptedDataSharing || req.consentTimestamp != null; // Handle optional field
+            const hasConsent = (req.worker as any).hasAcceptedDataSharing || req.consentTimestamp != null;
 
             // LEGAL ARMOR: Double Opt-in + Payment
             const isUnlocked = (isPro || isPaid || isTrialView) && hasConsent;
@@ -695,7 +441,6 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
                         email: '******** (Privado)',
                         fullName: 'Usuario Protegido',
                         phoneNumber: '******** (Privado)',
-                        // Remove unmasked fields
                     },
                     upsell: !isPro, // Tell frontend to upsell PRO
                     privacyLock: !hasConsent, // Specific lock reason
@@ -854,76 +599,7 @@ export const updateCRMStatus = async (req: Request, res: Response) => {
     }
 };
 
-/**
- * 💰 CLOSE CASE & CALCULATE COMMISSION (The "Rate Hike" Enforcement)
- * Logic: Checks ACTIVE plan at moment of closing.
- * PRO -> 7%
- * BASIC -> 10%
- */
-export const closeCaseWithCommission = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const { settlementAmount, evidenceUrl } = req.body; // e.g., 100000
-        const userId = (req as any).user?.id;
-
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: { profile: true, subscription: true }
-        });
-
-        if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
-
-        // 🔒 COMMISSION FREEZE: Read the rate that was snapshotted at acceptance time
-        // This prevents plan upgrades from retroactively lowering the commission on existing cases
-        const existingCase = await prisma.contactRequest.findUnique({ where: { id } });
-        if (!existingCase) return res.status(404).json({ error: 'Caso no encontrado' });
-
-        const commissionRate = existingCase.commissionRate
-            ? Number(existingCase.commissionRate)
-            : (lawyer.subscription?.plan === 'pro' && lawyer.subscription?.status === 'active' ? 0.07 : 0.10);
-
-        const amount = Number(settlementAmount);
-        const commissionFee = amount * commissionRate;
-        const frozenAtAcceptance = existingCase.commissionRate != null;
-
-        // 2. Close Case & Record Debt
-        const updatedRequest = await prisma.contactRequest.update({
-            where: { id },
-            data: {
-                crmStatus: 'CLOSED_WON',
-                settlementAmount: amount,
-                commissionAmount: commissionFee,
-                settlementDocUrl: evidenceUrl,
-                closedAt: new Date()
-                // Note: commissionRate is NOT updated here — it was frozen at acceptance
-            },
-            include: { worker: true }
-        });
-
-        // 3. Response
-        res.json({
-            success: true,
-            message: 'Caso cerrado con éxito.',
-            financials: {
-                settlement: amount,
-                rateApplied: `${(commissionRate * 100).toFixed(0)}%`,
-                commissionDue: commissionFee,
-                rateFrozenAt: frozenAtAcceptance ? 'aceptación del caso' : 'cierre del caso',
-                note: frozenAtAcceptance
-                    ? `✅ Tasa congelada al momento de aceptar: ${(commissionRate * 100).toFixed(0)}%.`
-                    : `ℹ️ Tasa aplicada según plan actual: ${(commissionRate * 100).toFixed(0)}%.`
-            }
-        });
-
-    } catch (error) {
-        console.error('Error closing case:', error);
-        res.status(500).json({ error: 'Error al cerrar caso' });
-    }
-};
-
 // --- HELPER: ASYNC AI TRIGGER ---
-import OpenAI from 'openai';
-
 const triggerAIAnalysis = async (requestId: string, summary: string) => {
     // Fire and forget - don't block
     setImmediate(async () => {
@@ -998,17 +674,13 @@ const triggerAIAnalysis = async (requestId: string, summary: string) => {
                 const { analisis, negocio, resumen_para_abogado } = result;
 
                 // 1. Update DB with AI Insights
-                // We store the full JSON in aiSummary, but also promote key metrics
                 await prisma.contactRequest.update({
                     where: { id: requestId },
                     data: {
                         aiSummary: aiContent,
                         isHot: analisis.es_hot,
-                        // Map AI urgency (1-10) to DB Urgency Score (0-100)
                         urgencyScore: analisis.urgencia * 10,
-                        // Update Classification if AI detects Collective/Machinery
                         classification: analisis.subtipo === 'SUSTITUCION_MAQUINARIA' ? 'machinery_439' : (analisis.es_hot ? 'hot' : 'normal'),
-                        // Dynamic Pricing Engine
                         lawyerPaymentAmount: negocio.precio_sugerido_lead_abogado || 150.00
                     }
                 });
@@ -1017,13 +689,9 @@ const triggerAIAnalysis = async (requestId: string, summary: string) => {
                 if (analisis.es_hot || analisis.categoria === 'COLECTIVO') {
                     console.log(`🔥 [ANTIGRAVITY] Hot/Collective Case Detected: ${requestId}`);
 
-                    // Use Notification Service
-                    const { sendPushNotification } = require('../services/notificationService');
-
-                    // Filter Logic: PRO Lawyers
                     const proLawyers = await prisma.lawyer.findMany({
                         where: { subscription: { plan: 'pro' }, isVerified: true },
-                        include: { user: true, subscription: true } // Explicitly include sub
+                        include: { user: true, subscription: true }
                     });
 
                     const msgTitle = analisis.categoria === 'COLECTIVO' ? "🚨 ALERTA: Caso Colectivo Detectado" : "🔥 Nuevo Caso HOT de Alto Valor";
@@ -1040,7 +708,6 @@ const triggerAIAnalysis = async (requestId: string, summary: string) => {
 
             } catch (parseError) {
                 console.error('Error parsing AI content for Antigravity V2:', parseError);
-                // Fallback: Save raw content
                 await prisma.contactRequest.update({
                     where: { id: requestId },
                     data: { aiSummary: aiContent }
@@ -1051,532 +718,4 @@ const triggerAIAnalysis = async (requestId: string, summary: string) => {
             console.error('❌ [AI] Analysis failed:', error.message);
         }
     });
-};
-
-/**
- * EL PUENTE: Upload Settlement Document & Auto-Invoice
- */
-export const uploadSettlementDoc = async (req: Request, res: Response) => {
-    try {
-        const { requestId } = req.params;
-        const { fileBase64, fileName, fileType, processType } = req.body; // processType: 'CONCILIACION' | 'JUICIO'
-        const userId = (req as any).user?.id;
-
-        console.log(`[El Puente] Uploading settlement doc for Request ${requestId}`);
-
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: { subscription: true }
-        });
-        if (!lawyer) return res.status(404).json({ error: 'Abogado no encontrado' });
-
-        const request = await prisma.contactRequest.findUnique({
-            where: { id: requestId },
-            include: { worker: true }
-        });
-        if (!request) return res.status(404).json({ error: 'Caso no encontrado' });
-
-        // 1. Process File
-        const buffer = Buffer.from(fileBase64, 'base64');
-        const destination = `settlements/${requestId}/${Date.now()}_${fileName}`;
-        const fileUrl = await storageService.uploadBuffer(buffer, destination, fileType);
-
-        // 2. OCR Analysis (Eye of Antigravity)
-        let extractedAmount: number | null = null;
-        let ocrText = "";
-
-        // Only try OCR on images for now (PDF support requires pdf-parse usually, assuming Image for MVP)
-        if (fileType.includes('image')) {
-            const result = await ocrService.extractTextFromImage(buffer);
-            ocrText = result.rawText;
-            const details = ocrService.extractSettlementDetails(ocrText);
-            extractedAmount = details.amount;
-            console.log(`[El Puente] OCR Result: Found Amount $${extractedAmount}`);
-        } else {
-            // Fallback for PDFs or skip OCR
-            console.log('[El Puente] PDF uploaded, skipping OCR for MVP');
-        }
-
-        // 3. 🔒 COMMISSION FREEZE: Use rate stored at acceptance time if available
-        // This prevents plan upgrades from lowering the rate on already-active cases
-        const type = (processType || 'JUICIO').toUpperCase();
-        const isPro = lawyer.subscription?.plan === 'pro';
-
-        let rate: number;
-        if (request.commissionRate != null) {
-            // Frozen rate exists — respect the snapshot from acceptance time
-            // Adjust for CONCILIACION vs JUICIO multiplier while keeping base rate
-            const baseRate = Number(request.commissionRate); // e.g. 0.07 or 0.10
-            // Apply a small discount for conciliacion (faster = slightly higher, but capped at frozen rate)
-            rate = (type === 'CONCILIACION') ? baseRate : Math.max(baseRate - 0.02, 0.05);
-            console.log(`[Commission Freeze] Using frozen rate ${request.commissionRate} → adjusted: ${rate} (${type})`);
-        } else {
-            // No frozen rate: fallback to current plan (old cases without snapshot)
-            if (isPro) {
-                rate = (type === 'CONCILIACION') ? 0.07 : 0.05;
-            } else {
-                rate = (type === 'CONCILIACION') ? 0.10 : 0.08;
-            }
-        }
-
-        let commissionAmount = 0;
-        let invoiceId = null;
-
-        if (extractedAmount && extractedAmount > 0) {
-            commissionAmount = extractedAmount * rate;
-
-            // 4. Generate Stripe Invoice
-            if (lawyer.stripeCustomerId) {
-                const invoice = await stripeService.createCommissionInvoice(
-                    lawyer.stripeCustomerId,
-                    commissionAmount,
-                    `Comisión por Éxito (${(rate * 100).toFixed(0)}%) - ${type} - Caso #${requestId}`
-                );
-                invoiceId = invoice.id;
-                console.log(`[El Puente] Invoice Created: ${invoiceId} (Rate: ${rate})`);
-            }
-        }
-
-        // 5. Update Database (The Vault)
-        await prisma.contactRequest.update({
-            where: { id: requestId },
-            data: {
-                settlementDocUrl: fileUrl,
-                settlementDocStatus: 'uploaded',
-                settlementAmount: extractedAmount ? extractedAmount : undefined,
-                commissionAmount: commissionAmount > 0 ? commissionAmount : undefined,
-                commissionInvoiceId: invoiceId || undefined,
-                commissionStatus: invoiceId ? 'pending' : 'not_applicable',
-                crmStatus: 'CLOSED_WON' // Auto-close case
-            }
-        });
-
-        // 6. Gamification: Reputation Boost & Loyalty Message (The "Feel Good" Logic)
-        // Calculate Savings if PRO
-        const basicRate = (type === 'CONCILIACION') ? 0.10 : 0.08;
-        const currentSavings = isPro ? (extractedAmount! * (basicRate - rate)) : 0;
-
-        await prisma.lawyerProfile.update({
-            where: { lawyerId: lawyer.id },
-            data: {
-                reputationScore: { increment: 10 },
-                successfulCases: { increment: 1 },
-                lifetimeCommissionSavings: { increment: currentSavings }
-            }
-        });
-
-        // RE-FETCH to get updated total savings
-        const updatedProfile = await prisma.lawyerProfile.findUnique({ where: { lawyerId: lawyer.id } });
-        const totalSavings = Number(updatedProfile?.lifetimeCommissionSavings || 0);
-
-        // A. LOYALTY NOTIFICATION (LAWYER)
-        if (commissionAmount > 0) {
-            let messageContent = `⚖️ ¡Felicidades por la victoria, Colega!\n\nHemos procesado el documento de cierre. Se ha generado la factura de tu Comisión por Éxito ($${commissionAmount.toLocaleString()} MXN).`;
-
-            if (isPro && currentSavings > 0) {
-                messageContent += `\n\n💎 **Efecto PRO:** En este caso ahorraste **$${currentSavings.toLocaleString()}**.`;
-                messageContent += `\n💰 **Ahorro Acumulado:** Tu suscripción PRO te ha ahorrado **$${totalSavings.toLocaleString()} MXN** en total.`;
-            }
-
-            messageContent += `\n\nEl link de pago está en tu correo. Al liquidarlo, se liberará el expediente digital para tu cliente.`;
-
-            // Insert into Chat (Lawyer View)
-            await prisma.chatMessage.create({
-                data: {
-                    requestId,
-                    senderId: lawyer.userId,
-                    content: messageContent,
-                    type: 'system_notification'
-                }
-            });
-        }
-
-        // B. WORKER VALUE PROP (SOCIAL AUDIT)
-        // Notify worker that "Something happened" but process is pending lawyer action
-        if (request.workerId) {
-            const workerMsg = `👋 Hola ${(request as any).worker?.fullName || 'Usuario'}, tu abogado ha marcado tu caso como 'Ganado' y ha subido el Convenio/Sentencia.\n\nPara que puedas descargar tu copia oficial y tener el respaldo legal, tu abogado debe completar el registro de cierre final en la plataforma.\n\n¡Felicidades por este gran paso!`;
-
-            await prisma.chatMessage.create({
-                data: {
-                    requestId,
-                    senderId: lawyer.userId, // System message appearing in chat
-                    content: workerMsg,
-                    type: 'text' // Visible to worker
-                }
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Convenio subido correctamente. Caso cerrado con éxito.',
-            ocrAnalysis: {
-                amountDetected: extractedAmount,
-                commissionGenerated: commissionAmount,
-                savingsApplied: currentSavings
-            }
-        });
-
-    } catch (error: any) {
-        console.error('Error uploading settlement doc:', error);
-        res.status(500).json({ error: 'Error procesando el convenio' });
-    }
-};
-
-/**
- * LAWYER: Suggest first message reply using Groq AI
- */
-export const suggestReply = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).user?.id;
-
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: { profile: true }
-        });
-
-        if (!lawyer || !lawyer.profile) return res.status(404).json({ error: 'Abogado no encontrado' });
-
-        const request = await prisma.contactRequest.findUnique({ where: { id }, include: { worker: true } });
-        if (!request) return res.status(404).json({ error: 'Solicitud no encontrada' });
-
-        if (request.lawyerProfileId !== lawyer.profile.id) {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-
-        if (!process.env.GROQ_API_KEY) {
-            return res.json({
-                suggestions: [
-                    "Hola, soy el abogado asignado a tu caso. ¿Podemos hablar y revisar los detalles?",
-                    "Saludos, he revisado parte de tu problema laboral y me gustaría brindarte apoyo.",
-                    "¡Hola! Entiendo que tuviste problemas en el trabajo. Estoy aquí para orientarte sin compromiso inicial."
-                ]
-            });
-        }
-
-        const groq = new OpenAI({
-            apiKey: process.env.GROQ_API_KEY,
-            baseURL: 'https://api.groq.com/openai/v1'
-        });
-
-        const prompt = `Eres un experto redactor legal y asistente de servicio al cliente para abogados laboralistas en México.
-        El trabajador ha descrito su caso así (puede ser un resumen de otra IA o palabras suyas):
-        "${request.aiSummary || request.caseSummary}"
-
-        Tu tarea:
-        Redacta 3 opciones separadas para enviar un "Primer Mensaje" que el abogado le enviará por chat al prospecto.
-        Las reglas son:
-        - Empático, humano, dando confianza.
-        - Breve (ideal para un chat celular), sin aburrir con leyes en el saludo.
-        - Debe invitar a seguir conversando.
-
-        Obligatorio: Imprime la respuesta como un objeto JSON válido con un arreglo de textos llamado "suggestions".
-        Formato exacto esperado: { "suggestions": ["Mensaje 1...", "Mensaje 2...", "Mensaje 3..."] }`;
-
-        const completion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: prompt }],
-            model: "llama-3.1-8b-instant",
-            response_format: { type: "json_object" },
-            temperature: 0.7
-        });
-
-        const responseContent = completion.choices[0]?.message?.content || '{"suggestions":[]}';
-        const result = JSON.parse(responseContent);
-
-        res.json({ suggestions: result.suggestions });
-
-    } catch (error: any) {
-        console.error('Error generating AI suggestions:', error);
-        res.status(500).json({ error: 'Error generando sugerencias', details: error.message });
-    }
-};
-
-/**
- * GET: Fetch request information and inactivity flags for options menu
- */
-export const getRequestInfo = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).user?.id;
-
-        const request = await prisma.contactRequest.findUnique({
-            where: { id },
-            include: {
-                worker: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                    }
-                },
-                lawyerProfile: {
-                    include: {
-                        lawyer: {
-                            include: {
-                                user: {
-                                    select: {
-                                        fullName: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        if (!request) {
-            return res.status(404).json({ error: 'Solicitud no encontrada' });
-        }
-
-        // Verify if user is either the worker or the assigned lawyer
-        const isWorker = request.workerId === userId;
-        
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: { profile: true }
-        });
-        const isLawyer = lawyer && request.lawyerProfileId === lawyer.profile?.id;
-
-        if (!isWorker && !isLawyer) {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-
-        const now = new Date();
-
-        // Calculate inactivity metrics
-        let canReassignLawyer = false;
-        let businessDaysSinceWorkerActivity = 0;
-        if (request.status === 'accepted' && request.subStatus === 'waiting_lawyer_response' && request.lastWorkerActivityAt) {
-            businessDaysSinceWorkerActivity = getBusinessDaysDiff(request.lastWorkerActivityAt, now);
-            if (businessDaysSinceWorkerActivity >= 5) {
-                canReassignLawyer = true;
-            }
-        }
-
-        let canArchiveCase = false;
-        let workerDaysSinceLawyerActivity = 0;
-        if (request.status === 'accepted' && request.subStatus === 'waiting_worker_response' && request.lastLawyerActivityAt) {
-            workerDaysSinceLawyerActivity = getWorkerDaysDiff(request.lastLawyerActivityAt, now);
-            if (workerDaysSinceLawyerActivity >= 7) {
-                canArchiveCase = true;
-            }
-        }
-
-        res.json({
-            request: {
-                id: request.id,
-                status: request.status,
-                subStatus: request.subStatus,
-                crmStatus: request.crmStatus,
-                caseType: request.caseType,
-                caseSummary: request.caseSummary,
-                isHot: request.isHot,
-                workerId: request.workerId,
-                lawyerProfileId: request.lawyerProfileId,
-                workerName: request.worker?.fullName || 'Trabajador',
-                lawyerName: request.lawyerProfile?.lawyer?.user?.fullName || 'Abogado',
-                lastWorkerActivityAt: request.lastWorkerActivityAt,
-                lastLawyerActivityAt: request.lastLawyerActivityAt,
-                canReassignLawyer,
-                canArchiveCase,
-                businessDaysSinceWorkerActivity,
-                workerDaysSinceLawyerActivity
-            }
-        });
-
-    } catch (error: any) {
-        console.error('Error getting request info:', error);
-        res.status(500).json({ error: 'Error al obtener información de la solicitud' });
-    }
-};
-
-/**
- * POST: Client requests change of lawyer due to inactivity (5 business days)
- */
-export const reassignLawyer = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).user?.id;
-
-        const request = await prisma.contactRequest.findUnique({
-            where: { id },
-            include: {
-                lawyerProfile: {
-                    include: {
-                        lawyer: { include: { user: true } }
-                    }
-                }
-            }
-        });
-
-        if (!request) {
-            return res.status(404).json({ error: 'Solicitud no encontrada' });
-        }
-
-        if (request.workerId !== userId) {
-            return res.status(403).json({ error: 'No autorizado: solo el propietario del caso puede solicitar reasignación' });
-        }
-
-        if (request.status !== 'accepted') {
-            return res.status(400).json({ error: 'El caso debe estar aceptado para solicitar reasignación' });
-        }
-
-        // Validate 5 business days since last worker activity
-        if (!request.lastWorkerActivityAt) {
-            return res.status(400).json({ error: 'No hay registro de actividad del trabajador' });
-        }
-
-        const businessDays = getBusinessDaysDiff(request.lastWorkerActivityAt, new Date());
-        if (businessDays < 5) {
-            return res.status(400).json({ 
-                error: `Aún no se cumplen los 5 días hábiles de inactividad del abogado. Días transcurridos: ${businessDays}` 
-            });
-        }
-
-        const originalLawyerProfileId = request.lawyerProfileId;
-        const lawyerUserId = request.lawyerProfile?.lawyer?.userId;
-
-        // Update request: unassign lawyer, record in previousLawyerIds, set back to pending
-        const updatedPreviousLawyers = request.previousLawyerIds 
-            ? `${request.previousLawyerIds},${originalLawyerProfileId}` 
-            : `${originalLawyerProfileId}`;
-
-        await prisma.$transaction([
-            prisma.contactRequest.update({
-                where: { id },
-                data: {
-                    lawyerProfileId: null,
-                    status: 'pending',
-                    subStatus: 'waiting_lawyer',
-                    crmStatus: 'NEW',
-                    previousLawyerIds: updatedPreviousLawyers,
-                    lastWorkerActivityAt: new Date(), // Reset to top
-                    lastLawyerActivityAt: null,
-                    expiresAt: null // Pool cases have no expiration
-                }
-            }),
-            prisma.chatMessage.create({
-                data: {
-                    requestId: id,
-                    senderId: userId,
-                    content: '🔄 **Sistema:** El cliente ha solicitado la reasignación de este caso debido a inactividad del abogado anterior. El caso ha regresado a la bolsa pública de abogados.',
-                    type: 'system_notification'
-                }
-            })
-        ]);
-
-        // Notifications
-        if (lawyerUserId) {
-            sendPushNotification(
-                lawyerUserId,
-                '⚠️ Caso Reasignado',
-                'Un caso activo ha sido reasignado debido a inactividad prolongada.',
-                { type: 'case_reassigned', requestId: id }
-            ).catch(err => console.error('[Push] Error notifying lawyer of reassignment:', err));
-        }
-
-        // Notify other active, verified lawyers
-        const activeLawyers = await prisma.lawyer.findMany({
-            where: { isVerified: true, status: { not: 'SUSPENDED' } },
-            include: { user: true, profile: true }
-        });
-
-        for (const lawyer of activeLawyers) {
-            if (lawyer.profile && lawyer.profile.id !== originalLawyerProfileId && lawyer.userId) {
-                sendPushNotification(
-                    lawyer.userId,
-                    '🔄 Nuevo Caso Disponible',
-                    'Hay una solicitud de asesoría laboral disponible en la bolsa pública.',
-                    { type: 'public_case', requestId: id }
-                ).catch(err => console.error('[Push] Error notifying public pool:', err));
-            }
-        }
-
-        res.json({ success: true, message: 'El caso ha sido regresado a la bolsa pública de abogados.' });
-
-    } catch (error: any) {
-        console.error('Error reassigning lawyer:', error);
-        res.status(500).json({ error: 'Error al reasignar abogado' });
-    }
-};
-
-/**
- * POST: Lawyer archives case due to worker inactivity (7 worker days)
- */
-export const archiveInactiveCase = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params;
-        const userId = (req as any).user?.id;
-
-        const lawyer = await prisma.lawyer.findUnique({
-            where: { userId },
-            include: { profile: true }
-        });
-
-        if (!lawyer || !lawyer.profile) {
-            return res.status(404).json({ error: 'Perfil de abogado no encontrado' });
-        }
-
-        const request = await prisma.contactRequest.findUnique({
-            where: { id }
-        });
-
-        if (!request) {
-            return res.status(404).json({ error: 'Solicitud no encontrada' });
-        }
-
-        if (request.lawyerProfileId !== lawyer.profile.id) {
-            return res.status(403).json({ error: 'No autorizado' });
-        }
-
-        if (request.status !== 'accepted') {
-            return res.status(400).json({ error: 'El caso debe estar aceptado para archivarlo' });
-        }
-
-        // Validate 7 worker business days of inactivity
-        if (!request.lastLawyerActivityAt) {
-            return res.status(400).json({ error: 'No hay registro de actividad del abogado' });
-        }
-
-        const workerDays = getWorkerDaysDiff(request.lastLawyerActivityAt, new Date());
-        if (workerDays < 7) {
-            return res.status(400).json({ 
-                error: `Aún no se cumplen los 7 días de inactividad del trabajador. Días transcurridos: ${workerDays}` 
-            });
-        }
-
-        await prisma.$transaction([
-            prisma.contactRequest.update({
-                where: { id },
-                data: {
-                    status: 'archived',
-                    subStatus: 'archived',
-                    crmStatus: 'CLOSED_LOST',
-                    closedAt: new Date()
-                }
-            }),
-            prisma.chatMessage.create({
-                data: {
-                    requestId: id,
-                    senderId: userId,
-                    content: '💼 **Sistema:** El caso ha sido cerrado y archivado debido a inactividad prolongada del trabajador.',
-                    type: 'system_notification'
-                }
-            })
-        ]);
-
-        // Notify worker
-        sendPushNotification(
-            request.workerId,
-            '📁 Caso Archivado por Inactividad',
-            'Tu caso fue archivado por inactividad. Si deseas reactivarlo, por favor contáctanos.',
-            { type: 'case_archived', requestId: id }
-        ).catch(err => console.error('[Push] Error notifying worker of archiving:', err));
-
-        res.json({ success: true, message: 'El caso ha sido archivado exitosamente.' });
-
-    } catch (error: any) {
-        console.error('Error archiving case:', error);
-        res.status(500).json({ error: 'Error al archivar caso' });
-    }
 };
