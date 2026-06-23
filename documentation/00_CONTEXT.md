@@ -163,11 +163,11 @@ Antes de cada compilación de AAB para producción:
 - **Bolsa Pública**: Los casos reasignados o expirados tienen `lawyerProfileId = null` y regresan al estado `pending`. Son visibles para todos los abogados activos y verificados en su pestaña de "Pendientes" (excepto para los abogados que previamente atendieron o dejaron expirar el caso, registrados en `previousLawyerIds`). Al ser aceptados, se cobra la cuota normal de $150/$300 y se asignan al nuevo abogado.
 
 ### 4.4 Modularización de Controladores y Separación de UI (Refactorización Junio 2026)
-- **Desacoplamiento en Backend**: Se dividió `contactController.ts` (originalmente de 1,583 líneas) en subcontroladores especializados:
-  - `contactPaymentController.ts`: Aceptaciones y cierres con comisiones de éxito.
-  - `contactVaultController.ts`: Subidas de convenios, OCR y sugerencias de IA.
-  - `contactSlaController.ts`: Información de SLA, reasignación por inactividad y archivado.
-  - El controlador base re-exporta los submódulos, lo que garantiza total compatibilidad con las rutas y endpoints de producción sin alterar la API.
+- **Desacoplamiento en Backend (Contactos)**: Se dividió `contactController.ts` (originalmente de 1,583 líneas) en subcontroladores especializados (`contactPaymentController.ts`, `contactVaultController.ts`, `contactSlaController.ts`). El controlador base re-exporta los submódulos para garantizar compatibilidad total con la API.
+- **Desacoplamiento en Backend (Administración)**: Se dividió `adminController.ts` (originalmente de 993 líneas) en subcontroladores especializados:
+  - `adminStatsController.ts`: Consultas de métricas, KPIs, radar colectivo e ingresos.
+  - `adminUserController.ts`: Operaciones de verificación, listas de usuarios, strikes y reasignación de planes/suscripciones.
+  - El controlador base re-exporta todos los submódulos para mantener las rutas existentes de producción.
 - **Desacoplamiento en Frontend**: Se extrajo la matemática de la Ley Federal del Trabajo (LFT) de la pantalla `CalculatorScreen.tsx` (1,226 líneas) al módulo utilitario puro `laborCalculations.ts` (`calculateLaborBenefits`). Esto previene duplicaciones y permite reutilizar los cálculos laborales en otras áreas.
 
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**

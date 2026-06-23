@@ -8,11 +8,11 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ## [v1.23.24] - 23 Junio 2026 (Refactorización y Modularización de Controladores y Calculadora)
 
-- **Refactor (Backend):** Dividido el archivo masivo `contactController.ts` (1,583 líneas) en tres subcontroladores temáticos más pequeños para facilitar el mantenimiento y reducir la densidad:
-  - `contactPaymentController.ts`: Gestión de aceptación de solicitudes y cobros de Stripe/MercadoPago.
-  - `contactVaultController.ts`: Gestión del baúl de documentos, OCR y sugerencia de respuestas de IA.
-  - `contactSlaController.ts`: Gestión de Acuerdo de Nivel de Servicio (SLA V2) e inactividad.
-- **Refactor (Backend):** El archivo original `contactController.ts` ahora mantiene solo operaciones esenciales y re-exporta todas las funciones modularizadas, asegurando 100% de compatibilidad con las rutas y endpoints existentes sin alterar el sistema de producción.
+- **Refactor (Backend/Contactos):** Dividido el archivo masivo `contactController.ts` (1,583 líneas) en tres subcontroladores temáticos más pequeños (`contactPaymentController.ts`, `contactVaultController.ts`, `contactSlaController.ts`). El archivo base re-exporta los submódulos, asegurando 100% de compatibilidad con las rutas y endpoints existentes.
+- **Refactor (Backend/Administración):** Dividido el archivo masivo `adminController.ts` (993 líneas) en dos subcontroladores temáticos más pequeños para facilitar el mantenimiento y reducir la densidad:
+  - `adminStatsController.ts`: Gestión de estadísticas del dashboard principal, reportes financieros y radar colectivo.
+  - `adminUserController.ts`: Operaciones de verificación, listas de usuarios, strikes y reasignación manual de planes/suscripciones.
+  - El archivo base re-exporta los submódulos, manteniendo las rutas de la API en producción sin necesidad de cambios en el enrutador.
 - **Refactor (Mobile):** Extraída toda la lógica matemática de la LFT (Salario Diario Integrado, finiquito, indemnizaciones, ISR estimado y primas) del componente visual `CalculatorScreen.tsx` (1,226 líneas) a un archivo utilitario puro `frontend/src/utils/laborCalculations.ts`.
 - **Refactor (Mobile):** La pantalla `CalculatorScreen.tsx` ahora invoca la función centralizada `calculateLaborBenefits`, reduciendo su complejidad y previniendo errores de sincronización con la ley laboral.
 
