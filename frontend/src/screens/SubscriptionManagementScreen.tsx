@@ -84,32 +84,34 @@ const SubscriptionManagementScreen = () => {
         const lawyerPlans = [
             {
                 id: 'basic',
-                title: 'Suscripción Abogado',
-                price: 99,
+                title: 'Suscripción Básica',
+                price: 299,
                 period: 'mensual',
                 gradient: ['#667eea', '#764ba2'] as const,
                 image: require('../../assets/images/ali-abo-bac.jpg'),
                 benefits: [
-                    'Recibir solicitudes de contacto',
-                    'Acceso a datos de contacto',
-                    'Perfil en el directorio',
-                    'Estadísticas básicas',
+                    'Perfil visible en el directorio',
+                    'Recibe solicitudes de casos normales',
+                    'Acceso completo al perfil del trabajador',
+                    'Estadísticas de tu perfil',
+                    'Tasa de comisión: 10% por caso ganado',
                 ],
                 planType: 'lawyer_basic'
             },
             {
                 id: 'pro',
-                title: 'Suscripción Abogado PRO',
-                price: 299,
+                title: 'Suscripción PRO',
+                price: 599,
                 period: 'mensual',
                 gradient: ['#FFD200', '#F7971E'] as const,
                 image: require('../../assets/images/ali-abo-pro.jpg'),
                 benefits: [
-                    'Todo lo de la suscripción Básica',
+                    'Todo lo del plan Básico',
+                    '\ud83d\udd25 Acceso a Casos HOT (alta severancia)',
                     'Posición prioritaria en el directorio',
-                    'Insignia de Verificado PRO',
-                    'Acceso a "Hot Leads" (Casos Urgentes)',
-                    'Soporte 24/7 y Asesoría'
+                    'Insignia PRO verificado',
+                    'Tasa de comisión reducida: 7% por caso ganado',
+                    'Soporte prioritario'
                 ],
                 planType: 'lawyer_pro'
             }
@@ -360,14 +362,14 @@ const SubscriptionManagementScreen = () => {
                                 {
                                     id: 'basic',
                                     title: 'Suscripción Básica',
-                                    price: 99,
+                                    price: 299,
                                     period: 'mensual',
                                     planType: 'lawyer_basic'
                                 },
                                 {
                                     id: 'pro',
                                     title: 'Suscripción PRO',
-                                    price: 299,
+                                    price: 599,
                                     period: 'mensual',
                                     planType: 'lawyer_pro'
                                 }

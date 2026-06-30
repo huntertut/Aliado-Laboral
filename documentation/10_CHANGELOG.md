@@ -6,6 +6,44 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 
+## [v1.24.1] - 30 Junio 2026 (Fase 2: Generación de Escritos Legales — Documentos por $99-$149 MXN)
+
+- **feat (Backend/Schema):** Agregado modelo `LegalDocument` en `prisma/schema.prisma` con campos: `documentType`, `status` (pending_payment → paid → generated), `amount`, `stripePaymentIntentId`, datos del trabajador y empleador. Ejecutado `prisma db push` para sincronizar.
+- **feat (Backend/Controlador):** Creado `legalDocumentController.ts` con catálogo de 3 documentos (`severance_claim` $99, `unfair_dismissal` $149, `benefits_claim` $99), flujo de pago con Stripe y generación de PDF con Puppeteer usando 3 plantillas HTML profesionales con estilo legal formal (tipografía Crimson Text, folio único, secciones estructuradas, disclaimer legal, bloques de firma).
+- **feat (Backend/Rutas):** Creado `legalDocumentRoutes.ts` con 4 endpoints: `GET /catalog` (público), `GET /my-documents`, `POST /purchase`, `GET /generate/:id` (workers autenticados). Registrado en `index.ts` bajo `/api/legal-documents`.
+- **feat (Backend/Webhooks):** Agregado handler `document_purchase` en `webhookHandlerService.ts`. Al confirmar pago Stripe, marca `LegalDocument.status = 'paid'` y envía push notification "📄 ¡Tu escrito está listo!".
+- **feat (Mobile/Pantalla):** Creada `LegalDocumentsScreen.tsx` con catálogo visual de documentos, flujo de compra con Stripe Payment Sheet, y sección "Mis Documentos" con estado en tiempo real (pendiente/listo/descargado) y botón de descarga de PDF.
+- **feat (Mobile/Calculadora):** Agregado botón "Generar Escrito Legal Formal" con gradiente azul oscuro en `CalculatorScreen.tsx` al final de los resultados, debajo del botón de PDF. Lleva al trabajador directo a la pantalla de documentos.
+- **feat (Mobile/Navegación):** Registrada `LegalDocumentsScreen` en `AppNavigator.tsx` bajo nombre `LegalDocuments`. Agregados endpoints `legalDocuments` en `api.ts`.
+
+## [v1.24.0] - 29 Junio 2026 (Fase 1: Modelo de Membresía de Abogados — Monetización Pasiva)
+
+- **feat (Backend/Suscripciones):** Actualizados los precios del mapa `PRICES` en `subscriptionController.ts` para reflejar el modelo de negocio real: `lawyer_basic` → $299 MXN/mes (directorio + casos normales) y `lawyer_pro` → $599 MXN/mes (directorio + casos hot). Agregado `LAWYER_PLAN_MAP` para traducir el planType al campo `plan` de `LawyerSubscription`.
+- **feat (Backend/Webhooks):** Mejorada la función `handleStripePaymentSuccess` en `webhookHandlerService.ts` para detectar pagos de membresía de abogado por `planType` en el metadata. Al detectarlos, actualiza `Lawyer.subscriptionStatus`, `Lawyer.subscriptionEndDate` y hace `upsert` en `LawyerSubscription` con el `plan` correcto (`basic` o `pro`). Envía push notification de confirmación al abogado.
+- **feat (Backend/Casos):** Implementado filtro por tier en `getLawyerRequests` (`contactController.ts`). Los abogados con `plan: 'basic'` solo ven casos normales (`isHot: false`). Los abogados `pro` ven todos incluyendo casos hot (severancia > $150k o antigüedad > 3 años). El `isPro` ahora se devuelve en la respuesta para que el frontend lo use como fuente de verdad.
+- **feat (Backend/Cron):** Añadido bloque de recordatorio de renovación de membresía en `cronService.ts`. El cron nocturno detecta abogados con `subscriptionEndDate` entre 7 y 8 días en el futuro y les envía una push notification indicando la fecha de vencimiento y el nombre del plan.
+- **feat (Mobile/Solicitudes):** Agregado estado `isProPlan` en `LawyerRequestsScreen.tsx` alimentado por el `isPro` del backend (fuente de verdad confiable). Corregido bug donde `user.plan` local podía estar desactualizado. Banner de upgrade a PRO con gradiente dorado aparece debajo de los tabs cuando el abogado tiene plan básico.
+- **feat (Mobile/Suscripción):** Actualizados precios y beneficios de los planes de abogado en `SubscriptionManagementScreen.tsx`: Básico $299/mes (5 beneficios incluyendo comisión 10%) y PRO $599/mes (6 beneficios incluyendo casos HOT, comisión reducida al 7% e insignia PRO).
+
+## [v1.23.26] - 24 Junio 2026 (Mejoras Específicas de la Fase 2: Estabilidad, UX, Conversión y CI/CD)
+
+- **Feat (Mobile/Calculadora):** Diseñada una tarjeta de conversión persuasiva (`lawyerConversionCard`) al final de la calculadora de finiquito/liquidación en `CalculatorScreen.tsx` que advierte al trabajador sobre los riesgos de firmar renuncias o convenios sin defensa legal y ofrece un botón de contacto directo a abogados laboralistas.
+- **Feat (Mobile/Calculadora):** Implementado el botón **"Exportar Cálculo a PDF"** utilizando `expo-print` and `expo-sharing` para generar y compartir reportes de liquidación en PDF con formato profesional e institucional, incluyendo un desglose claro de los conceptos legales, ISR estimado, leyendas preventivas y atribución de Aliado Laboral.
+- **Feat (Mobile/Documentos):** Rediseñado el visor de contratos `ContractDetailScreen.tsx` para incorporar el **"Modo Lectura"** interactivo. Permite al usuario ajustar en tiempo real el tamaño de la tipografía (Pequeño, Mediano, Grande) y alternar esquemas cromáticos de alto contraste (Claro, Sepia cálido, Oscuro).
+- **Feat (Mobile/Estado):** Creado un gestor de estado global ligero con Zustand en `frontend/src/store/useAppStore.ts` para almacenar el contador de notificaciones no leídas y los mensajes de chat activos en memoria de manera ultra-rápida, optimizando los re-renderizados de la UI.
+- **Feat (Mobile/UX):** Implementada una pantalla de confirmación animada e ilustrada en `WorkerSubscriptionModal.tsx` que utiliza la API `Animated` nativa de React Native para realizar transiciones fluidas de escala y opacidad (*spring scale & fade-in*) al confirmar suscripciones Premium con Stripe.
+- **Feat (DevOps/CI/CD):** Reestructurado el pipeline de GitHub Actions en `.github/workflows/eas-build.yml` en dos etapas. Se ejecuta la validación estática y verificación de tipos de TypeScript (`npx tsc --noEmit`) en cada push y pull request, limitando la costosa compilación nativa en Expo EAS a los tags de versión (`v*`) o ejecución manual, protegiendo las cuotas del cliente.
+- **Fix (Mobile/Visor):** Resuelta una duplicación en la exportación default al final de `ContractDetailScreen.tsx`.
+
+## [v1.23.25] - 23 Junio 2026 (Centro de Notificaciones Unificado y Atribución de Noticias Legales)
+
+- **Feat (Backend/Noticias):** Modificado el endpoint `GET /api/news` (`getNewsFeed`) para retornar todos los campos detallados del modelo `LegalNews` en la respuesta JSON (`sourceUrl`, `sourceName`, summaries y `originalText`). Esto permite a la aplicación móvil acceder a los análisis enriquecidos y de atribución.
+- **Feat (Mobile/Notificaciones):** Añadido el sistema de notificaciones persistentes in-app. La pantalla de inicio (`HomeScreen.tsx`) consulta el conteo de avisos no leídos y dibuja un badge indicador (círculo rojo con conteo `9+`) sobre el icono de la campanita.
+- **Feat (Mobile/Notificaciones):** Rediseñada la pantalla `NewsFeedScreen.tsx` como un **Centro de Notificaciones y Noticias** unificado. Cuenta con una barra de pestañas deslizante para alternar entre **Avisos** (alertas interactivas de casos, chats y noticias con redirección automática) y **Noticias** (feed de actualidad laboral).
+- **Feat (Mobile/Noticias):** Rediseñado el modal de detalle de noticias para mostrar un selector de tres perspectivas (Trabajador 👷, PYME 🏢, Abogado ⚖️) y una tarjeta de atribución de fuente con enlace web nativo usando `Linking.openURL`.
+- **Fix (Mobile/OTA):** Optimizado el flujo de arranque de la aplicación en `App.tsx`. Se eliminó la pantalla de carga de actualización obligatoria de 1 segundo en cada inicio. Ahora el chequeo de actualizaciones OTA se realiza de manera silenciosa en segundo plano, mostrando la pantalla de descarga únicamente cuando existe una actualización real disponible.
+- **Verify (Backend/AI):** Confirmada y verificada la integración del filtro semántico en `newsScheduler.ts` utilizando la API de Inteligencia Artificial para evitar noticias repetidas en la base de datos local.
+
 ## [v1.23.24] - 23 Junio 2026 (Refactorización y Modularización de Controladores y Calculadora)
 
 - **Refactor (Backend/Contactos):** Dividido el archivo masivo `contactController.ts` (1,583 líneas) en tres subcontroladores temáticos más pequeños (`contactPaymentController.ts`, `contactVaultController.ts`, `contactSlaController.ts`). El archivo base re-exporta los submódulos, asegurando 100% de compatibilidad con las rutas y endpoints existentes.
@@ -15,6 +53,9 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
   - El archivo base re-exporta los submódulos, manteniendo las rutas de la API en producción sin necesidad de cambios en el enrutador.
 - **Refactor (Mobile):** Extraída toda la lógica matemática de la LFT (Salario Diario Integrado, finiquito, indemnizaciones, ISR estimado y primas) del componente visual `CalculatorScreen.tsx` (1,226 líneas) a un archivo utilitario puro `frontend/src/utils/laborCalculations.ts`.
 - **Refactor (Mobile):** La pantalla `CalculatorScreen.tsx` ahora invoca la función centralizada `calculateLaborBenefits`, reduciendo su complejidad y previniendo errores de sincronización con la ley laboral.
+- **Refactor (Mobile):** Rediseñada y modularizada la pantalla [ImssNomScreen.tsx](file:///c:/dev/aliado-laboral/frontend/src/screens/ImssNomScreen.tsx) (de 929 líneas a 120 líneas) mediante la creación de subcomponentes aislados en [frontend/src/components/imss_nom](file:///c:/dev/aliado-laboral/frontend/src/components/imss_nom) (`ImssView.tsx`, `NomHome.tsx`, `NomTest.tsx`, `InfoModal.tsx`).
+- **Cleanup (Backend):** Depuración definitiva de endpoints y funciones de KPIs huérfanos obsoletos (`getImpactKPIs`, `getFinancialHealth`, `getCollectiveRadar`) que no estaban mapeados a ninguna ruta activa en el Panel Web.
+- **Fix (Admin Web & Backend):** Removidas declaraciones y definiciones de componentes/funciones duplicadas en `admin-web/src/pages/Cases.tsx` y `backend/src/controllers/adminController.ts` causadas por fusiones anteriores. Ambos proyectos ahora compilan limpiamente sin advertencias de TypeScript.
 
 ## [v1.23.23] - 22 Junio 2026 (SLA V2: Inactividad y Reasignación de Abogados)
 

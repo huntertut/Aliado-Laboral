@@ -11,6 +11,8 @@ import DatePickerModal from '../components/DatePickerModal';
 import { LABOR_LAW_CONSTANTS, SEPARATION_REASONS } from '../config/constants';
 import AppHeader from '../components/common/AppHeader';
 import { ViralShareService } from '../services/ViralShareService';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 const CalculatorScreen = () => {
     const { user } = useAuth();
@@ -43,6 +45,272 @@ const CalculatorScreen = () => {
     useEffect(() => {
         loadProfileData();
     }, []);
+
+    const exportToPDF = async () => {
+        if (!results) return;
+        try {
+            const htmlContent = `
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body {
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        color: #2c3e50;
+                        margin: 0;
+                        padding: 30px;
+                        line-height: 1.4;
+                    }
+                    .header {
+                        text-align: center;
+                        border-bottom: 2px solid #1e3799;
+                        padding-bottom: 15px;
+                        margin-bottom: 20px;
+                    }
+                    .title {
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #1e3799;
+                        margin: 0;
+                    }
+                    .subtitle {
+                        font-size: 14px;
+                        color: #7f8c8d;
+                        margin-top: 5px;
+                    }
+                    .meta-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 20px;
+                    }
+                    .meta-table td {
+                        padding: 6px 10px;
+                        border: 1px solid #e0e0e0;
+                        font-size: 12px;
+                    }
+                    .meta-table td.label {
+                        font-weight: bold;
+                        background-color: #f8f9fa;
+                        width: 25%;
+                    }
+                    .section-title {
+                        font-size: 14px;
+                        font-weight: bold;
+                        color: #1e3799;
+                        border-bottom: 1px solid #1e3799;
+                        padding-bottom: 3px;
+                        margin-top: 20px;
+                        margin-bottom: 10px;
+                        text-transform: uppercase;
+                    }
+                    .data-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 15px;
+                    }
+                    .data-table th, .data-table td {
+                        padding: 8px 10px;
+                        text-align: left;
+                        font-size: 12px;
+                    }
+                    .data-table th {
+                        background-color: #f8f9fa;
+                        border-bottom: 2px solid #e0e0e0;
+                        font-weight: bold;
+                    }
+                    .data-table td {
+                        border-bottom: 1px solid #eee;
+                    }
+                    .data-table td.amount {
+                        text-align: right;
+                        font-weight: bold;
+                    }
+                    .total-box {
+                        background-color: #1e3799;
+                        color: white;
+                        padding: 12px 15px;
+                        border-radius: 6px;
+                        text-align: right;
+                        margin-top: 20px;
+                    }
+                    .total-title {
+                        font-size: 11px;
+                        opacity: 0.9;
+                    }
+                    .total-amount {
+                        font-size: 24px;
+                        font-weight: bold;
+                    }
+                    .warning-card {
+                        background-color: #fff9e6;
+                        border-left: 5px solid #f39c12;
+                        padding: 12px;
+                        margin-top: 25px;
+                        border-radius: 4px;
+                    }
+                    .warning-title {
+                        font-weight: bold;
+                        color: #b7791f;
+                        margin-bottom: 4px;
+                        font-size: 12px;
+                    }
+                    .warning-text {
+                        font-size: 11px;
+                        color: #744210;
+                        line-height: 1.4;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 40px;
+                        font-size: 10px;
+                        color: #95a5a6;
+                        border-top: 1px solid #eee;
+                        padding-top: 10px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="title">Aliado Laboral</div>
+                    <div class="subtitle">Reporte Detallado de Cálculo de Finiquito y Liquidación</div>
+                </div>
+                
+                <table class="meta-table">
+                    <tr>
+                        <td class="label">Fecha de Ingreso:</td>
+                        <td>${startDate}</td>
+                        <td class="label">Fecha de Salida:</td>
+                        <td>${endDate}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Antigüedad:</td>
+                        <td>${results.yearsWorked} años</td>
+                        <td class="label">Sueldo Mensual Bruto:</td>
+                        <td>$${parseFloat(monthlySalary).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Sueldo Diario:</td>
+                        <td>$${results.dailySalary.toFixed(2)}</td>
+                        <td class="label">Motivo de Separación:</td>
+                        <td>${SEPARATION_REASONS.find((r: any) => r.id === separationReason)?.label || 'No especificado'}</td>
+                    </tr>
+                </table>
+
+                <div class="section-title">1. Percepciones por Finiquito (Derechos Irrenunciables)</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Descripción</th>
+                            <th style="text-align: right;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${results.pendingSalary > 0 ? `
+                        <tr>
+                            <td>Sueldo Pendiente</td>
+                            <td>Días trabajados no pagados (${pendingDays || 0} días)</td>
+                            <td class="amount">$${results.pendingSalary.toFixed(2)}</td>
+                        </tr>` : ''}
+                        <tr>
+                            <td>Aguinaldo Proporcional</td>
+                            <td>Parte proporcional del año trabajado</td>
+                            <td class="amount">$${results.aguinaldo.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Vacaciones Proporcionales</td>
+                            <td>Días generados en el período</td>
+                            <td class="amount">$${results.vacationPay.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Prima Vacacional</td>
+                            <td>${vacationPremium}% sobre vacaciones proporcionales</td>
+                            <td class="amount">$${results.primaVacacional.toFixed(2)}</td>
+                        </tr>
+                        <tr style="font-weight: bold; background-color: #fafafa;">
+                            <td colspan="2">Subtotal Finiquito</td>
+                            <td class="amount" style="color: #1e3799;">$${results.finiquitoTotal.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                ${results.hasIndemnification && results.liquidacionTotal > 0 ? `
+                <div class="section-title">2. Indemnizaciones Adicionales (Liquidación)</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Descripción</th>
+                            <th style="text-align: right;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Indemnización Constitucional</td>
+                            <td>3 meses de salario + 20 días por año</td>
+                            <td class="amount">$${results.indemnizacion.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Prima de Antigüedad</td>
+                            <td>12 días de salario por año trabajado</td>
+                            <td class="amount">$${results.seniorityPremium.toFixed(2)}</td>
+                        </tr>
+                        <tr style="font-weight: bold; background-color: #fafafa;">
+                            <td colspan="2">Subtotal Liquidación</td>
+                            <td class="amount" style="color: #1e3799;">$${results.liquidacionTotal.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>` : ''}
+
+                <div class="section-title">3. Deducciones Estimadas</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Descripción</th>
+                            <th style="text-align: right; color: #e74c3c;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ISR (Impuesto Sobre la Renta)</td>
+                            <td>Retención estimada de impuestos por ley</td>
+                            <td class="amount" style="color: #e74c3c;">-$${results.estimatedISR.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="total-box">
+                    <div class="total-title">TOTAL NETO A RECIBIR (ESTIMADO)</div>
+                    <div class="total-amount">$${results.totalNet.toFixed(2)}</div>
+                </div>
+
+                <div class="warning-card">
+                    <div class="warning-title">⚠️ ATENCIÓN: TU DEFENSA LEGAL ES CRUCIAL</div>
+                    <div class="warning-text">
+                        Este cálculo es una estimación matemática basada en los mínimos de la Ley Federal del Trabajo. 
+                        Sin embargo, <strong>los patrones suelen ofrecer acuerdos muy por debajo de la ley o presionar para firmar renuncias voluntarias</strong>. 
+                        Un mal acuerdo o una firma apresurada puede hacerte perder hasta el 50% o más de lo que legítimamente te corresponde. 
+                        Te recomendamos encarecidamente <strong>no firmar ningún documento, convenio o renuncia</strong> sin antes consultar a uno de nuestros abogados laboralistas verificados. 
+                        Ellos evaluarán tu caso particular y te defenderán para asegurar que recibas cada centavo de tu liquidación.
+                    </div>
+                </div>
+
+                <div class="footer">
+                    Documento generado a través de Aliado Laboral App. Este documento es de carácter informativo.<br>
+                    &copy; ${new Date().getFullYear()} Aliado Laboral. Todos los derechos reservados.
+                </div>
+            </body>
+            </html>
+            `;
+
+            const { uri } = await Print.printToFileAsync({ html: htmlContent });
+            await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Compartir Reporte de Finiquito', UTI: 'com.adobe.pdf' });
+        } catch (error) {
+            console.error('Error al exportar PDF:', error);
+            Alert.alert('Error', 'No se pudo generar el reporte PDF en este momento. Inténtalo de nuevo.');
+        }
+    };
 
     const loadProfileData = async () => {
         try {
@@ -456,6 +724,55 @@ const CalculatorScreen = () => {
                     <Text style={styles.totalLabel}>TOTAL A RECIBIR (ESTIMADO)</Text>
                     <Text style={styles.totalAmount}>${results.totalNet.toFixed(2)}</Text>
                 </View>
+
+                {/* Lawyer Conversion Card & PDF Export Button */}
+                <View style={styles.conversionCard}>
+                    <View style={styles.conversionHeader}>
+                        <Ionicons name="shield-half-outline" size={24} color="#d35400" />
+                        <Text style={styles.conversionTitle}>¡Protege tu dinero!</Text>
+                    </View>
+                    <Text style={styles.conversionText}>
+                        Este cálculo es una estimación de ley. Sin embargo, para hacerlo realidad frente a tu patrón, requieres la defensa de un abogado especialista. Un mal acuerdo o una firma apresurada puede hacerte perder hasta el 50% de tu dinero.
+                    </Text>
+                    <Text style={styles.conversionHighlight}>
+                        ¡No firmes ninguna renuncia o convenio sin asesoría legal!
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.conversionButton}
+                        onPress={() => navigation.navigate('Lawyers' as never)}
+                    >
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#fff" />
+                        <Text style={styles.conversionButtonText}>Contactar Abogado Verificado</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.pdfButton}
+                    onPress={exportToPDF}
+                >
+                    <Ionicons name="document-text-outline" size={22} color="#fff" />
+                    <Text style={styles.pdfButtonText}>Exportar Cálculo a PDF</Text>
+                </TouchableOpacity>
+
+                {/* 📄 FASE 2: Legal Document Generation Button */}
+                <TouchableOpacity
+                    style={styles.legalDocButton}
+                    onPress={() => (navigation as any).navigate('LegalDocuments')}
+                >
+                    <LinearGradient
+                        colors={['#1a237e', '#3949ab']}
+                        style={styles.legalDocButtonGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                    >
+                        <Ionicons name="shield-checkmark-outline" size={20} color="#fff" />
+                        <View style={styles.legalDocButtonContent}>
+                            <Text style={styles.legalDocButtonTitle}>Generar Escrito Legal Formal</Text>
+                            <Text style={styles.legalDocButtonSubtitle}>Documento listo para presentar ante tu patrón — desde $99 MXN</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+                    </LinearGradient>
+                </TouchableOpacity>
 
                 {/* Share Result Buttons */}
                 <Text style={styles.shareLabel}>Compartir Resultado en Redes:</Text>
@@ -1219,6 +1536,106 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,
+    },
+    conversionCard: {
+        backgroundColor: '#fffcf5',
+        borderColor: '#f39c12',
+        borderWidth: 1.5,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        elevation: 1,
+    },
+    conversionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        gap: 8,
+    },
+    conversionTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#d35400',
+    },
+    conversionText: {
+        fontSize: 13,
+        color: '#2c3e50',
+        lineHeight: 18,
+        marginBottom: 8,
+    },
+    conversionHighlight: {
+        fontSize: 13,
+        fontWeight: 'bold',
+        color: '#c0392b',
+        marginBottom: 12,
+    },
+    conversionButton: {
+        backgroundColor: '#e67e22',
+        borderRadius: 10,
+        padding: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    conversionButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    pdfButton: {
+        backgroundColor: '#1e3799',
+        borderRadius: 10,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        gap: 8,
+    },
+    pdfButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    legalDocButton: {
+        borderRadius: 12,
+        marginBottom: 16,
+        overflow: 'hidden',
+        shadowColor: '#1a237e',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 4,
+    },
+    legalDocButtonGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    legalDocButtonContent: {
+        flex: 1,
+    },
+    legalDocButtonTitle: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginBottom: 2,
+    },
+    legalDocButtonSubtitle: {
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 11.5,
     },
 });
 

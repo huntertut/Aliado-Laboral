@@ -14,10 +14,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 // PRICE MAP (Hardcoded for simplicity matching Frontend)
 const PRICES: Record<string, number> = {
-    'worker_premium': 2900, // $29.00 MXN
-    'lawyer_basic': 9900,   // $99.00 MXN
-    'lawyer_pro': 29900,    // $299.00 MXN
-    'pyme_pro': 99900       // $999.00 MXN
+    'worker_premium': 2900,  // $29.00 MXN
+    'lawyer_basic': 29900,   // $299.00 MXN — directorio normal
+    'lawyer_pro': 59900,     // $599.00 MXN — directorio + casos hot
+    'pyme_pro': 99900        // $999.00 MXN
+};
+
+// Map plan type to LawyerSubscription plan name
+const LAWYER_PLAN_MAP: Record<string, string> = {
+    'lawyer_basic': 'basic',
+    'lawyer_pro': 'pro',
 };
 
 export const activateSubscription = async (req: Request, res: Response) => {
@@ -97,6 +103,8 @@ export const activateSubscription = async (req: Request, res: Response) => {
                 planType,
                 role
             }
+        }, {
+            idempotencyKey: `sub_pi_${userId}_${planType}`
         });
 
         res.json({

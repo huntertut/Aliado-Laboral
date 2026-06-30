@@ -11,11 +11,12 @@ import { AnalyticsService } from '../services/AnalyticsService';
 
 const LawyerRequestsScreen = () => {
     const navigation = useNavigation<any>();
-    const { user, getAccessToken } = useAuth(); // Obtener usuario real y función de token
+    const { user, getAccessToken } = useAuth();
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState<'pending' | 'accepted' | 'rejected'>('pending');
+    const [isProPlan, setIsProPlan] = useState(false); // 🔒 Authoritative from backend
 
     // TRACK LOCKED VIEWS
     useEffect(() => {
@@ -119,6 +120,10 @@ const LawyerRequestsScreen = () => {
 
             const data = await response.json();
             setRequests(data.requests || []);
+            // ✅ Use backend-authoritative isPro
+            if (typeof data.isPro === 'boolean') {
+                setIsProPlan(data.isPro);
+            }
         } catch (error) {
             console.error('Error al cargar solicitudes:', error);
         } finally {
@@ -160,9 +165,10 @@ const LawyerRequestsScreen = () => {
 
         const urgency = urgencyConfig[item.urgency as keyof typeof urgencyConfig] || urgencyConfig.normal;
 
-        // --- BUINESS LOGIC: HOT CASE RESTRICTION ---
+        // --- BUSINESS LOGIC: HOT CASE RESTRICTION ---
         const isHotCase = item.isHot || item.classification === 'hot';
-        const canAccess = !isHotCase || (user?.plan === 'pro' || user?.role === 'admin');
+        // 🔒 Use backend-authoritative isPro (not local user.plan which may be stale)
+        const canAccess = !isHotCase || isProPlan || user?.role === 'admin';
 
         const handlePress = () => {
             if (canAccess) {
@@ -384,6 +390,23 @@ const LawyerRequestsScreen = () => {
                 </TouchableOpacity>
             </View>
 
+            {/* 🔥 PRO UPGRADE BANNER — Only visible for basic plan lawyers */}
+            {!isProPlan && !loading && (
+                <TouchableOpacity
+                    style={styles.proBanner}
+                    onPress={() => navigation.navigate('SubscriptionManagement' as never)}
+                    activeOpacity={0.85}
+                >
+                    <LinearGradient colors={['#FFD200', '#F7971E']} style={styles.proBannerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                        <Ionicons name="flame" size={20} color="#fff" />
+                        <Text style={styles.proBannerText}>
+                            Casos HOT ocultos — Plan PRO $599/mes
+                        </Text>
+                        <Ionicons name="chevron-forward" size={18} color="#fff" />
+                    </LinearGradient>
+                </TouchableOpacity>
+            )}
+
             {/* List */}
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -539,7 +562,26 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginTop: 5,
         marginBottom: 10,
-    }
+    },
+    proBanner: {
+        marginHorizontal: 16,
+        marginTop: 8,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    proBannerGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 8,
+    },
+    proBannerText: {
+        flex: 1,
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 13,
+    },
 });
 
 export default LawyerRequestsScreen;

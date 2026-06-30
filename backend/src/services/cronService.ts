@@ -181,6 +181,64 @@ cron.schedule('0 2 * * *', async () => {
             }
         }
 
+        // 4. \ud83d\udcb3 RECORDATORIO DE RENOVACIÓN DE MEMBRESÍA (7 días antes del vencimiento)
+        const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const eightDaysFromNow = new Date(now.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+        const expiringLawyers = await prisma.lawyer.findMany({
+            where: {
+                subscriptionStatus: 'active',
+                subscriptionEndDate: {
+                    gte: sevenDaysFromNow,
+                    lt: eightDaysFromNow // Only notify on the 7-day mark (not every day)
+                }
+            },
+            include: { subscription: true }
+        });
+
+        console.log(`\u23f0 [CRON] ${expiringLawyers.length} abogados con membresía próxima a vencer en 7 días.`);
+
+        for (const lawyer of expiringLawyers) {
+            if (!lawyer.userId) continue;
+            const planName = lawyer.subscription?.plan === 'pro' ? 'Pro ($599/mes)' : 'Básica ($299/mes)';
+            await sendPushNotification(
+                lawyer.userId,
+                '\u23f3 Tu membresía vence en 7 días',
+                `Tu membresía ${planName} vence el ${lawyer.subscriptionEndDate?.toLocaleDateString('es-MX')}. Renueva para seguir recibiendo casos.`,
+                { type: 'subscription_expiring', daysLeft: 7 }
+            ).catch(err => console.error('[Push] Error notifying lawyer renewal:', err));
+        }
+
+        // 5. NOTIFICACIONES PREVENTIVAS Y ESTACIONALES
+        const month = now.getMonth(); // 0 = Enero, 4 = Mayo, 11 = Diciembre
+        const date = now.getDate();
+        let seasonalTitle = '';
+        let seasonalBody = '';
+
+        if (month === 4 && date === 15) { // 15 de Mayo
+            seasonalTitle = '💰 ¿Ya recibiste tu reparto de utilidades (PTU)?';
+            seasonalBody = 'Recuerda que la fecha límite es el 30 de mayo. Revisa tus derechos y realiza tu estimación aquí.';
+        } else if (month === 11 && date === 10) { // 10 de Diciembre
+            seasonalTitle = '🗞️ ¡Se acerca el pago de tu Aguinaldo!';
+            seasonalBody = 'Los patrones tienen hasta el 20 de diciembre para pagarlo. Calcula cuánto te corresponde en Aliado Laboral.';
+        } else if (month === 3 && date === 15) { // 15 de Abril
+            seasonalTitle = '📅 Declaración Anual y Deducciones';
+            seasonalBody = '¿Sabías que como asalariado puedes deducir colegiaturas y gastos médicos? Conoce cómo tener saldo a favor.';
+        }
+
+        if (seasonalTitle && seasonalBody) {
+            console.log(`📢 [CRON] Enviando notificación preventiva estacional: "${seasonalTitle}"`);
+            const usersWithTokens = await prisma.user.findMany({
+                where: { pushToken: { not: null } },
+                select: { id: true }
+            });
+            
+            for (const user of usersWithTokens) {
+                sendPushNotification(user.id, seasonalTitle, seasonalBody, { type: 'seasonal' })
+                    .catch(err => console.error(`Error sending seasonal notification to ${user.id}:`, err));
+            }
+        }
+
         console.log('✅ [CRON] Revisión nocturna de SLAs completada.');
     } catch (error) {
         console.error('❌ [CRON] Error ejecutando la revisión de SLAs:', error);

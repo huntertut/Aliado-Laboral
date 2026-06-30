@@ -193,7 +193,7 @@ async function handleStripeCheckoutSessionCompleted(session: any): Promise<void>
  */
 async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
     const metadata = paymentIntent.metadata || {};
-    const { contactRequestId, userId, type } = metadata;
+    const { contactRequestId, userId, type, planType } = metadata;
 
     if (paymentIntent.id) {
         await prisma.payment.upsert({
@@ -209,6 +209,85 @@ async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
                 metadata: JSON.stringify(metadata)
             }
         });
+    }
+
+    // ✅ LAWYER SUBSCRIPTION ACTIVATION (basic $299 / pro $599)
+    if ((planType === 'lawyer_basic' || planType === 'lawyer_pro') && userId) {
+        const planName = planType === 'lawyer_pro' ? 'pro' : 'basic';
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1); // 1 month subscription
+
+        const lawyer = await prisma.lawyer.findUnique({ where: { userId } });
+        if (lawyer) {
+            // Update main lawyer subscription status
+            await prisma.lawyer.update({
+                where: { id: lawyer.id },
+                data: {
+                    subscriptionStatus: 'active',
+                    subscriptionEndDate: endDate,
+                }
+            });
+
+            // Upsert LawyerSubscription with correct plan
+            await prisma.lawyerSubscription.upsert({
+                where: { lawyerId: lawyer.id },
+                update: {
+                    plan: planName,
+                    status: 'active',
+                    startDate: new Date(),
+                    endDate,
+                    amount: paymentIntent.amount ? paymentIntent.amount / 100 : (planName === 'pro' ? 599 : 299),
+                    lastPaymentId: paymentIntent.id,
+                },
+                create: {
+                    lawyerId: lawyer.id,
+                    plan: planName,
+                    status: 'active',
+                    startDate: new Date(),
+                    endDate,
+                    amount: paymentIntent.amount ? paymentIntent.amount / 100 : (planName === 'pro' ? 599 : 299),
+                    lastPaymentId: paymentIntent.id,
+                    paymentMethod: 'stripe',
+                    autoRenew: true,
+                }
+            });
+
+            // Notify lawyer of successful activation
+            await sendPushNotification(
+                userId,
+                planName === 'pro' ? '🚀 ¡Membresía Pro Activada!' : '✅ ¡Membresía Activada!',
+                planName === 'pro'
+                    ? 'Ya puedes ver todos los casos, incluyendo los casos prioritarios (hot). ¡Bienvenido!'
+                    : 'Tu membresía está activa. Ya apareces en el directorio de Aliado Laboral.',
+                { type: 'subscription_activated', plan: planName }
+            ).catch(err => console.error('[Push] Error notifying lawyer subscription:', err));
+
+            console.log(`✅ LawyerSubscription activated: ${lawyer.id} | plan: ${planName} | until: ${endDate.toISOString()}`);
+        }
+        return;
+    }
+
+    // ✅ DOCUMENT PURCHASE ACTIVATION
+    if (type === 'document_purchase' && metadata.documentId) {
+        const docId = metadata.documentId;
+
+        await prisma.legalDocument.update({
+            where: { id: docId },
+            data: { status: 'paid' },
+        });
+
+        // Notify worker
+        if (userId) {
+            await sendPushNotification(
+                userId,
+                '📄 ¡Tu escrito está listo!',
+                'El pago fue confirmado. Ya puedes descargar tu documento legal desde la app.',
+                { type: 'document_ready', documentId: docId }
+            ).catch(err => console.error('[Push] Error notifying document ready:', err));
+        }
+
+        console.log(`✅ LegalDocument activated: ${docId}`);
+        return;
     }
 
     if (type === 'worker_contact_fee' && contactRequestId) {

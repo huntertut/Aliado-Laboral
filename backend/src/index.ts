@@ -19,6 +19,7 @@ import accountantRoutes from './routes/accountantRoutes';
 import chatRoutes from './routes/chatRoutes';
 import vaultRoutes from './routes/vaultRoutes';
 import newsRoutes from './routes/newsRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import pymeRoutes from './routes/pymeRoutes';
 import systemRoutes from './routes/systemRoutes';
 import forumRoutes from './routes/forumRoutes';
@@ -28,6 +29,7 @@ import documentRoutes from './routes/documentRoutes';
 import jurisdictionRoutes from './routes/jurisdictionRoutes';
 import promotionRoutes from './routes/promotionRoutes';
 import webhookRoutes from './routes/webhookRoutes';
+import legalDocumentRoutes from './routes/legalDocumentRoutes';
 
 // ... (imports)
 
@@ -126,6 +128,7 @@ app.use('/api/accountant', accountantRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/vault', vaultRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/pyme-profile', pymeRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/forum', forumRoutes); // Forum Routes
@@ -134,6 +137,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/jurisdiction', jurisdictionRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/legal-documents', legalDocumentRoutes); // Phase 2: Legal document generation
 
 import reportRoutes from './routes/reportRoutes';
 app.use('/api/reports', reportRoutes);

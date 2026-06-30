@@ -53,6 +53,7 @@ import ContractReviewScreen from '../screens/pyme/ContractReviewScreen';
 import LiquidationCalculatorView from '../screens/pyme/LiquidationCalculatorView';
 import GenerateActScreen from '../screens/pyme/GenerateActScreen';
 import DeveloperCreditsScreen from '../screens/DeveloperCreditsScreen';
+import LegalDocumentsScreen from '../screens/LegalDocumentsScreen';
 
 const Stack = createStackNavigator();
 
@@ -161,6 +162,9 @@ const AppNavigator = () => {
                         <Stack.Screen name="LawyerCases" component={LawyerCasesScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="LawyerRequestDetail" component={LawyerRequestDetailScreen} options={{ headerShown: false }} />
                         <Stack.Screen name="CaseChat" component={CaseChatScreen} options={{ headerShown: false }} />
+
+                        {/* Phase 2: Legal Documents (Worker) */}
+                        <Stack.Screen name="LegalDocuments" component={LegalDocumentsScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
                     // Auth Stack — skip Welcome for returning users

@@ -14,5 +14,11 @@ export const endpoints = {
         acceptRequest: (id: string) => `${API_URL}/contact/lawyer/${id}/accept`,
         rejectRequest: (id: string) => `${API_URL}/contact/lawyer/${id}/reject`,
         getContact: (id: string) => `${API_URL}/contact/lawyer/${id}/contact`,
+    },
+    legalDocuments: {
+        catalog: `${API_URL}/legal-documents/catalog`,
+        myDocuments: `${API_URL}/legal-documents/my-documents`,
+        purchase: `${API_URL}/legal-documents/purchase`,
+        generate: (documentId: string) => `${API_URL}/legal-documents/generate/${documentId}`,
     }
 };

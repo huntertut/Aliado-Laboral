@@ -420,10 +420,18 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
         });
 
         // TIER STRICTNESS LOGIC & LEGAL ARMOR
-        const isPro = lawyer.subscription?.plan === 'pro';
+        const isPro = lawyer.subscription?.plan === 'pro'
+            && lawyer.subscription?.status === 'active'
+            && (lawyer.subscription?.endDate ? lawyer.subscription.endDate > new Date() : false);
 
-        const processedRequests = filteredRequests.map(req => {
-            const isTrialView = filteredRequests.length <= 3;
+        // \ud83d\udd25 HOT CASE FILTER: Pro plan only sees hot cases, Basic only sees normal cases
+        const tierFilteredRequests = filteredRequests.filter(req => {
+            if (req.isHot) return isPro; // Hot cases → only Pro abogados
+            return true; // Normal cases → any active subscription (or trial)
+        });
+
+        const processedRequests = tierFilteredRequests.map(req => {
+            const isTrialView = tierFilteredRequests.length <= 3;
             const isPaid = req.status === 'accepted' || req.bothPaymentsSucceeded;
             const hasConsent = (req.worker as any).hasAcceptedDataSharing || req.consentTimestamp != null;
 
@@ -449,7 +457,8 @@ export const getLawyerRequests = async (req: Request, res: Response) => {
             }
         });
 
-        res.json({ requests: processedRequests });
+        res.json({ requests: processedRequests, isPro }); // send isPro to frontend for upsell UI
+
 
     } catch (error: any) {
         console.error('Error getting lawyer requests:', error);
