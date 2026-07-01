@@ -125,9 +125,86 @@ Te corresponde el finiquito MÁS las indemnizaciones constitucionales:
         }
     });
 
+    // 3. Curso Freelancer
+    const course3 = await prisma.course.create({
+        data: {
+            title: 'Freelancer con Seguro: Cómo afiliarte al IMSS por tu cuenta',
+            description: 'Guía práctica para trabajadores independientes, emprendedores y freelancers sobre cómo cotizar de manera voluntaria al IMSS bajo la Modalidad 10. Conoce los costos, coberturas y cómo proteger tu salud y tu retiro.',
+            price: 99.00,
+            category: 'freelancer',
+            coverImage: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=400&auto=format&fit=crop',
+            modules: {
+                create: [
+                    {
+                        title: 'Módulo 1: La Modalidad 10 para independientes',
+                        sortOrder: 1,
+                        lessons: {
+                            create: [
+                                {
+                                    title: 'Lección 1: ¿Qué es la Modalidad 10 y qué beneficios te da?',
+                                    content: `### Modalidad 10 del IMSS
+Es el esquema diseñado específicamente para trabajadores independientes. A diferencia de la Modalidad 40, la Modalidad 10 te otorga cobertura médica completa, incapacidades por enfermedad o maternidad, y cotización para tu cuenta de Afore/pensiones.
+
+### Beneficios incluidos:
+1. Servicios médicos generales, especialidades y cirugías para ti y tus beneficiarios directos (padres, hijos, cónyuge).
+2. Pago de incapacidades de trabajo.
+3. Cotización para retiro y pensión.
+4. Acceso a guarderías y prestaciones sociales.`,
+                                    videoUrl: 'https://vimeo.com/769798717',
+                                    durationMin: 12,
+                                    sortOrder: 1
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    });
+
+    // 4. Curso de Navegación Burocrática (Incapacidades)
+    const course4 = await prisma.course.create({
+        data: {
+            title: 'Incapacidades y Riesgos de Trabajo: Que el IMSS te pague lo justo',
+            description: 'Aprende a navegar el proceso burocrático ante el IMSS en caso de enfermedad general, maternidad o accidente de trabajo. Evita que te rechacen tus trámites y asegura el pago del 100% de tu sueldo cuando más lo necesitas.',
+            price: 99.00,
+            category: 'bureaucracy',
+            coverImage: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=400&auto=format&fit=crop',
+            modules: {
+                create: [
+                    {
+                        title: 'Módulo 1: Accidentes y Riesgos Laborales',
+                        sortOrder: 1,
+                        lessons: {
+                            create: [
+                                {
+                                    title: 'Lección 1: Cómo llenar y reportar la forma ST-7 de Riesgo de Trabajo',
+                                    content: `### La forma ST-7 (Aviso de Atención Médica Inicial y Calificación de Probable Accidente de Trabajo)
+Es el documento más importante si te lesionas en tu jornada de trabajo o en el trayecto de tu casa al trabajo.
+
+### Puntos clave:
+- Debes pedirle al médico familiar o urgencias que inicie el trámite.
+- El patrón tiene la obligación de llenar su parte del reporte en un plazo máximo de 72 horas.
+- Si se califica como **Sí de Trabajo**, el IMSS te paga el **100% de tu salario registrado** desde el primer día. Si es enfermedad general, solo te pagan el 60% a partir del cuarto día. ¡Por eso es vital tramitarlo correctamente!`,
+                                    videoUrl: 'https://vimeo.com/769798717',
+                                    durationMin: 15,
+                                    sortOrder: 1,
+                                    attachmentUrl: 'https://api.cibertmx.org/assets/templates/guia_formato_st7.pdf',
+                                    attachmentName: 'Guía de Llenado Formato ST-7 IMSS.pdf'
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    });
+
     console.log(`✅ Cursos demo cargados con éxito!
 - Curso 1: ${course1.title} (${course1.id})
 - Curso 2: ${course2.title} (${course2.id})
+- Curso 3: ${course3.title} (${course3.id})
+- Curso 4: ${course4.title} (${course4.id})
 `);
 }
 

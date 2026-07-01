@@ -22,7 +22,11 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         // 1. Try Legacy JWT Verification
         try {
             const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-            req.user = decoded;
+            req.user = {
+                ...decoded,
+                id: decoded.userId || decoded.id,
+                userId: decoded.userId || decoded.id
+            };
             return next();
         } catch (jwtError) {
             // JWT verification failed, proceed to try Firebase

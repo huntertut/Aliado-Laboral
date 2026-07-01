@@ -157,9 +157,9 @@ const HomeScreen = () => {
         { label: 'Foro\nAnónimo', icon: 'people-outline', color: AppTheme.colors.primary, route: 'Forum' },
         { label: 'IMSS', icon: 'medkit-outline', color: AppTheme.colors.primary, route: 'ImssNom' },
         { label: 'PROFEDET', icon: 'shield-checkmark-outline', color: AppTheme.colors.primary, route: 'Guides' },
-        { label: 'Aliado\nPRO', icon: 'star-outline', color: '#f1c40f', route: 'SubscriptionManagement' },
         { label: 'Donar al\nProyecto', icon: 'gift-outline', color: '#e84393', route: null, bgColor: '#fff0f6' },
     ];
+
 
 
     return (
@@ -191,7 +191,7 @@ const HomeScreen = () => {
                                     <Text style={styles.proBadgeText}>⭐ PRO</Text>
                                 </View>
                             )}
-                            <TouchableOpacity onPress={() => navigation.navigate('NewsFeed' as never)} style={styles.iconBtn}>
+                            <TouchableOpacity onPress={() => (navigation as any).navigate('NewsFeed', { initialTab: 'notifications' })} style={styles.iconBtn}>
                                 <View style={{ position: 'relative' }}>
                                     <Ionicons name="notifications-outline" size={22} color="#fff" />
                                     {unreadCount > 0 && (
@@ -342,7 +342,15 @@ const HomeScreen = () => {
                             <TouchableOpacity
                                 key={item.label}
                                 style={styles.smallCard}
-                                onPress={() => item.route ? navigation.navigate(item.route as never) : setShowDonationModal(true)}
+                                onPress={() => {
+                                    if (item.route === 'NewsFeed') {
+                                        (navigation as any).navigate('NewsFeed', { initialTab: 'news' });
+                                    } else if (item.route) {
+                                        navigation.navigate(item.route as never);
+                                    } else {
+                                        setShowDonationModal(true);
+                                    }
+                                }}
                             >
                                 <View style={[styles.smallIconCircle, item.bgColor ? { backgroundColor: item.bgColor } : undefined]}>
                                     <Ionicons name={item.icon as any} size={22} color={item.color} />

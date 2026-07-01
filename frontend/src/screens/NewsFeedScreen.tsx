@@ -5,7 +5,7 @@ import {
     Alert, Linking, Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,10 +15,17 @@ import { useAuth } from '../context/AuthContext';
 
 const NewsFeedScreen = () => {
     const navigation = useNavigation();
+    const route = useRoute<any>();
     const { user } = useAuth();
     
     // Tabs state
-    const [activeTab, setActiveTab] = useState<'notifications' | 'news'>('notifications');
+    const initialTab = route.params?.initialTab || 'notifications';
+    const [activeTab, setActiveTab] = useState<'notifications' | 'news'>(initialTab);
+    
+    // Interactive Quiz State
+    const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [quizVerified, setQuizVerified] = useState(false);
+
     
     // Notifications State
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -104,6 +111,12 @@ const NewsFeedScreen = () => {
         fetchNotifications();
         fetchNews();
     }, []);
+
+    useEffect(() => {
+        if (route.params?.initialTab) {
+            setActiveTab(route.params.initialTab);
+        }
+    }, [route.params?.initialTab]);
 
     // ─────────────────────────────────────────────
     // Pull to Refresh
@@ -191,6 +204,8 @@ const NewsFeedScreen = () => {
     const closeNewsDetail = () => {
         setModalVisible(false);
         setSelectedNews(null);
+        setSelectedAnswer(null);
+        setQuizVerified(false);
     };
 
     const handleOpenSource = () => {
@@ -297,6 +312,106 @@ const NewsFeedScreen = () => {
         return selectedNews?.summaryWorker || selectedNews?.summary;
     };
 
+    const renderQuizSection = () => {
+        if (!selectedNews?.quiz) return null;
+        
+        // Try to split the quiz question and answer
+        const parts = selectedNews.quiz.split('|');
+        const fullQuestionText = parts[0].trim();
+        const correctAnswerRaw = parts[1] ? parts[1].trim() : '';
+        
+        // Parse options if the question contains options like A) B) C)
+        // e.g. "¿Es legal...? A) Sí B) No"
+        const optionsRegex = /([A-C]\)[^A-C|]+)/g;
+        const optionsMatches = fullQuestionText.match(optionsRegex) || [];
+        
+        // Clean question: strip the options from the end of the text
+        let questionTextOnly = fullQuestionText;
+        const optionsStartIndex = fullQuestionText.search(/[A-C]\)/);
+        if (optionsStartIndex !== -1) {
+            questionTextOnly = fullQuestionText.substring(0, optionsStartIndex).trim();
+        }
+        
+        const parsedOptions = optionsMatches.map(opt => opt.trim());
+        
+        // If no options matched, we fallback to a simple Did You Know or text display
+        if (parsedOptions.length === 0) {
+            return (
+                <View style={styles.quizSection}>
+                    <View style={styles.quizHeader}>
+                        <Ionicons name="bulb" size={20} color={AppTheme.colors.primary} />
+                        <Text style={styles.quizTitle}>Sabías que...</Text>
+                    </View>
+                    <Text style={styles.quizText}>{fullQuestionText}</Text>
+                </View>
+            );
+        }
+        
+        return (
+            <View style={styles.quizSection}>
+                <View style={styles.quizHeader}>
+                    <Ionicons name="help-circle" size={22} color="#0288d1" />
+                    <Text style={styles.quizTitle}>Quiz Rápido</Text>
+                </View>
+                <Text style={styles.quizQuestionText}>{questionTextOnly}</Text>
+                
+                <View style={styles.quizOptionsContainer}>
+                    {parsedOptions.map((opt) => {
+                        const optionLetter = opt.substring(0, 2); // e.g. "A)"
+                        const isSelected = selectedAnswer === optionLetter;
+                        const isCorrectOpt = correctAnswerRaw.startsWith(optionLetter);
+                        
+                        let btnStyle: any = styles.quizOptionBtn;
+                        let txtStyle: any = styles.quizOptionBtnText;
+                        
+                        if (selectedAnswer) {
+                           if (isCorrectOpt) {
+                               btnStyle = [styles.quizOptionBtn, styles.quizOptionCorrect];
+                               txtStyle = [styles.quizOptionBtnText, styles.quizOptionCorrectText];
+                           } else if (isSelected) {
+                               btnStyle = [styles.quizOptionBtn, styles.quizOptionWrong];
+                               txtStyle = [styles.quizOptionBtnText, styles.quizOptionWrongText];
+                           }
+                        } else {
+                           if (isSelected) {
+                               btnStyle = [styles.quizOptionBtn, styles.quizOptionSelected];
+                               txtStyle = [styles.quizOptionBtnText, styles.quizOptionSelectedText];
+                           }
+                        }
+                        
+                        return (
+                            <TouchableOpacity
+                                key={opt}
+                                disabled={!!selectedAnswer}
+                                style={btnStyle}
+                                onPress={() => setSelectedAnswer(optionLetter)}
+                            >
+                                <Text style={txtStyle}>{opt}</Text>
+                                {selectedAnswer && isCorrectOpt && (
+                                    <Ionicons name="checkmark-circle" size={18} color="#2e7d32" style={{ marginLeft: 6 }} />
+                                )}
+                                {selectedAnswer && isSelected && !isCorrectOpt && (
+                                    <Ionicons name="close-circle" size={18} color="#c62828" style={{ marginLeft: 6 }} />
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+                
+                {selectedAnswer && (
+                    <View style={styles.quizFeedback}>
+                        <Text style={styles.quizFeedbackTitle}>
+                            {correctAnswerRaw.startsWith(selectedAnswer) ? '¡Excelente! 🎉 Correcto.' : 'Ups, respuesta incorrecta. 📝'}
+                        </Text>
+                        <Text style={styles.quizFeedbackText}>
+                            Respuesta correcta: <Text style={{ fontWeight: 'bold', color: '#1b5e20' }}>{correctAnswerRaw}</Text>
+                        </Text>
+                    </View>
+                )}
+            </View>
+        );
+    };
+
     const renderDetailModal = () => (
         <Modal
             animationType="slide"
@@ -371,15 +486,7 @@ const NewsFeedScreen = () => {
                             </View>
 
                             {/* Trivia Quiz */}
-                            {selectedNews?.quiz && (
-                                <View style={styles.quizSection}>
-                                    <View style={styles.quizHeader}>
-                                        <Ionicons name="bulb" size={20} color={AppTheme.colors.primary} />
-                                        <Text style={styles.quizTitle}>Sabías que...</Text>
-                                    </View>
-                                    <Text style={styles.quizText}>{selectedNews.quiz}</Text>
-                                </View>
-                            )}
+                            {renderQuizSection()}
 
                             {/* Atribución de fuente */}
                             <View style={styles.sourceCard}>
@@ -423,12 +530,15 @@ const NewsFeedScreen = () => {
             >
                 <View style={styles.headerTopRow}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={26} color="#fff" />
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Notificaciones</Text>
-                    <View style={{ width: 40 }} />
+                    <Text style={styles.headerTitle}>
+                        {activeTab === 'news' ? 'Noticias Legales' : 'Centro de Avisos'}
+                    </Text>
                 </View>
-                <Text style={styles.headerSubtitle}>Avisos y Actualizaciones Laborales</Text>
+                <Text style={styles.headerSubtitle}>
+                    {activeTab === 'news' ? 'Información relevante sobre tus derechos' : 'Notificaciones y avisos de tus casos'}
+                </Text>
             </LinearGradient>
 
             {/* Custom Sliding Tab Bar */}
@@ -555,30 +665,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
-        paddingTop: Platform.OS === 'ios' ? 50 : 40,
-        paddingBottom: 20,
+        paddingTop: Platform.OS === 'ios' ? 44 : 32,
+        paddingBottom: 15,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
     },
     headerTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
+        position: 'relative',
+        height: 40,
     },
     backButton: {
-        padding: 4,
+        position: 'absolute',
+        left: 0,
+        padding: 6,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: 18,
         fontWeight: '900',
         color: '#fff',
-        textAlign: 'center',
     },
     headerSubtitle: {
-        fontSize: 12,
+        fontSize: 11,
         color: 'rgba(255,255,255,0.85)',
-        marginTop: 4,
+        marginTop: 2,
         textAlign: 'center',
     },
 
@@ -953,29 +1066,101 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     quizSection: {
-        backgroundColor: '#e1f5fe',
-        padding: 16,
-        borderRadius: 16,
+        backgroundColor: '#f0f9ff',
+        padding: 18,
+        borderRadius: 20,
         marginBottom: 20,
-        borderLeftWidth: 4,
-        borderLeftColor: '#0288d1',
+        borderWidth: 1,
+        borderColor: '#bae6fd',
     },
     quizHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        marginBottom: 6,
+        gap: 8,
+        marginBottom: 8,
     },
     quizTitle: {
-        fontSize: 13,
-        fontWeight: '800',
-        color: '#0288d1',
+        fontSize: 14,
+        fontWeight: '900',
+        color: '#0369a1',
         textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    quizQuestionText: {
+        fontSize: 15,
+        color: '#0f172a',
+        fontWeight: '700',
+        lineHeight: 20,
+        marginBottom: 14,
     },
     quizText: {
         fontSize: 14,
-        color: '#01579b',
+        color: '#0369a1',
         fontWeight: '500',
+        lineHeight: 18,
+    },
+    quizOptionsContainer: {
+        gap: 8,
+        marginBottom: 12,
+    },
+    quizOptionBtn: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    quizOptionBtnText: {
+        fontSize: 14,
+        color: '#334155',
+        fontWeight: '600',
+        flex: 1,
+    },
+    quizOptionSelected: {
+        borderColor: AppTheme.colors.primary,
+        backgroundColor: '#e0e7ff',
+    },
+    quizOptionSelectedText: {
+        color: AppTheme.colors.primary,
+        fontWeight: '700',
+    },
+    quizOptionCorrect: {
+        borderColor: '#2e7d32',
+        backgroundColor: '#e8f5e9',
+    },
+    quizOptionCorrectText: {
+        color: '#2e7d32',
+        fontWeight: '700',
+    },
+    quizOptionWrong: {
+        borderColor: '#c62828',
+        backgroundColor: '#ffebee',
+    },
+    quizOptionWrongText: {
+        color: '#c62828',
+        fontWeight: '700',
+    },
+    quizFeedback: {
+        marginTop: 10,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    quizFeedbackTitle: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#1e293b',
+        marginBottom: 4,
+    },
+    quizFeedbackText: {
+        fontSize: 13,
+        color: '#475569',
         lineHeight: 18,
     },
 

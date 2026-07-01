@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { AppTheme } from '../theme/colors';
@@ -213,7 +213,12 @@ const MyContactRequestsScreen = () => {
                 colors={['#667eea', '#764ba2']}
                 style={styles.header}
             >
-                <Text style={styles.headerTitle}>Mis Solicitudes</Text>
+                <View style={styles.headerTopRow}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Mis Solicitudes</Text>
+                </View>
                 <Text style={styles.headerSubtitle}>
                     {filteredRequests.length} {filteredRequests.length === 1 ? 'solicitud' : 'solicitudes'}
                 </Text>
@@ -288,19 +293,32 @@ const styles = StyleSheet.create({
         backgroundColor: '#F5F6FA',
     },
     header: {
-        paddingTop: 60,
-        paddingBottom: 25,
+        paddingTop: Platform.OS === 'ios' ? 44 : 32,
+        paddingBottom: 15,
         paddingHorizontal: 20,
     },
+    headerTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        height: 40,
+    },
+    backButton: {
+        position: 'absolute',
+        left: 0,
+        padding: 6,
+    },
     headerTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '900',
         color: '#fff',
     },
     headerSubtitle: {
-        fontSize: 14,
+        fontSize: 12,
         color: 'rgba(255,255,255,0.8)',
-        marginTop: 5,
+        marginTop: 2,
+        textAlign: 'center',
     },
     filters: {
         flexDirection: 'row',
