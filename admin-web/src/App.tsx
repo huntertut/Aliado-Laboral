@@ -11,6 +11,7 @@ import Verifications from './pages/Verifications';
 import Finance from './pages/Finance';
 import Security from './pages/Security';
 import Promotions from './pages/Promotions';
+import Courses from './pages/Courses';
 
 function App() {
   return (
@@ -30,7 +31,9 @@ function App() {
             <Route path="finance" element={<Finance />} />
             <Route path="security" element={<Security />} />
             <Route path="promotions" element={<Promotions />} />
+            <Route path="courses" element={<Courses />} />
           </Route>
+
 
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>

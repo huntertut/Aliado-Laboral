@@ -290,6 +290,38 @@ async function handleStripePaymentSuccess(paymentIntent: any): Promise<void> {
         return;
     }
 
+    // ✅ COURSE PURCHASE ACTIVATION
+    if (type === 'course_purchase' && metadata.purchaseId) {
+        const purchaseId = metadata.purchaseId;
+        const courseId = metadata.courseId;
+
+        await prisma.coursePurchase.update({
+            where: { id: purchaseId },
+            data: { status: 'completed' },
+        });
+
+        // Auto-create initial course progress record for user if not exists
+        if (userId && courseId) {
+            await prisma.userCourseProgress.upsert({
+                where: { userId_courseId: { userId, courseId } },
+                update: {},
+                create: { userId, courseId, isCompleted: false }
+            });
+
+            // Send welcoming push notification
+            await sendPushNotification(
+                userId,
+                '🎓 ¡Curso Desbloqueado!',
+                'Tu pago fue procesado. Ya puedes iniciar tus lecciones en el portal de capacitación.',
+                { type: 'course_unlocked', courseId }
+            ).catch(err => console.error('[Push] Error notifying course unlocked:', err));
+        }
+
+        console.log(`✅ CoursePurchase completed: ${purchaseId}`);
+        return;
+    }
+
+
     if (type === 'worker_contact_fee' && contactRequestId) {
         // Worker paid $50 via Stripe
         await prisma.contactRequest.update({

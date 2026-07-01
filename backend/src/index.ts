@@ -30,6 +30,8 @@ import jurisdictionRoutes from './routes/jurisdictionRoutes';
 import promotionRoutes from './routes/promotionRoutes';
 import webhookRoutes from './routes/webhookRoutes';
 import legalDocumentRoutes from './routes/legalDocumentRoutes';
+import courseRoutes from './routes/courseRoutes';
+
 
 // ... (imports)
 
@@ -138,6 +140,8 @@ app.use('/api/jurisdiction', jurisdictionRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/legal-documents', legalDocumentRoutes); // Phase 2: Legal document generation
+app.use('/api/courses', courseRoutes); // Phase 3: Course module
+
 
 import reportRoutes from './routes/reportRoutes';
 app.use('/api/reports', reportRoutes);

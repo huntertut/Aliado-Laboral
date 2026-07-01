@@ -49,6 +49,8 @@ model User {
   payments                   Payment[]
   notifications              Notification[]
   legalDocuments             LegalDocument[]
+  coursePurchases            CoursePurchase[]
+  courseProgress             UserCourseProgress[]
 }
 
 model UserDocument {
@@ -610,3 +612,78 @@ model StripeEvent {
   processed Boolean  @default(true)
   createdAt DateTime @default(now())
 }
+
+// 🎓 Módulo de Capacitación y Cursos (Fase 3)
+model Course {
+  id           String               @id @default(uuid())
+  title        String
+  description  String
+  coverImage   String?              // Portada o icono del curso
+  price        Decimal              @default(99.00)
+  category     String               // 'retirement' | 'defense' | 'freelancer' | 'bureaucracy'
+  isActive     Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  modules      CourseModule[]
+  purchases    CoursePurchase[]
+  progress     UserCourseProgress[]
+}
+
+model CourseModule {
+  id        String         @id @default(uuid())
+  courseId  String
+  title     String
+  sortOrder Int
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   CourseLesson[]
+}
+
+model CourseLesson {
+  id             String               @id @default(uuid())
+  moduleId       String
+  title          String
+  content        String?              // Contenido markdown
+  videoUrl       String?              // Enlace de video
+  durationMin    Int                  @default(5)
+  sortOrder      Int
+  attachmentUrl  String?              // Enlace a recurso (descargable)
+  attachmentName String?              // Nombre del recurso (ej. "check-list.pdf")
+  module         CourseModule         @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userProgress   UserLessonProgress[]
+}
+
+model CoursePurchase {
+  id                    String   @id @default(uuid())
+  userId                String
+  courseId              String
+  status                String   @default("pending") // 'pending' | 'completed'
+  stripePaymentIntentId String?  @unique
+  amount                Decimal
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course                Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model UserCourseProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  courseId    String
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model UserLessonProgress {
+  id             String       @id @default(uuid())
+  userId         String
+  lessonId       String
+  isCompleted    Boolean      @default(false)
+  lastAccessedAt DateTime     @default(now())
+  completedAt    DateTime?
+  lesson         CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+

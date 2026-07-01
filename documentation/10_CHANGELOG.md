@@ -6,7 +6,19 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
 
+## [v1.25.0] - 01 Julio 2026 (Fase 3: Módulo de Cursos y Capacitación — Ventas de Cursos $99-$199 MXN)
+
+- **feat (Backend/Schema):** Agregados los modelos de base de datos `Course`, `CourseModule`, `CourseLesson`, `CoursePurchase`, `UserCourseProgress` y `UserLessonProgress` a `prisma/schema.prisma`. Definidas relaciones y cascades correspondientes.
+- **feat (Backend/Controlador):** Creado `courseController.ts` con listado de cursos, temarios bloqueados/desbloqueados para preview, guardado de porcentaje de avance, toggle de lecciones completadas y APIs CRUD de administrador para crear cursos/módulos/lecciones.
+- **feat (Backend/Rutas):** Registrado el enrutador `courseRoutes.ts` montado en el index bajo `/api/courses`.
+- **feat (Backend/Webhooks):** Agregado manejador para `course_purchase` en el webhook de Stripe para activar los cursos del usuario de forma inmediata y enviar una notificación push de bienvenida.
+- **feat (Backend/Seeder):** Creado script `seed_courses.ts` con temarios y lecciones reales para Modalidad 40 ($199 MXN) y Despido Injustificado ($99 MXN) con contenido Markdown y recursos adjuntos.
+- **feat (Mobile/Pantallas):** Creadas pantallas `CoursesPortalScreen.tsx` (catálogo y progreso), `CourseDetailScreen.tsx` (temario del curso y cobro por Stripe) y `LessonViewerScreen.tsx` (reproductor de video, lector Markdown y descargador de herramientas adjuntas mediante FileSystem y Sharing).
+- **feat (Mobile/Navegación):** Registradas rutas en `AppNavigator.tsx` y endpoints en `api.ts`.
+- **feat (Admin-Web/Páginas):** Creada la página `Courses.tsx` en el panel de administración web para dar de alta cursos, añadir módulos e ingresar lecciones directamente. Registrada en el ruteador de `App.tsx` y la barra lateral de `AdminLayout.tsx`.
+
 ## [v1.24.1] - 30 Junio 2026 (Fase 2: Generación de Escritos Legales — Documentos por $99-$149 MXN)
+
 
 - **feat (Backend/Schema):** Agregado modelo `LegalDocument` en `prisma/schema.prisma` con campos: `documentType`, `status` (pending_payment → paid → generated), `amount`, `stripePaymentIntentId`, datos del trabajador y empleador. Ejecutado `prisma db push` para sincronizar.
 - **feat (Backend/Controlador):** Creado `legalDocumentController.ts` con catálogo de 3 documentos (`severance_claim` $99, `unfair_dismissal` $149, `benefits_claim` $99), flujo de pago con Stripe y generación de PDF con Puppeteer usando 3 plantillas HTML profesionales con estilo legal formal (tipografía Crimson Text, folio único, secciones estructuradas, disclaimer legal, bloques de firma).

@@ -20,5 +20,12 @@ export const endpoints = {
         myDocuments: `${API_URL}/legal-documents/my-documents`,
         purchase: `${API_URL}/legal-documents/purchase`,
         generate: (documentId: string) => `${API_URL}/legal-documents/generate/${documentId}`,
+    },
+    courses: {
+        list: `${API_URL}/courses`,
+        detail: (courseId: string) => `${API_URL}/courses/${courseId}`,
+        purchase: `${API_URL}/courses/purchase`,
+        completeLesson: (lessonId: string) => `${API_URL}/courses/lesson/${lessonId}/complete`,
     }
 };
+

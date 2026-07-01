@@ -4,7 +4,7 @@ import {
     StatusBar, Image, Linking, TextInput, Animated, LayoutAnimation,
     Platform, UIManager,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { AppTheme } from '../theme/colors';
@@ -12,6 +12,9 @@ import { useAuth } from '../context/AuthContext';
 import DonationModal from '../components/DonationModal';
 import PanicButton from '../components/common/PanicButton';
 import Constants from 'expo-constants';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/constants';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -77,6 +80,29 @@ const HomeScreen = () => {
     const navigation = useNavigation();
     const { user } = useAuth();
     const [showDonationModal, setShowDonationModal] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const fetchUnreadCount = async () => {
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+            if (!token) return;
+            const response = await axios.get(`${API_URL}/notifications`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const unread = (response.data as any).filter((n: any) => !n.isRead).length;
+            setUnreadCount(unread);
+        } catch (error) {
+            console.error('Error fetching unread notifications count:', error);
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchUnreadCount();
+            const interval = setInterval(fetchUnreadCount, 30000);
+            return () => clearInterval(interval);
+        }, [])
+    );
 
     // Calculator accordion
     const [calcOpen, setCalcOpen] = useState(false);
@@ -125,6 +151,7 @@ const HomeScreen = () => {
     ];
 
     const infoActions = [
+        { label: 'Capacitación\ny Cursos', icon: 'school-outline', color: '#1a237e', route: 'CoursesPortal' },
         { label: 'Mis\nSolicitudes', icon: 'mail-open-outline', color: AppTheme.colors.primary, route: 'MyContactRequests' },
         { label: 'Noticias\nLegales', icon: 'newspaper-outline', color: AppTheme.colors.primary, route: 'NewsFeed' },
         { label: 'Foro\nAnónimo', icon: 'people-outline', color: AppTheme.colors.primary, route: 'Forum' },
@@ -133,6 +160,7 @@ const HomeScreen = () => {
         { label: 'Aliado\nPRO', icon: 'star-outline', color: '#f1c40f', route: 'SubscriptionManagement' },
         { label: 'Donar al\nProyecto', icon: 'gift-outline', color: '#e84393', route: null, bgColor: '#fff0f6' },
     ];
+
 
     return (
         <ErrorBoundary>
@@ -164,7 +192,16 @@ const HomeScreen = () => {
                                 </View>
                             )}
                             <TouchableOpacity onPress={() => navigation.navigate('NewsFeed' as never)} style={styles.iconBtn}>
-                                <Ionicons name="notifications-outline" size={22} color="#fff" />
+                                <View style={{ position: 'relative' }}>
+                                    <Ionicons name="notifications-outline" size={22} color="#fff" />
+                                    {unreadCount > 0 && (
+                                        <View style={styles.badgeContainer}>
+                                            <Text style={styles.badgeText}>
+                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={styles.avatarBtn}>
                                 <Ionicons name="person-circle" size={34} color="#fff" />
@@ -394,6 +431,26 @@ const styles = StyleSheet.create({
     },
     iconBtn: {
         padding: 6,
+    },
+    badgeContainer: {
+        position: 'absolute',
+        right: -5,
+        top: -5,
+        backgroundColor: '#ff4d4d',
+        borderRadius: 8,
+        minWidth: 16,
+        height: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 3,
+        borderWidth: 1,
+        borderColor: '#1e3799',
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 8,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
     avatarBtn: {
         padding: 2,

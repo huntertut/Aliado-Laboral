@@ -54,6 +54,10 @@ import LiquidationCalculatorView from '../screens/pyme/LiquidationCalculatorView
 import GenerateActScreen from '../screens/pyme/GenerateActScreen';
 import DeveloperCreditsScreen from '../screens/DeveloperCreditsScreen';
 import LegalDocumentsScreen from '../screens/LegalDocumentsScreen';
+import CoursesPortalScreen from '../screens/CoursesPortalScreen';
+import CourseDetailScreen from '../screens/CourseDetailScreen';
+import LessonViewerScreen from '../screens/LessonViewerScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -165,6 +169,11 @@ const AppNavigator = () => {
 
                         {/* Phase 2: Legal Documents (Worker) */}
                         <Stack.Screen name="LegalDocuments" component={LegalDocumentsScreen} options={{ headerShown: false }} />
+
+                        {/* Phase 3: Courses & Training (Worker) */}
+                        <Stack.Screen name="CoursesPortal" component={CoursesPortalScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="CourseDetail" component={CourseDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="LessonViewer" component={LessonViewerScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
                     // Auth Stack — skip Welcome for returning users

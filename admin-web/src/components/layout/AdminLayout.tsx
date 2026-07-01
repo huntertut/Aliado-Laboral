@@ -4,6 +4,7 @@ import { api } from '../../config/axios';
 import logo from '../../assets/logo.png';
 import { useAuth } from '../../context/AuthContext';
 import {
+    BookOpen,
     Users,
     Settings,
     LayoutDashboard,
@@ -71,10 +72,12 @@ export default function AdminLayout() {
         { name: 'Contabilidad', path: '/app/finance', icon: Wallet },
         { name: 'Casos y Foro', path: '/app/cases', icon: FileText },
         { name: 'Validaciones', path: '/app/verifications', icon: ShieldAlert },
+        { name: 'Cursos', path: '/app/courses', icon: BookOpen },
         { name: 'Seguridad', path: '/app/security', icon: ShieldAlert },
         { name: 'Promociones', path: '/app/promotions', icon: Gift },
         { name: 'Configuración', path: '/app/settings', icon: Settings },
     ];
+
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
