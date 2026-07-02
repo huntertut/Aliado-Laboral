@@ -170,5 +170,5 @@ Antes de cada compilación de AAB para producción:
   - El controlador base re-exporta todos los submódulos para mantener las rutas existentes de producción.
 - **Desacoplamiento en Frontend**: Se extrajo la matemática de la Ley Federal del Trabajo (LFT) de la pantalla `CalculatorScreen.tsx` (1,226 líneas) al módulo utilitario puro `laborCalculations.ts` (`calculateLaborBenefits`). Esto previene duplicaciones y permite reutilizar los cálculos laborales en otras áreas.
 
-**Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
+**Último versionCode en Producción: 89 (v1.23.23) — 02 Julio 2026**
 

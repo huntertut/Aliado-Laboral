@@ -4,7 +4,18 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 84 (v1.23.21) — 22 Junio 2026**
+**Último versionCode en Producción: 89 (v1.23.23) — 02 Julio 2026**
+
+## [v1.25.1] - 02 Julio 2026 (Estabilización, Corrección de 9 Puntos y Control de Actualizaciones)
+
+- **fix (Backend/Auth):** Corregido el mapeo de `id` y `userId` en el middleware `auth.ts` heredado. Esto solucionó la pérdida de perfiles vacíos de trabajadores y restauró la visibilidad de solicitudes de contacto activas.
+- **refactor (Backend/Version):** Modificado el endpoint `/api/config/version` para leer dinámicamente las variables `MIN_VERSION_ANDROID` y `MIN_VERSION_IOS` desde variables de entorno (`process.env`) con fallbacks seguros. Esto permite cambiar la versión forzada y alertar a los usuarios de inmediato sin necesidad de recompilar el servidor.
+- **feat (Backend/News):** Ajustado el prompt de la IA en Groq (`newsAIService.ts`) para generar resúmenes informativos completos y estructurados de 2-3 párrafos adaptados a cada rol, resolviendo resúmenes de una línea.
+- **feat (Mobile/Quiz):** Rediseñado el Quiz Laboral de Noticias en `NewsFeedScreen.tsx` para ser completamente interactivo, permitiendo al usuario seleccionar opciones (A, B, C) con retroalimentación visual inmediata de correcto/incorrecto y análisis legal.
+- **feat (Mobile/UI):** Compactadas las cabeceras de `NewsFeedScreen.tsx` y `MyContactRequestsScreen.tsx`. Alineadas las flechas de regreso con posicionamiento absoluto y agregada la flecha de regreso en la vista de solicitudes de contacto del trabajador.
+- **feat (Mobile/Navegación):** Corregida la campana de notificaciones del Home para redirigir directamente al tab de Avisos y la tarjeta de Noticias Legales para abrir el tab de Noticias.
+- **cleanup (Mobile/Home):** Eliminado el acceso directo a "Aliado PRO" de la pantalla de inicio del trabajador, confirmando la gratuidad del servicio base para los trabajadores.
+- **feat (Backend/Seeder):** Añadidos y sembrados dos cursos demo adicionales (*Freelancer con Seguro* y *Incapacidades y Riesgos de Trabajo*) para completar las cuatro categorías de capacitación laboral en producción.
 
 ## [v1.25.0] - 01 Julio 2026 (Fase 3: Módulo de Cursos y Capacitación — Ventas de Cursos $99-$199 MXN)
 
