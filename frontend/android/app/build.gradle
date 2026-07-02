@@ -1,24 +1,8 @@
-import groovy.json.JsonSlurper
-
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
-
-def getAppJsonVersion() {
-    def jsonFile = file("../../app.json")
-    if (jsonFile.exists()) {
-        def parsedJson = new JsonSlurper().parseText(jsonFile.text)
-        return [
-            versionName: parsedJson.expo.version,
-            versionCode: parsedJson.expo.android.versionCode.toInteger()
-        ]
-    }
-    return [versionName: "1.23.23", versionCode: 89]
-}
-
-def appVersionInfo = getAppJsonVersion()
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -108,8 +92,8 @@ android {
         applicationId 'com.aliadolaboral.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode appVersionInfo.versionCode
-        versionName appVersionInfo.versionName
+        versionCode 89
+        versionName "1.23.23"
     }
     signingConfigs {
         debug {
