@@ -92,8 +92,8 @@ android {
         applicationId 'com.aliadolaboral.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 86
-        versionName "1.23.22"
+        versionCode 89
+        versionName "1.23.23"
     }
     signingConfigs {
         debug {
