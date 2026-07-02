@@ -94,7 +94,7 @@ app.get('/api/health', (req, res) => {
 // Change MIN_VERSION_ANDROID / MIN_VERSION_IOS to force users to update.
 // Uses 5-minute in-memory cache to avoid hitting the file on every request.
 // ──────────────────────────────────────────────────────────────────────────────
-const MIN_VERSION_ANDROID = '1.20.0';  // ← Change to force Android update (current: 1.20.0)
+const MIN_VERSION_ANDROID = '1.23.23';  // ← Change to force Android update (current: 1.23.23)
 const MIN_VERSION_IOS = '1.20.0';  // ← Change to force iOS update    (current: 1.20.0)
 let versionConfigCache: { data: any; expiry: number } | null = null;
 
