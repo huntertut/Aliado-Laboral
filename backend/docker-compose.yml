@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./dev.db:/app/dev.db
+      - ./prisma/dev.db:/app/dev.db
     restart: always
     network_mode: "host"
     command: sh -c "node dist/index.js > /app/crash.log 2>&1 || true; tail -f /dev/null"
