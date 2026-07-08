@@ -58,23 +58,31 @@ To avoid regressions in the Admin Dashboard:
 - **Heavy ZIPs**: Never upload a ZIP containing `node_modules` or `.git` to the production server. These are for backups only.
 - **Verification**: Always check the version number in the Sidebar (e.g., `v1.21.1-prod`) after refreshing to confirm the update was successful.
 
-## 5. Reglas Críticas de Infraestructura en Producción
+### 5.1 Base de Datos y Persistencia de Volumen — REGLA PERMANENTE ⚠️
+La base de datos de producción de SQLite **SIEMPRE** debe apuntar al archivo correcto en el host:
+`/root/Aliado-Laboral/backend/prisma/dev.db`
 
-### 5.1 Base de Datos — REGLA PERMANENTE ⚠️
-La base de datos de producción **SIEMPRE** debe apuntar a:
+**Configuración crítica en `docker-compose.yml`**:
+El volumen debe estar mapeado estrictamente como:
+```yaml
+volumes:
+  - ./prisma/dev.db:/app/dev.db
 ```
-DATABASE_URL="file:/root/Aliado-Laboral/backend/prisma/dev.db"
-```
-**Nunca usar ruta relativa** (`file:./dev.db`) en producción. PM2 ejecuta desde `dist/`, haciendo que las rutas relativas se rompan silenciosamente.
+* ⛔ **NUNCA** usar `./dev.db:/app/dev.db`, ya que esto creará una base de datos vacía desincronizada en la raíz del backend del host, provocando pérdida aparente de datos e inicio de sesión de usuarios como nuevos.
+* El archivo `.env` del backend debe definir `DATABASE_URL="file:/root/Aliado-Laboral/backend/prisma/dev.db"`. En Docker, la directiva `environment` del compose sobreescribe este valor por `/app/dev.db` de forma correcta.
 
-Hay 3 archivos `.db` en el servidor — solo uno es válido:
-| Archivo | Estado | Uso |
-|---------|--------|-----|
-| `/root/Aliado-Laboral/backend/prisma/dev.db` | ✅ PRODUCCIÓN REAL | Siempre usar este |
-| `/root/Aliado-Laboral/backend/dev.db` | ⛔ INCOMPLETO | No usar |
-| `/root/Aliado-Laboral/backend/recovered_apr15.db` | 📦 BACKUP APR 2026 | Solo recuperación |
+### 5.2 Evitar Conflictos de Procesos en el Servidor (PM2 vs Docker) ⚠️
+El backend de Aliado Laboral se administra **únicamente** a través de Docker Compose.
+* ⛔ **PROHIBIDO** registrar o correr el proceso `aliado-api` en PM2 en el host del servidor.
+* **Riesgo:** Ejecutar el backend directamente en el host por PM2 causa fallos de módulos faltantes (como `multer`), entrando en un bucle infinito de caídas y reinicios rápidos (miles de reinicios por día). Esto satura la CPU y la RAM del servidor, provocando que el kernel de Linux (OOM Killer) apague el contenedor de Docker real.
+* **Mantenimiento:** PM2 debe permanecer libre de procesos del backend. Si reaparece algún proceso fantasma, se debe remover con `pm2 delete <id>` y guardar el estado con `pm2 save --force`.
 
-### 5.2 Flujo de Registro de Usuarios en la App — Cómo Funciona
+### 5.3 Sincronización de Roles mediante Firebase Custom Claims 🛡️
+Para evitar que fallos del servidor o reinicios borren o cambien los roles de los usuarios registrados (por ejemplo, convertir a un Abogado en Trabajador):
+* **Custom Claims de Firebase:** Al registrar un usuario (`POST /api/auth/register`) o iniciar sesión vía social login (`POST /api/auth/social-login`), el backend inyecta de forma persistente el rol del usuario en sus metadatos de Firebase usando `setCustomUserClaims(uid, { role })`.
+* **Recuperación Automática:** Si un usuario inicia sesión en cualquier dispositivo y su registro no existe en la base de datos SQL (por ejemplo, después de una purga o migración), el endpoint `/api/auth/verify-token` leerá el rol directamente desde el token firmado de Firebase (`decodedToken.role`) y restaurará su perfil correcto (`lawyer`, `pyme` o `worker`) en la base de datos local de manera inmediata.
+
+### 5.4 Flujo de Registro de Usuarios en la App — Cómo Funciona
 
 Cuando un usuario descarga la app y se registra:
 1. Elige su rol en la pantalla de bienvenida (Trabajador / Abogado / Empresa)
@@ -84,9 +92,9 @@ Cuando un usuario descarga la app y se registra:
 5. Si es **Trabajador** → se crea un `WorkerSubscription` inactivo
 6. Si es **PyME** → se crea un `PymeProfile`
 
-> Firebase solo guarda email, UID y nombre. **El rol NO está en Firebase**, siempre viene de la app.
+> Firebase solo guarda email, UID y nombre. **El rol NO está en Firebase**, siempre viene de la app y se sincroniza en los Custom Claims del usuario para persistencia.
 
-### 5.3 Botón "Sincronizar Firebase" — Qué hace y qué NO hace
+### 5.5 Botón "Sincronizar Firebase" — Qué hace y qué NO hace
 
 **SÍ hace:**
 - Revisa todos los usuarios con `role='lawyer'` en la DB SQL.
@@ -98,9 +106,7 @@ Cuando un usuario descarga la app y se registra:
 - NO crea Workers ni PyMEs.
 - NO modifica usuarios que ya tienen perfil completo.
 
-**Cuándo usarlo:** Solo si un abogado dice que se registró correctamente pero no aparece en el panel, o si un usuario reporta ver una interfaz que no corresponde a su rol real. En ese caso, primero verificar que su `User.role` sea el correcto en la DB, y luego presionar el botón o ejecutar el script de sincronización.
-
-### 5.4 Despliegue — Flujo Correcto
+### 5.6 Despliegue — Flujo Correcto
 
 ```bash
 # 1. Compilar localmente (Windows)
@@ -111,10 +117,10 @@ Compress-Archive -Path dist\* -DestinationPath ..\admin-web-dist.zip -Force
 # Subir admin-web-dist.zip al File Manager de Hostinger
 
 # 3. Desplegar Backend (automático via script)
-node deployer\deploy_quota.js
+node scripts/deploy_and_seed.js
 ```
 
-> ⚠️ El script `deploy_quota.js` **NO ejecuta migraciones de DB**. Solo hace `npm run build` + `pm2 restart`. Esto es intencional para evitar que se pierdan datos.
+> ⚠️ El script `deploy_and_seed.js` **NO ejecuta migraciones destructivas de DB**. Solo realiza pull de `main`, compila Docker con caché y levanta la base de datos de cursos.tart`. Esto es intencional para evitar que se pierdan datos.
 
 ### 5.5 OTA Updates (expo-updates) — Reglas Permanentes ⚠️
 
