@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,7 +7,6 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { AppTheme } from '../theme/colors';
 import { API_URL } from '../config/constants';
-import WorkerSubscriptionModal from '../components/WorkerSubscriptionModal';
 
 // Mock data for MVP if backend is not reachable
 const MOCK_LAWYERS = [
@@ -63,11 +62,9 @@ const LawyersScreen = () => {
     const { user, getAccessToken } = useAuth();
     const [lawyers, setLawyers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
     const [activeFilter, setActiveFilter] = useState<'all' | 'nearest' | 'popular'>('all');
 
-    // Check if user is Premium plan or Admin
-    const hasActiveSubscription = user?.plan === 'premium' || user?.plan === 'worker_premium' || user?.role === 'admin';
+    // All workers have free access to lawyers - no premium gate
 
     useEffect(() => {
         fetchLawyers();
@@ -104,15 +101,11 @@ const LawyersScreen = () => {
     };
 
     const handleLawyerPress = (lawyer: any) => {
-        if (hasActiveSubscription) {
-            navigation.navigate('LawyerPublicProfile' as never, { lawyerId: lawyer.id } as never);
-        } else {
-            setShowSubscriptionModal(true);
-        }
+        navigation.navigate('LawyerPublicProfile' as never, { lawyerId: lawyer.id } as never);
     };
 
     const handleSubscribed = async () => {
-        Alert.alert('¡Plan Premium Activo!', 'Ahora puedes contactar a todos los abogados.');
+        // kept for compatibility
     };
 
     const getInitials = (fullName: string) => {
@@ -143,7 +136,6 @@ const LawyersScreen = () => {
     };
 
     const renderLawyerCard = ({ item }: { item: any }) => {
-        const isGated = !hasActiveSubscription;
 
         return (
             <TouchableOpacity
@@ -159,35 +151,19 @@ const LawyersScreen = () => {
                 {/* Info */}
                 <View style={styles.info}>
                     <Text style={styles.name}>
-                        {isGated ? getAbbreviatedName(item.name || item.user?.fullName) : (item.name || item.user?.fullName)}
+                        {item.name || item.user?.fullName}
                     </Text>
                     <View style={styles.locationRow}>
                         <Ionicons name="location-outline" size={14} color="#666" />
                         <Text style={styles.location}>{item.city || 'México'}</Text>
                     </View>
-
-                    {isGated ? (
-                        <View style={styles.gatedInfo}>
-                            <Text style={styles.blurred}>⭐⭐⭐⭐⭐</Text>
-                            <Text style={styles.gatedText}>• XX casos ganados</Text>
-                        </View>
-                    ) : (
-                        <>
-                            <Text style={styles.specialty}>{item.specialty}</Text>
-                            <Text style={styles.license}>Cédula: {item.licenseNumber}</Text>
-                        </>
-                    )}
+                    <Text style={styles.specialty}>{item.specialty}</Text>
+                    <Text style={styles.license}>Cédula: {item.licenseNumber}</Text>
                 </View>
 
                 {/* Action Button */}
                 <View style={styles.actionButton}>
-                    {isGated ? (
-                        <View style={styles.lockIcon}>
-                            <Ionicons name="lock-closed" size={24} color={AppTheme.colors.primary} />
-                        </View>
-                    ) : (
-                        <Ionicons name="chevron-forward" size={24} color="#999" />
-                    )}
+                    <Ionicons name="chevron-forward" size={24} color="#999" />
                 </View>
             </TouchableOpacity>
         );
@@ -246,22 +222,7 @@ const LawyersScreen = () => {
                 </View>
             </LinearGradient>
 
-            {/* Info Banner (only for non-subscribers) */}
-            {!hasActiveSubscription && (
-                <TouchableOpacity
-                    style={styles.infoBanner}
-                    onPress={() => setShowSubscriptionModal(true)}
-                >
-                    <Ionicons name="information-circle" size={24} color={AppTheme.colors.primary} />
-                    <View style={styles.bannerTextContainer}>
-                        <Text style={styles.bannerTitle}>Acceso Completo por $29/mes</Text>
-                        <Text style={styles.bannerText}>
-                            Conectamos con los mejores abogados de todo México
-                        </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={AppTheme.colors.primary} />
-                </TouchableOpacity>
-            )}
+            {/* No premium banner - all workers have free access */}
 
             <FlatList
                 data={lawyers}
@@ -269,12 +230,6 @@ const LawyersScreen = () => {
                 renderItem={renderLawyerCard}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-            />
-
-            <WorkerSubscriptionModal
-                visible={showSubscriptionModal}
-                onClose={() => setShowSubscriptionModal(false)}
-                onSubscribed={handleSubscribed}
             />
         </View>
     );

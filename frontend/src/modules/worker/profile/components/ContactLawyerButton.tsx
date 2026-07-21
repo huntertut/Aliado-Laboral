@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { AppTheme } from '../../../../theme/colors';
-import { useAuth } from '../../../../context/AuthContext';
 
 interface Props {
     laborData: any;
@@ -16,7 +15,6 @@ export const ContactLawyerButton = ({ laborData, profedetIsActive }: Props) => {
     const [showLaborModal, setShowLaborModal] = useState(false);
     const [showProfedetWarning, setShowProfedetWarning] = useState(false);
 
-    const { user } = useAuth();
 
     const handlePress = () => {
         // Validation: Ensure occupation and federalEntity are present
@@ -25,15 +23,7 @@ export const ContactLawyerButton = ({ laborData, profedetIsActive }: Props) => {
             return;
         }
 
-        // Business Model: Direct to Premium Subscription if free user
-        const isPremium = user?.plan === 'PRO' || user?.plan === 'PREMIUM' || (user as any).isPremiumMock;
-
-        if (!isPremium) {
-            navigation.navigate('SubscriptionManagement' as never);
-            return;
-        }
-
-        // PRO users: Check PROFEDET warning, then proceed to lawyer directory
+        // All workers have free access - navigate directly to lawyer directory
         if (profedetIsActive) {
             setShowProfedetWarning(true);
         } else {
