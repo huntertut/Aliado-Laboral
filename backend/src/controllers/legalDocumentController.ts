@@ -59,7 +59,7 @@ export const getDocumentCatalog = async (req: Request, res: Response) => {
 
 export const getMyDocuments = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
 
         const docs = await prisma.legalDocument.findMany({
             where: { userId },
@@ -79,7 +79,7 @@ export const getMyDocuments = async (req: Request, res: Response) => {
 
 export const createDocumentPaymentIntent = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
         const { documentType, workerName, employerName, dailySalary, yearsOfService, separationDate, additionalData } = req.body;
 
         if (!documentType || !DOCUMENT_CATALOG[documentType as DocumentType]) {
@@ -168,7 +168,7 @@ export const createDocumentPaymentIntent = async (req: Request, res: Response) =
 
 export const generateLegalDocument = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
         const { documentId } = req.params;
 
         const doc = await prisma.legalDocument.findUnique({

@@ -43,8 +43,9 @@ conn.on('ready', async () => {
             cd /root/Aliado-Laboral/backend &&
             rm -rf src scripts package.json package-lock.json tsconfig.json &&
             unzip -o ../backend-update.zip || true &&
-            docker-compose build --no-cache backend &&
-            docker-compose up -d backend
+            docker-compose down &&
+            docker build --no-cache -t backend-backend:latest . &&
+            docker-compose up -d
         `;
         const { code } = await runCommand(conn, remoteCmd);
 

@@ -29,8 +29,8 @@ const LAWYER_PLAN_MAP: Record<string, string> = {
 export const activateSubscription = async (req: Request, res: Response) => {
     try {
         const { planType, paymentMethod } = req.body;
-        const userId = (req as any).user.userId;
-        const role = (req as any).user.role;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const role = (req as any).user?.role;
 
         if (!planType || !PRICES[planType]) {
             return res.status(400).json({ error: 'Invalid Plan Type' });
@@ -123,7 +123,7 @@ export const activateSubscription = async (req: Request, res: Response) => {
 export const confirmPayment = async (req: Request, res: Response) => {
     try {
         const { paymentIntentId } = req.body;
-        const userId = (req as any).user.userId;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
 
         if (!paymentIntentId) return res.status(400).json({ error: 'Missing paymentIntentId' });
 
@@ -153,8 +153,8 @@ export const confirmPayment = async (req: Request, res: Response) => {
 export const activateFreeSubscription = async (req: Request, res: Response) => {
     try {
         const { planType } = req.body;
-        const userId = (req as any).user.userId;
-        const role = (req as any).user.role;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const role = (req as any).user?.role;
 
         if (role === 'pyme' && planType === 'pyme_basic') {
             // Activate Basic Pyme (Free)
@@ -183,8 +183,8 @@ export const activateFreeSubscription = async (req: Request, res: Response) => {
 
 export const cancelAutoRenew = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const role = (req as any).user.role;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const role = (req as any).user?.role;
 
         if (role === 'worker') {
             await prisma.workerSubscription.update({
@@ -208,8 +208,8 @@ export const cancelAutoRenew = async (req: Request, res: Response) => {
 
 export const getSubscriptionStatus = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
-        const role = (req as any).user.role;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        const role = (req as any).user?.role;
 
         // --- DEV BYPASS FOR TEST ACCOUNTS ---
         // Fetch email to check if it's a test account

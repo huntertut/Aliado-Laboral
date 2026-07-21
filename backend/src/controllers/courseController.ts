@@ -188,7 +188,9 @@ export const getCourseDetails = async (req: Request, res: Response) => {
  */
 export const createCoursePaymentIntent = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        // requireRole middleware overwrites req.user with the Prisma User object (.id, not .userId)
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        if (!userId) return res.status(401).json({ error: 'Usuario no autenticado' });
         const { courseId } = req.body;
 
         const course = await prisma.course.findUnique({ where: { id: courseId } });
@@ -265,7 +267,9 @@ export const createCoursePaymentIntent = async (req: Request, res: Response) => 
  */
 export const toggleLessonCompletion = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.userId;
+        // requireRole middleware overwrites req.user with the Prisma User object (.id, not .userId)
+        const userId = (req as any).user?.id || (req as any).user?.userId;
+        if (!userId) return res.status(401).json({ error: 'Usuario no autenticado' });
         const { lessonId } = req.params;
         const { isCompleted } = req.body; // boolean
 
