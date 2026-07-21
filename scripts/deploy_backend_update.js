@@ -41,8 +41,8 @@ conn.on('ready', async () => {
         console.log('\n🧱 Extracting and Rebuilding Backend Docker Container...\n');
         const remoteCmd = `
             cd /root/Aliado-Laboral/backend &&
-            rm -rf src scripts prisma package.json package-lock.json tsconfig.json &&
-            unzip -o ../backend-update.zip &&
+            rm -rf src scripts package.json package-lock.json tsconfig.json &&
+            unzip -o ../backend-update.zip || true &&
             docker-compose build --no-cache backend &&
             docker-compose up -d backend
         `;
