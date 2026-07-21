@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 89,
+      "versionCode": 90,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/aliado_logo_new.png",

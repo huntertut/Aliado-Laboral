@@ -4,7 +4,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 89 (v1.23.23) — 02 Julio 2026**
+**Último versionCode en Producción: 90 (v1.25.2) — 21 Julio 2026**
+
+## [v1.25.2] - 21 Julio 2026 (Eliminación de Paywall de Abogados y Fix de Compras de Cursos)
+
+- **fix (Backend/Courses):** Corregida la extracción de `userId` en `courseController.ts`, `legalDocumentController.ts` y `subscriptionController.ts` para resolver incompatibilidad con el middleware `requireRole`, eliminando el error Prisma `where: { id: undefined }` durante compras.
+- **fix (Backend/Deploy):** Actualizado el script de despliegue en servidor para usar `docker build` nativo de Podman evitando corrupción de capas de Docker buildx.
+- **feat (Mobile/Paywall):** Eliminado el cobro/paywall de $29 MXN/mes en la lista de abogados (`LawyersScreen.tsx`) y en el botón de perfil (`ContactLawyerButton.tsx`), otorgando a todos los trabajadores acceso libre e ilimitado para consultar y contactar abogados laboralistas.
+- **chore (Mobile/Version):** Incrementado `versionCode` a 90 (v1.25.2) y fijada la versión `ndkVersion = "26.1.10909125"` para estabilización de compilaciones nativas C++.
 
 ## [v1.25.1] - 02 Julio 2026 (Estabilización, Corrección de 9 Puntos y Control de Actualizaciones)
 
