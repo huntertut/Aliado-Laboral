@@ -4,7 +4,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 90 (v1.25.2) — 21 Julio 2026**
+**Último versionCode en Producción: 91 (v1.25.3) — 21 Julio 2026**
+
+## [v1.25.3] - 21 Julio 2026 (Actualización Obligatoria Android 16 — API Level 36)
+
+- **chore (Mobile/Android):** Actualizado el nivel de API de destino (`targetSdkVersion` y `compileSdkVersion`) a **36 (Android 16)** en `app.json`, `android/build.gradle` y `android/app/build.gradle` cumpliendo con el requisito obligatorio de Google Play Console.
+- **chore (Mobile/Version):** Incrementado `versionCode` a **91** (v1.25.3) y generado nuevo paquete de release AAB (`admin-dist-v91.aab`).
 
 ## [v1.25.2] - 21 Julio 2026 (Eliminación de Paywall de Abogados y Fix de Compras de Cursos)
 
