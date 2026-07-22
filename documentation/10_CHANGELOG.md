@@ -4,7 +4,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 92 (v1.3.0) — 22 Julio 2026**
+**Último versionCode en Producción: 93 (v1.3.1) — 22 Julio 2026**
+
+## [v1.3.1] - 22 Julio 2026 (Fix AAPT Resource Linking — iconBackground Faltante)
+
+- **fix (Mobile/Android):** Agregado el recurso `<color name="iconBackground">#1e3799</color>` en `frontend/android/app/src/main/res/values/colors.xml` resolviendo el error de compilación AAPT `resource color/iconBackground not found` producido durante el linking de recursos en Gradle de EAS Build.
+- **chore (Mobile/Version):** Incrementado `versionCode` a 93 (v1.3.1).
 
 ## [v1.3.0] - 22 Julio 2026 (Nueva nomenclatura de versiones + Fix 16KB Page Alignment + Android 16)
 
