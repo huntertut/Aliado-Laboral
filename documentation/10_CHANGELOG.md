@@ -4,9 +4,16 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 91 (v1.25.3) — 21 Julio 2026**
+**Último versionCode en Producción: 92 (v1.3.0) — 22 Julio 2026**
 
-## [v1.25.3] - 21 Julio 2026 (Actualización Obligatoria Android 16 — API Level 36)
+## [v1.3.0] - 22 Julio 2026 (Nueva nomenclatura de versiones + Fix 16KB Page Alignment + Android 16)
+
+- **chore (Mobile/Version):** Nueva nomenclatura de versiones. Se adopta el esquema `1.X.Y` comenzando con `v1.3.0` (versionCode 92).
+- **fix (Mobile/Android):** Aplicado el fix definitivo para el error de 16KB page alignment de Google Play. Se regeneró la carpeta `android/` con `expo prebuild --clean` usando **Expo SDK 53 + React Native 0.79.6**, los únicos binarios precompilados con alineación de 16KB (ver `09_TROUBLESHOOTING.md` sección 14).
+- **chore (Mobile/Android):** Actualizado `targetSdkVersion` y `compileSdkVersion` a **36 (Android 16)** cumpliendo requisito obligatorio de Google Play Console antes del 30 Ago 2026.
+- **fix (Mobile/Build):** Restaurada la configuración de firma de release (`signingConfigs.release`) en `android/app/build.gradle` después del prebuild --clean (que siempre la borra).
+- **fix (Mobile/Build):** Corregidos `namespace` y `applicationId` a `com.aliadolaboral.app` (el prebuild los había reseteado a `com.aliadolaboral`).
+
 
 - **chore (Mobile/Android):** Actualizado el nivel de API de destino (`targetSdkVersion` y `compileSdkVersion`) a **36 (Android 16)** en `app.json`, `android/build.gradle` y `android/app/build.gradle` cumpliendo con el requisito obligatorio de Google Play Console.
 - **chore (Mobile/Version):** Incrementado `versionCode` a **91** (v1.25.3) y generado nuevo paquete de release AAB (`admin-dist-v91.aab`).
