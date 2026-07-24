@@ -22,6 +22,7 @@ import newsRoutes from './routes/newsRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import pymeRoutes from './routes/pymeRoutes';
 import systemRoutes from './routes/systemRoutes';
+import { getVersionConfig } from './controllers/systemController';
 import forumRoutes from './routes/forumRoutes';
 import devRoutes from './routes/devRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
@@ -90,28 +91,9 @@ app.get('/api/health', (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// APP VERSION CONFIG — Force Update Endpoint
-// Change MIN_VERSION_ANDROID / MIN_VERSION_IOS to force users to update.
-// Uses 5-minute in-memory cache to avoid hitting the file on every request.
+// APP VERSION CONFIG — Force Update Endpoint (Dynamic DB Config)
 // ──────────────────────────────────────────────────────────────────────────────
-const MIN_VERSION_ANDROID = process.env.MIN_VERSION_ANDROID || '1.23.23';
-const MIN_VERSION_IOS = process.env.MIN_VERSION_IOS || '1.20.0';
-let versionConfigCache: { data: any; expiry: number } | null = null;
-
-app.get('/api/config/version', (req, res) => {
-    const now = Date.now();
-    if (versionConfigCache && versionConfigCache.expiry > now) {
-        return res.json(versionConfigCache.data);
-    }
-    const data = {
-        min_version_android: MIN_VERSION_ANDROID,
-        min_version_ios: MIN_VERSION_IOS,
-        update_url_android: 'market://details?id=com.aliadolaboral.app',
-        update_url_ios: 'itms-apps://itunes.apple.com/app/id0000000000' // Update when iOS is published
-    };
-    versionConfigCache = { data, expiry: now + 5 * 60 * 1000 }; // 5 min cache
-    res.json(data);
-});
+app.get('/api/config/version', getVersionConfig);
 // ──────────────────────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authRoutes);

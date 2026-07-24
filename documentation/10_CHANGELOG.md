@@ -4,7 +4,12 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 93 (v1.3.1) — 22 Julio 2026**
+**Último versionCode en Producción: 93 (v1.3.1) — 24 Julio 2026**
+
+## [Unreleased / Admin-Web Update] - 24 Julio 2026 (Control Dinámico de Versiones Móviles desde Admin Web)
+
+- **feat (Admin-Web/Settings):** Creado panel de control de versión para actualización forzada de la App Móvil en `admin-web/src/pages/Settings.tsx`. Permite administrar `MIN_VERSION_ANDROID`, `MIN_VERSION_IOS`, `UPDATE_URL_ANDROID` y `UPDATE_URL_IOS` dinámicamente desde el navegador sin reiniciar el servidor.
+- **feat (Backend/Config):** Actualizado el controlador `systemController.ts` y el endpoint `/api/config/version` para consultar `SystemConfig` en Prisma con caché dinámico, permitiendo cambios instantáneos de versión mínima obligatoria para la App Móvil sin depender de variables de entorno estáticas (`process.env`) ni reinicios de Docker.
 
 ## [v1.3.1] - 22 Julio 2026 (Fix AAPT Resource Linking — iconBackground Faltante)
 

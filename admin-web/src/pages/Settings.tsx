@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Settings as SettingsIcon, Save, Gift, AlertCircle, ShieldAlert, Lock, CheckCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Gift, AlertCircle, ShieldAlert, Lock, CheckCircle, Smartphone } from 'lucide-react';
 
 export default function Settings() {
     const [loading, setLoading] = useState(true);
@@ -9,6 +9,12 @@ export default function Settings() {
     const [trialDays, setTrialDays] = useState('30');
     const [bannerText, setBannerText] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Mobile App Version Control State
+    const [minVersionAndroid, setMinVersionAndroid] = useState('1.3.1');
+    const [minVersionIos, setMinVersionIos] = useState('1.20.0');
+    const [updateUrlAndroid, setUpdateUrlAndroid] = useState('market://details?id=com.aliadolaboral.app');
+    const [updateUrlIos, setUpdateUrlIos] = useState('itms-apps://itunes.apple.com/app/id0000000000');
 
     // Password Update State
     const [currentPassword, setCurrentPassword] = useState('');
@@ -21,10 +27,23 @@ export default function Settings() {
         const fetchConfig = async () => {
             try {
                 const response = await api.get('/system/public');
-                const { promoActive, trialDays, bannerText } = response.data;
+                const {
+                    promoActive,
+                    trialDays,
+                    bannerText,
+                    minVersionAndroid,
+                    minVersionIos,
+                    updateUrlAndroid,
+                    updateUrlIos
+                } = response.data;
+
                 setPromoActive(promoActive || false);
                 setTrialDays(String(trialDays || 30));
                 setBannerText(bannerText || '');
+                if (minVersionAndroid) setMinVersionAndroid(minVersionAndroid);
+                if (minVersionIos) setMinVersionIos(minVersionIos);
+                if (updateUrlAndroid) setUpdateUrlAndroid(updateUrlAndroid);
+                if (updateUrlIos) setUpdateUrlIos(updateUrlIos);
             } catch (error) {
                 console.error('Error fetching config:', error);
                 setMessage({ type: 'error', text: 'Error al cargar la configuración.' });
@@ -42,11 +61,15 @@ export default function Settings() {
             await api.put('/system/update', {
                 promoActive,
                 trialDays: parseInt(trialDays),
-                bannerText
+                bannerText,
+                minVersionAndroid,
+                minVersionIos,
+                updateUrlAndroid,
+                updateUrlIos
             });
-            setMessage({ type: 'success', text: 'Configuración de promoción actualizada correctamente.' });
-            // Hide message after 3 seconds
-            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            setMessage({ type: 'success', text: 'Configuración general y versiones mínimas de la app móvil actualizadas correctamente.' });
+            // Hide message after 4 seconds
+            setTimeout(() => setMessage({ type: '', text: '' }), 4000);
         } catch (error) {
             console.error('Error saving config:', error);
             setMessage({ type: 'error', text: 'No se pudo guardar la configuración. Revisa que tu administrador tenga permisos completos.' });
@@ -141,6 +164,94 @@ export default function Settings() {
                             <Save className="w-5 h-5 mr-2" />
                         )}
                         {saving ? 'Guardando...' : 'Guardar Configuración'}
+                    </button>
+                </div>
+            </div>
+
+            {/* Mobile App Version Control Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+                <div className="border-b border-slate-100 p-6 bg-slate-50">
+                    <h2 className="text-lg font-semibold text-slate-800 flex items-center">
+                        <Smartphone className="w-5 h-5 mr-2 text-indigo-600" />
+                        Control de Versión de la App Móvil (Actualización Forzada)
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Cualquier usuario que abra la app con una versión inferior a la especificada verá la pantalla de actualización obligatoria al instante.
+                    </p>
+                </div>
+
+                <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Versión Mínima Android
+                            </label>
+                            <input
+                                type="text"
+                                value={minVersionAndroid}
+                                onChange={(e) => setMinVersionAndroid(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-sm"
+                                placeholder="Ej: 1.3.1"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Sugerencia: Cambiar al liberar un nuevo release en Play Store.</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Versión Mínima iOS
+                            </label>
+                            <input
+                                type="text"
+                                value={minVersionIos}
+                                onChange={(e) => setMinVersionIos(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-sm"
+                                placeholder="Ej: 1.20.0"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Sugerencia: Cambiar al publicar en App Store.</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                URL Tienda Android (Play Store)
+                            </label>
+                            <input
+                                type="text"
+                                value={updateUrlAndroid}
+                                onChange={(e) => setUpdateUrlAndroid(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-xs text-slate-600"
+                                placeholder="market://details?id=com.aliadolaboral.app"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                URL Tienda iOS (App Store)
+                            </label>
+                            <input
+                                type="text"
+                                value={updateUrlIos}
+                                onChange={(e) => setUpdateUrlIos(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-xs text-slate-600"
+                                placeholder="itms-apps://itunes.apple.com/app/id0000000000"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-slate-50 border-t border-slate-100 p-4 flex justify-end">
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center disabled:opacity-70"
+                    >
+                        {saving ? (
+                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        ) : (
+                            <Save className="w-5 h-5 mr-2" />
+                        )}
+                        {saving ? 'Guardando...' : 'Guardar Versiones'}
                     </button>
                 </div>
             </div>

@@ -58,6 +58,11 @@ To avoid regressions in the Admin Dashboard:
 - **Heavy ZIPs**: Never upload a ZIP containing `node_modules` or `.git` to the production server. These are for backups only.
 - **Verification**: Always check the version number in the Sidebar (e.g., `v1.21.1-prod`) after refreshing to confirm the update was successful.
 
+### 4.3 Dynamic Mobile App Version Control 📱
+- **Management**: Minimum required versions (`MIN_VERSION_ANDROID`, `MIN_VERSION_IOS`) and store URLs are managed dynamically from the Admin Web panel (`/app/settings`).
+- **No Restarts Required**: Changing versions in Admin Web writes to the `SystemConfig` Prisma table and immediately clears the backend cache. No server container restarts or environment variable edits are required.
+- **Force Update**: The mobile app queries `/api/config/version` on startup and triggers `<UpdateRequired />` if the installed version is lower than `min_version_android` (or `min_version_ios`).
+
 ### 5.1 Base de Datos y Persistencia de Volumen — REGLA PERMANENTE ⚠️
 La base de datos de producción de SQLite **SIEMPRE** debe apuntar al archivo correcto en el host:
 `/root/Aliado-Laboral/backend/prisma/dev.db`
