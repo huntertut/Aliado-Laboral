@@ -13,6 +13,8 @@ export default function Settings() {
     // Mobile App Version Control State
     const [minVersionAndroid, setMinVersionAndroid] = useState('1.3.1');
     const [minVersionIos, setMinVersionIos] = useState('1.20.0');
+    const [minBuildAndroid, setMinBuildAndroid] = useState('93');
+    const [minBuildIos, setMinBuildIos] = useState('0');
     const [updateUrlAndroid, setUpdateUrlAndroid] = useState('market://details?id=com.aliadolaboral.app');
     const [updateUrlIos, setUpdateUrlIos] = useState('itms-apps://itunes.apple.com/app/id0000000000');
 
@@ -44,6 +46,8 @@ export default function Settings() {
                 if (minVersionIos) setMinVersionIos(minVersionIos);
                 if (updateUrlAndroid) setUpdateUrlAndroid(updateUrlAndroid);
                 if (updateUrlIos) setUpdateUrlIos(updateUrlIos);
+                if (response.data.minBuildAndroid) setMinBuildAndroid(String(response.data.minBuildAndroid));
+                if (response.data.minBuildIos) setMinBuildIos(String(response.data.minBuildIos));
             } catch (error) {
                 console.error('Error fetching config:', error);
                 setMessage({ type: 'error', text: 'Error al cargar la configuración.' });
@@ -64,6 +68,8 @@ export default function Settings() {
                 bannerText,
                 minVersionAndroid,
                 minVersionIos,
+                minBuildAndroid: parseInt(minBuildAndroid) || 0,
+                minBuildIos: parseInt(minBuildIos) || 0,
                 updateUrlAndroid,
                 updateUrlIos
             });
@@ -208,6 +214,47 @@ export default function Settings() {
                                 placeholder="Ej: 1.20.0"
                             />
                             <p className="text-xs text-slate-400 mt-1">Sugerencia: Cambiar al publicar en App Store.</p>
+                        </div>
+                    </div>
+
+                    </div>
+
+                    {/* Build mínimo (versionCode) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                        <div className="md:col-span-2">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-1 rounded">⚡ Build Mínimo (versionCode)</span>
+                                <span className="text-xs text-slate-400">Para apps v1.3.2+ — comparación precisa por número de build</span>
+                            </div>
+                            <p className="text-xs text-slate-500 mb-3 bg-amber-50 border border-amber-200 rounded p-2">
+                                ⚠️ El <strong>versionCode</strong> es el número entero interno del build (ej. 94 para v1.3.2). Este campo es usado por apps <strong>v1.3.2 en adelante</strong> para comparación exacta, ignorando el formato del texto de versión. Si está en 0, se usará la comparación por texto de versión.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Build Mínimo Android (versionCode)
+                            </label>
+                            <input
+                                type="number"
+                                value={minBuildAndroid}
+                                onChange={(e) => setMinBuildAndroid(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-sm"
+                                placeholder="Ej: 94"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Actualizar al liberar nuevo build en Play Store.</p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Build Mínimo iOS (build number)
+                            </label>
+                            <input
+                                type="number"
+                                value={minBuildIos}
+                                onChange={(e) => setMinBuildIos(e.target.value)}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-mono text-sm"
+                                placeholder="Ej: 0"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Actualizar al publicar en App Store.</p>
                         </div>
                     </div>
 

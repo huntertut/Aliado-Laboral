@@ -20,7 +20,7 @@ export const getVersionConfig = async (req: Request, res: Response) => {
     try {
         const configs = await prisma.systemConfig.findMany({
             where: {
-                key: { in: ['MIN_VERSION_ANDROID', 'MIN_VERSION_IOS', 'UPDATE_URL_ANDROID', 'UPDATE_URL_IOS'] }
+                key: { in: ['MIN_VERSION_ANDROID', 'MIN_VERSION_IOS', 'UPDATE_URL_ANDROID', 'UPDATE_URL_IOS', 'MIN_BUILD_ANDROID', 'MIN_BUILD_IOS'] }
             }
         });
 
@@ -28,8 +28,12 @@ export const getVersionConfig = async (req: Request, res: Response) => {
         configs.forEach(c => configMap[c.key] = c.value);
 
         const data = {
+            // Versión string — para compatibilidad con apps antiguas (1.23.x)
             min_version_android: configMap['MIN_VERSION_ANDROID'] || process.env.MIN_VERSION_ANDROID || '1.3.1',
             min_version_ios: configMap['MIN_VERSION_IOS'] || process.env.MIN_VERSION_IOS || '1.20.0',
+            // Build number (versionCode) — para apps >= 1.3.2 (comparación precisa)
+            min_build_android: parseInt(configMap['MIN_BUILD_ANDROID'] || process.env.MIN_BUILD_ANDROID || '0') || 0,
+            min_build_ios: parseInt(configMap['MIN_BUILD_IOS'] || process.env.MIN_BUILD_IOS || '0') || 0,
             update_url_android: configMap['UPDATE_URL_ANDROID'] || 'market://details?id=com.aliadolaboral.app',
             update_url_ios: configMap['UPDATE_URL_IOS'] || 'itms-apps://itunes.apple.com/app/id0000000000'
         };
@@ -41,6 +45,8 @@ export const getVersionConfig = async (req: Request, res: Response) => {
         res.json({
             min_version_android: process.env.MIN_VERSION_ANDROID || '1.3.1',
             min_version_ios: process.env.MIN_VERSION_IOS || '1.20.0',
+            min_build_android: parseInt(process.env.MIN_BUILD_ANDROID || '0') || 0,
+            min_build_ios: parseInt(process.env.MIN_BUILD_IOS || '0') || 0,
             update_url_android: 'market://details?id=com.aliadolaboral.app',
             update_url_ios: 'itms-apps://itunes.apple.com/app/id0000000000'
         });
@@ -59,6 +65,8 @@ export const getPublicConfig = async (req: Request, res: Response) => {
                         'PROMO_BANNER_TEXT',
                         'MIN_VERSION_ANDROID',
                         'MIN_VERSION_IOS',
+                        'MIN_BUILD_ANDROID',
+                        'MIN_BUILD_IOS',
                         'UPDATE_URL_ANDROID',
                         'UPDATE_URL_IOS'
                     ]
@@ -75,6 +83,8 @@ export const getPublicConfig = async (req: Request, res: Response) => {
             bannerText: configMap['PROMO_BANNER_TEXT'] || "¡Promoción Especial!",
             minVersionAndroid: configMap['MIN_VERSION_ANDROID'] || process.env.MIN_VERSION_ANDROID || '1.3.1',
             minVersionIos: configMap['MIN_VERSION_IOS'] || process.env.MIN_VERSION_IOS || '1.20.0',
+            minBuildAndroid: parseInt(configMap['MIN_BUILD_ANDROID'] || process.env.MIN_BUILD_ANDROID || '0') || 0,
+            minBuildIos: parseInt(configMap['MIN_BUILD_IOS'] || process.env.MIN_BUILD_IOS || '0') || 0,
             updateUrlAndroid: configMap['UPDATE_URL_ANDROID'] || 'market://details?id=com.aliadolaboral.app',
             updateUrlIos: configMap['UPDATE_URL_IOS'] || 'itms-apps://itunes.apple.com/app/id0000000000'
         };
@@ -95,6 +105,8 @@ export const updateConfig = async (req: Request, res: Response) => {
             bannerText,
             minVersionAndroid,
             minVersionIos,
+            minBuildAndroid,
+            minBuildIos,
             updateUrlAndroid,
             updateUrlIos
         } = req.body;
@@ -138,6 +150,22 @@ export const updateConfig = async (req: Request, res: Response) => {
                 where: { key: 'MIN_VERSION_IOS' },
                 update: { value: String(minVersionIos) },
                 create: { key: 'MIN_VERSION_IOS', value: String(minVersionIos), description: 'Versión mínima requerida iOS' }
+            }));
+        }
+
+        if (minBuildAndroid !== undefined) {
+            transactions.push(prisma.systemConfig.upsert({
+                where: { key: 'MIN_BUILD_ANDROID' },
+                update: { value: String(minBuildAndroid) },
+                create: { key: 'MIN_BUILD_ANDROID', value: String(minBuildAndroid), description: 'Build mínimo requerido Android (versionCode)' }
+            }));
+        }
+
+        if (minBuildIos !== undefined) {
+            transactions.push(prisma.systemConfig.upsert({
+                where: { key: 'MIN_BUILD_IOS' },
+                update: { value: String(minBuildIos) },
+                create: { key: 'MIN_BUILD_IOS', value: String(minBuildIos), description: 'Build mínimo requerido iOS (build number)' }
             }));
         }
 
