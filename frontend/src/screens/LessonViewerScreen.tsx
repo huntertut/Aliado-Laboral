@@ -113,27 +113,56 @@ const LessonViewerScreen = () => {
 
     // ── DOWNLOAD ATTACHMENT FLOW ────────────────────
 
+    const getMimeType = (filename: string): string => {
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const types: Record<string, string> = {
+            pdf: 'application/pdf',
+            doc: 'application/msword',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xls: 'application/vnd.ms-excel',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            txt: 'text/plain',
+            zip: 'application/zip',
+        };
+        return types[ext || ''] || 'application/octet-stream';
+    };
+
     const handleDownloadAttachment = async () => {
         if (!lesson || !lesson.attachmentUrl) return;
         try {
             setDownloading(true);
 
             const filename = lesson.attachmentName || 'recurso_aliado.pdf';
-            const localUri = FileSystem.documentDirectory + filename.replace(/\s+/g, '_');
+            const safeFilename = filename.replace(/\s+/g, '_');
+            const localUri = FileSystem.documentDirectory + safeFilename;
 
-            // Download file to local document folder
-            const { uri } = await FileSystem.downloadAsync(lesson.attachmentUrl, localUri);
+            // Verify file info (avoid re-downloading if already cached)
+            const fileInfo = await FileSystem.getInfoAsync(localUri);
+            let finalUri = localUri;
 
-            // Share / Open the file natively on iOS/Android
+            if (!fileInfo.exists) {
+                const { uri } = await FileSystem.downloadAsync(lesson.attachmentUrl, localUri);
+                finalUri = uri;
+            }
+
+            // Share/Open with correct mimeType so Android/iOS knows the file type
+            const mimeType = getMimeType(filename);
             if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri);
+                await Sharing.shareAsync(finalUri, {
+                    mimeType,
+                    dialogTitle: filename,
+                    UTI: mimeType, // iOS UTI
+                });
             } else {
-                Alert.alert('Recurso Guardado', `Archivo guardado en: ${uri}`);
+                Alert.alert('Recurso Guardado', `Archivo guardado en: ${finalUri}`);
             }
 
         } catch (err) {
             console.error('Download error:', err);
-            Alert.alert('Error', 'No se pudo descargar el recurso de apoyo.');
+            Alert.alert('Error', 'No se pudo descargar el recurso. Verifica tu conexión e intenta de nuevo.');
         } finally {
             setDownloading(false);
         }
