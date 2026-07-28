@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
-    Alert, ActivityIndicator, Dimensions
+    Alert, ActivityIndicator, Dimensions, Image
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,6 +42,7 @@ const LessonViewerScreen = () => {
     const { lessonId, courseId, title } = route.params;
 
     const [lesson, setLesson] = useState<LessonDetails | null>(null);
+    const [courseCoverImage, setCourseCoverImage] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [downloading, setDownloading] = useState(false);
     const [toggling, setToggling] = useState(false);
@@ -56,6 +57,7 @@ const LessonViewerScreen = () => {
 
             if (res.ok) {
                 const data = await res.json();
+                setCourseCoverImage(data.course?.coverImage || null);
                 const allLessons: LessonDetails[] = [];
                 
                 data.course.modules.forEach((mod: any) => {
@@ -196,7 +198,7 @@ const LessonViewerScreen = () => {
             </LinearGradient>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Video Player (if available) */}
+                {/* Video Player or Cover Image (if available) */}
                 {lesson.videoUrl ? (
                     <Video
                         source={{ uri: lesson.videoUrl }}
@@ -207,6 +209,12 @@ const LessonViewerScreen = () => {
                         shouldPlay={false}
                         useNativeControls
                         style={styles.videoPlayer}
+                    />
+                ) : courseCoverImage ? (
+                    <Image
+                        source={{ uri: courseCoverImage }}
+                        style={styles.courseCoverBanner}
+                        resizeMode="cover"
                     />
                 ) : (
                     <View style={styles.noVideoPlaceholder}>
@@ -309,6 +317,7 @@ const styles = StyleSheet.create({
 
     scrollContent: { paddingBottom: 30 },
     videoPlayer: { width: '100%', height: width * 0.56, backgroundColor: '#000' }, // 16:9 Aspect Ratio
+    courseCoverBanner: { width: '100%', height: width * 0.56, backgroundColor: '#000' },
     noVideoPlaceholder: {
         width: '100%', height: 120, backgroundColor: '#f0f0f0',
         justifyContent: 'center', alignItems: 'center', gap: 6,
