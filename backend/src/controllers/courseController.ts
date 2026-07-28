@@ -431,3 +431,45 @@ export const adminAddLesson = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Error al agregar la lección' });
     }
 };
+
+export const adminUpdateLesson = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, content, videoUrl, durationMin, sortOrder, attachmentUrl, attachmentName } = req.body;
+        const lesson = await prisma.courseLesson.update({
+            where: { id },
+            data: {
+                title,
+                content: content || null,
+                videoUrl: videoUrl || null,
+                durationMin: durationMin ? parseInt(durationMin) : undefined,
+                sortOrder: sortOrder ? parseInt(sortOrder) : undefined,
+                attachmentUrl: attachmentUrl || null,
+                attachmentName: attachmentName || null
+            }
+        });
+        res.json({ lesson });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al actualizar la lección' });
+    }
+};
+
+export const adminDeleteModule = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await prisma.courseModule.delete({ where: { id } });
+        res.json({ success: true, message: 'Módulo eliminado' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar el módulo' });
+    }
+};
+
+export const adminDeleteLesson = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await prisma.courseLesson.delete({ where: { id } });
+        res.json({ success: true, message: 'Lección eliminada' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al eliminar la lección' });
+    }
+};

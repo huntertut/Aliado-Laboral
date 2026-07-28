@@ -9,6 +9,9 @@ import {
     adminDeleteCourse,
     adminAddModule,
     adminAddLesson,
+    adminUpdateLesson,
+    adminDeleteModule,
+    adminDeleteLesson,
 } from '../controllers/courseController';
 import { authMiddleware, requireRole } from '../middleware/auth';
 
@@ -25,6 +28,9 @@ router.post('/admin/create', authMiddleware, requireRole(['admin']), adminCreate
 router.put('/admin/update/:id', authMiddleware, requireRole(['admin']), adminUpdateCourse);
 router.delete('/admin/delete/:id', authMiddleware, requireRole(['admin']), adminDeleteCourse);
 router.post('/admin/module', authMiddleware, requireRole(['admin']), adminAddModule);
+router.delete('/admin/module/:id', authMiddleware, requireRole(['admin']), adminDeleteModule);
 router.post('/admin/lesson', authMiddleware, requireRole(['admin']), adminAddLesson);
+router.put('/admin/lesson/:id', authMiddleware, requireRole(['admin']), adminUpdateLesson);
+router.delete('/admin/lesson/:id', authMiddleware, requireRole(['admin']), adminDeleteLesson);
 
 export default router;
