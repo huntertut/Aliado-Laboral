@@ -179,10 +179,10 @@ export default function Settings() {
                 <div className="border-b border-slate-100 p-6 bg-slate-50">
                     <h2 className="text-lg font-semibold text-slate-800 flex items-center">
                         <Smartphone className="w-5 h-5 mr-2 text-indigo-600" />
-                        Control de Versión de la App Móvil (Actualización Forzada)
+                        Control de Versión de la App Móvil (Actualización Forzada v1.3.2)
                     </h2>
                     <p className="text-xs text-slate-500 mt-1">
-                        Cualquier usuario que abra la app con una versión inferior a la especificada verá la pantalla de actualización obligatoria al instante.
+                        Cualquier usuario que abra la app con una versión o build inferior al especificado verá la pantalla de actualización obligatoria.
                     </p>
                 </div>
 
