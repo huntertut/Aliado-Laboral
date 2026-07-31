@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import admin from '../config/firebase';
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -148,6 +149,22 @@ export const register = async (req: Request, res: Response) => {
 
             return user;
         });
+
+        // Sync to Firebase and create UserRole mapping
+        try {
+            const firebaseUser = await admin.auth().getUserByEmail(email);
+            if (firebaseUser) {
+                console.log(`[register] Syncing role ${result.role} to Firebase claims for ${email}`);
+                await admin.auth().setCustomUserClaims(firebaseUser.uid, { role: result.role || 'worker' });
+                await prisma.userRole.upsert({
+                    where: { firebaseUid: firebaseUser.uid },
+                    update: { role: result.role || 'worker', email, userId: result.id, fullName: fullName || '' },
+                    create: { firebaseUid: firebaseUser.uid, role: result.role || 'worker', email, userId: result.id, fullName: fullName || '' }
+                });
+            }
+        } catch (fbErr: any) {
+            console.warn('[register] Firebase claims/UserRole sync skipped:', fbErr.message);
+        }
 
         const token = jwt.sign({ userId: result.id, role: result.role }, JWT_SECRET, {
             expiresIn: '1h',
@@ -310,6 +327,19 @@ export const socialLogin = async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'Failed to process user' });
         }
 
+        // Sync claims for both new and existing users to be 100% safe
+        try {
+            console.log(`[socialLogin] Syncing role ${user.role} to Firebase claims for UID: ${uid}`);
+            await admin.auth().setCustomUserClaims(uid, { role: user.role });
+            await prisma.userRole.upsert({
+                where: { firebaseUid: uid },
+                update: { role: user.role, email: user.email, userId: user.id, fullName: user.fullName || '' },
+                create: { firebaseUid: uid, role: user.role, email: user.email, userId: user.id, fullName: user.fullName || '' }
+            });
+        } catch (fbErr: any) {
+            console.warn('[socialLogin] Firebase claims/UserRole sync skipped:', fbErr.message);
+        }
+
         // Existing User: Return token and status
         const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
             expiresIn: '24h',
@@ -357,8 +387,12 @@ export const updateProfile = async (req: Request, res: Response) => {
 
 export const updatePushToken = async (req: Request, res: Response) => {
     try {
-        const userId = (req as any).user.id;
+        const userId = (req as any).user?.id || (req as any).user?.userId;
         const { pushToken } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
 
         if (!pushToken) {
             return res.status(400).json({ error: 'Push token is required' });
@@ -369,6 +403,7 @@ export const updatePushToken = async (req: Request, res: Response) => {
             data: { pushToken }
         });
 
+        console.log(`📱 Push token guardado para usuario ${userId}: ${pushToken}`);
         res.json({ success: true });
     } catch (error) {
         console.error('Update Push Token Error:', error);

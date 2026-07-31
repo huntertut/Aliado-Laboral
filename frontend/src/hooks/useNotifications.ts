@@ -21,18 +21,18 @@ Notifications.setNotificationHandler({
 // Helper: Register Token in Backend
 const registerTokenInBackend = async (token: string) => {
     try {
-        const authToken = await AsyncStorage.getItem('userToken');
+        const authToken = await AsyncStorage.getItem('authToken') || await AsyncStorage.getItem('userToken');
         if (!authToken) return;
 
-        await axios.post(`${API_URL}/notifications/register-token`, {
-            token,
+        await axios.post(`${API_URL}/auth/update-push-token`, {
+            pushToken: token,
             platform: Platform.OS
         }, {
             headers: { Authorization: `Bearer ${authToken}` }
         });
         console.log('✅ Push Token registrado en backend:', token);
     } catch (error) {
-        console.log('⚠️ Error registrando token (Backend offline?):', error);
+        console.log('⚠️ Error registrando token:', error);
     }
 };
 
