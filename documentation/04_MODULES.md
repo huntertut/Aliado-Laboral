@@ -59,3 +59,19 @@ This document breaks down the core engines that power the Aliado Laboral backend
   - Manual verification of lawyer licenses.
   - Emergency Sync (`/admin/lawyers/sync-firebase`).
   - Strict Security Logs (Failed logins).
+
+## 9. News Engine & Push Notifications (`newsController`, `newsScheduler`, `notificationService`)
+- **Function:** Automated legal news curation with Google AI and Expo Push Notification broadcast.
+- **Capabilities:**
+  - **Automated Fetching (`newsScheduler`):** Google News RSS aggregator running daily. AI filters semantically repetitive articles.
+  - **Multi-Role Summarization:** AI generates 3 distinct perspectives for each news item: Worker, SME/PyME, and Lawyer.
+  - **Push Broadcast:** Distributes alerts to users via `expo-server-sdk` using their registered `pushToken`.
+  - **In-App Persistence:** Saves notifications to `Notification` table for historical viewing inside the app.
+
+## 10. Courses & Training Engine (`courseController`)
+- **Function:** LMS (Learning Management System) for worker legal education.
+- **Capabilities:**
+  - **Structure:** Course -> Modules -> Lessons (with Markdown text, Video URLs, and PDF downloadable attachments).
+  - **Access Control:** Free preview on first lesson, locked premium content requiring Stripe purchase.
+  - **Admin Web CRUD:** Full management of courses, modules, lessons, and downloadable attachments.
+

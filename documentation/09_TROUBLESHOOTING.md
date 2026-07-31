@@ -777,4 +777,23 @@ El trabajador intenta contactar a un abogado y le sale la alerta *"Solicitud Env
 2. Se actualizó la navegación de `LawyersScreen.tsx` al presionar un abogado para que apunte a `LawyerPublicProfile` con su `lawyerId`.
 3. Se integró el modal de pago `ContactPaymentModal` en la pantalla de redacción de caso `CreateContactRequestScreen.tsx`. Ahora, tras redactar el caso y aceptar el consentimiento de datos, se abre el modal para elegir Stripe o MercadoPago, se procesan los documentos adjuntos a base64, y se crea la solicitud real en el backend en el endpoint `/contact/create-with-payment`, gatillando el análisis de IA de Groq en segundo plano y la posterior notificación push al abogado cuando se procesa el pago.
 
+---
+
+## 21. Mobile / Backend: Noticia publicada visible en el celular pero sin Notificación Push emergente
+**Síntoma:**
+La noticia creada manualmente desde el panel Admin o importada automáticamente por el cron job de RSS aparece correctamente dentro de la app móvil en la sección de Noticias, pero el teléfono no emite la notificación push flotante (banner).
+
+**Causas Principales:**
+1. **`pushToken` nulo en la BD:** Si el usuario reinstaló la app, borró datos, o inició sesión sin haber otorgado permisos de notificaciones al arrancar, la columna `pushToken` en la tabla `User` de SQLite está en `null`. El backend publica la noticia pero descarta el envío push al usuario.
+2. **App abierta en primer plano (Foreground):** En Android/iOS, si el usuario tiene la aplicación abierta en pantalla cuando se publica la noticia, el sistema operativo suprime por defecto el banner superior flotante para no interrumpir la navegación.
+3. **Falta de permiso en Android 13+ / iOS:** El permiso de notificaciones fue denegado o no fue solicitado explícitamente durante el flujo de inicio de sesión (`registerForPushNotificationsAsync`).
+
+**Diagnóstico y Verificación:**
+```bash
+# Verificar si el usuario tiene un pushToken válido registrado en la base de datos
+sqlite3 /root/Aliado-Laboral/backend/prisma/dev.db "SELECT id, email, role, pushToken FROM User WHERE pushToken IS NOT NULL;"
+```
+Si el resultado es 0 usuarios con token, la app móvil debe llamar a `PUT /api/auth/profile` o el endpoint de registro de token para asociar el `ExponentPushToken[...]` al usuario activo tras iniciar sesión.
+
+
 

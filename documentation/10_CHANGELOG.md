@@ -4,7 +4,16 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 93 (v1.3.1) — 24 Julio 2026**
+**Último versionCode en Producción: 94 (v1.3.2) — 28 Julio 2026**
+
+## [v1.3.2] - 28 Julio 2026 (Actualización de Control de Versión por versionCode + Gestión de Cursos en Admin Web + Fix PDF y Portadas)
+
+- **feat (Admin-Web/Cursos):** Implementado CRUD completo de Módulos y Lecciones en `admin-web/src/pages/Courses.tsx` (creación, edición, eliminación, módulos colapsables, URLs de PDF descargable).
+- **feat (Backend/Cursos):** Agregadas rutas y controladores `adminUpdateLesson`, `adminDeleteModule` y `adminDeleteLesson` en `courseController.ts` y `courseRoutes.ts`.
+- **feat (Backend/Seeder):** Creado `seedCourses.ts` con 3 cursos completos con contenido Markdown y recursos adjuntos (*Liquidación*, *Derechos IMSS*, *Freelancers*).
+- **fix (Mobile/Cursos):** Corregido el visor de lecciones `LessonViewerScreen.tsx` para detectar y pasar `mimeType` adecuado a `Sharing.shareAsync`, resolviendo el error "el archivo seleccionado no era un documento" en Android/iOS al descargar PDFs adjuntos.
+- **feat (Mobile/Cursos):** Agregada visualización automática de la imagen de portada del curso (`coverImage`) en `LessonViewerScreen.tsx` cuando la lección no contiene un video.
+- **docs (Ecosystem):** Actualizados `04_MODULES.md` (Módulo 9 Noticias y Módulo 10 Cursos) y `09_TROUBLESHOOTING.md` (Sección 21 sobre diagnóstico de Notificaciones Push de Noticias).
 
 ## [Unreleased / Admin-Web Update] - 24 Julio 2026 (Control Dinámico de Versiones Móviles desde Admin Web)
 
