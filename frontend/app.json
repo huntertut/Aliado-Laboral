@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.aliadolaboral.app",
-      "versionCode": 94,
+      "versionCode": 95,
       "compileSdkVersion": 36,
       "targetSdkVersion": 36,
       "googleServicesFile": "./google-services.json",

@@ -4,9 +4,9 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 94 (v1.3.2) — 28 Julio 2026**
+**Último versionCode en Producción: 95 (v1.3.2) — 04 Agosto 2026**
 
-## [v1.3.2] - 28 Julio 2026 (Actualización de Control de Versión por versionCode + Gestión de Cursos en Admin Web + Fix PDF y Portadas)
+## [v1.3.2] - 04 Agosto 2026 (Stripe Producción pk_live + Push Token Fix + versionCode 95)
 
 - **feat (Admin-Web/Cursos):** Implementado CRUD completo de Módulos y Lecciones en `admin-web/src/pages/Courses.tsx` (creación, edición, eliminación, módulos colapsables, URLs de PDF descargable).
 - **feat (Backend/Cursos):** Agregadas rutas y controladores `adminUpdateLesson`, `adminDeleteModule` y `adminDeleteLesson` en `courseController.ts` y `courseRoutes.ts`.
