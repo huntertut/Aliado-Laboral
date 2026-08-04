@@ -96,7 +96,7 @@ export default function App() {
     }
 
     return (
-        <StripeProvider publishableKey="pk_test_51Sb1MxAnr3rKmiaWJSPgHYSFqTC07ya0896cQuON6MIqibc8dqSw6bkOF2zJ3olI2LjguKaalLsbj3iiLnLDtqn700PScbxcDT">
+        <StripeProvider publishableKey="pk_live_51Sb1MxAnr3rKpbBY4DVvjsiYdgJmdwaWd5zQMGX9BAIDvwZgLPPMxAn0qr8QD5nQ63QrDs1P23jOjtn2M2sy702HFY00P1PJUdTr">
             <AuthProvider>
                 <AppNavigator />
             </AuthProvider>
