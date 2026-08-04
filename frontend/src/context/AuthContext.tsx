@@ -125,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     try {
                         console.log('🔄 [AuthContext] Refreshing user status from backend...');
                         const response = await axios.post(`${API_URL}/auth/verify-token`, { idToken: token }, { timeout: 5000 });
-                        const freshUser = response.data.user;
+                        const freshUser = (response.data as any).user;
 
                         // 3.5. DEMO MODE OVERRIDES (PERSIST ON REFRESH)
                         const demoEmail = freshUser.email?.toLowerCase();
@@ -246,7 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AuthContext] 3. Verifying token with backend:', `${API_URL}/auth/verify-token`);
             const response = await axios.post(`${API_URL}/auth/verify-token`, { idToken }, { timeout: 15000 });
             console.log('[AuthContext] 3. Backend response received:', response.status);
-            const userData = response.data.user;
+            const userData = (response.data as any).user;
 
             // 3.5. DEMO MODE OVERRIDES (For Testing/Demos)
             const demoEmail = email.toLowerCase();
@@ -427,7 +427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
 
             // Sync local state
-            await updateUser({ ...data, ...response.data.user });
+            await updateUser({ ...data, ...(response.data as any).user });
         } catch (e: any) {
             console.error('Update profile failed:', e);
             throw new Error(e.response?.data?.error || 'Failed to update profile');
