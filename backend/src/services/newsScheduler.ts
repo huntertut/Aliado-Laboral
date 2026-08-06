@@ -7,8 +7,8 @@ import { sendPushNotification } from './notificationService';
 const prisma = new PrismaClient();
 const parser = new Parser();
 
-// Google News RSS Feed (Specific to Mexico Labor Law)
-const RSS_URL = 'https://news.google.com/rss/search?q=(ley+federal+del+trabajo+OR+reforma+laboral+OR+derechos+laborales+OR+stps+OR+vacaciones+OR+salario+minimo)+mexico&hl=es-419&gl=MX&ceid=MX:es-419';
+// Google News RSS Feed (Broadened search for Mexican Labor Law & Workforce news)
+const RSS_URL = 'https://news.google.com/rss/search?q=(ley+federal+del+trabajo+OR+reforma+laboral+OR+derechos+laborales+OR+stps+OR+vacaciones+OR+salario+minimo+OR+empleo+OR+trabajadores+OR+imss+OR+infonavit+OR+utilidades+OR+aguinaldo)+mexico&hl=es-419&gl=MX&ceid=MX:es-419';
 
 /**
  * Fetch and process news from RSS
@@ -19,21 +19,21 @@ export const fetchLaborNews = async () => {
         const feed = await parser.parseURL(RSS_URL);
         console.log(`📡 [Scheduler] Fetched ${feed.items.length} items from RSS.`);
 
-        // Filter: Only items from last 7 days (to handle weekends/slow news weeks)
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // Filter: Items from last 14 days (handles slow news weeks)
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-        const recentItems = feed.items.filter(item => {
+        let recentItems = feed.items.filter(item => {
             const pubDate = item.pubDate ? new Date(item.pubDate) : new Date(0);
-            return pubDate > sevenDaysAgo;
+            return pubDate > fourteenDaysAgo;
         });
 
-        console.log(`🔍 [Scheduler] Found ${recentItems.length} recent items.`);
-
         if (recentItems.length === 0) {
-            console.log('📭 [Scheduler] No new relevant news found today.');
-            return;
+            console.log('⚠️ [Scheduler] No items in last 14 days, using top RSS feed fallback.');
+            recentItems = feed.items.slice(0, 10);
         }
+
+        console.log(`🔍 [Scheduler] Found ${recentItems.length} candidate items.`);
 
         // 1. Fetch recently published news titles to filter repetitions (Semantic Filter)
         const recentDbNews = await prisma.legalNews.findMany({
@@ -120,35 +120,45 @@ export const fetchLaborNews = async () => {
             };
         }
 
-        await prisma.legalNews.create({ data: finalData });
+        const createdNews = await prisma.legalNews.create({ data: finalData });
         console.log('✅ [Scheduler] News saved to DB with Source URL & Name.');
 
-        // --- BROADCAST NOTIFICATION ---
+        // --- BROADCAST NOTIFICATION VIA EXPO PUSH SDK CHUNKS ---
         try {
-            // Fetch users with push tokens (Optimization: Select only needed fields)
             const users = await prisma.user.findMany({
                 where: { pushToken: { not: null } },
                 select: { id: true, pushToken: true }
             });
 
-            console.log(`📢 [Scheduler] Broadcasting news to ${users.length} users...`);
+            console.log(`📢 [Scheduler] Broadcasting news to ${users.length} users with push tokens...`);
 
-            const notificationTitle = "🗞️ Nueva Noticia Laboral";
-            const notificationBody = finalData.titleClickable || "Actualización importante sobre la LFT.";
+            if (users.length > 0) {
+                const { Expo } = await import('expo-server-sdk');
+                const expo = new Expo();
+                const title = "🗞️ Nueva Noticia Laboral";
+                const body = finalData.titleClickable || "Actualización importante sobre la LFT.";
+                const data = { type: 'news', newsId: createdNews.id };
 
-            // Send in parallel (or use the chunk logic inside notificationService if optimized)
-            // For now, simple loop using the service's single-send or we could refactor service to batch.
-            // Using a simple loop for safety/simplicity in this fix.
+                const messages = users
+                    .filter(u => u.pushToken && Expo.isExpoPushToken(u.pushToken))
+                    .map(u => ({ to: u.pushToken!, sound: 'default' as const, title, body, data }));
 
-            let sentCount = 0;
-            for (const user of users) {
-                // Avoiding await inside loop to not block, but for mass push ideally use chunks.
-                // Since sendPushNotification is async, we can fire and forget or gather promises.
-                // Let's gather promises for better robustness.
-                sendPushNotification(user.id, notificationTitle, notificationBody, { type: 'news', newsId: topItem.link });
-                sentCount++;
+                const chunks = expo.chunkPushNotifications(messages);
+                for (const chunk of chunks) {
+                    try {
+                        const tickets = await expo.sendPushNotificationsAsync(chunk);
+                        console.log(`🔔 [Scheduler] Push tickets:`, JSON.stringify(tickets));
+                    } catch (err) {
+                        console.error('[Scheduler] Error sending push chunk:', err);
+                    }
+                }
             }
-            console.log(`🔔 [Scheduler] Broadcasted to ${sentCount} users.`);
+
+            // Also persist in-app notification center for all users
+            for (const user of users) {
+                sendPushNotification(user.id, "🗞️ Nueva Noticia Laboral", finalData.titleClickable, { type: 'news', newsId: createdNews.id })
+                    .catch(() => {});
+            }
 
         } catch (notifyError) {
             console.error('⚠️ [Scheduler] Failed to broadcast notifications:', notifyError);
