@@ -4,9 +4,11 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 95 (v1.3.2) — 04 Agosto 2026**
+**Último versionCode en Producción: 96 (v1.3.2) — 07 Agosto 2026**
 
-## [v1.3.2] - 04 Agosto 2026 (Stripe Producción pk_live + Push Token Fix + versionCode 95)
+## [v1.3.2] - 07 Agosto 2026 (Fix Permiso Android POST_NOTIFICATIONS + Stripe pk_live + Push Token Fix + versionCode 96)
+
+- **fix (Mobile/Android):** Agregados los permisos `POST_NOTIFICATIONS`, `VIBRATE` y `RECEIVE_BOOT_COMPLETED` en `app.json` y `AndroidManifest.xml`. Sin `POST_NOTIFICATIONS` declarado explícitamente en el manifiesto nativo de Android 13+ (targetSdkVersion 36), el sistema operativo denegaba y bloqueaba automáticamente la ventana de permiso y los banners emergentes de notificaciones push.
 
 - **feat (Admin-Web/Cursos):** Implementado CRUD completo de Módulos y Lecciones en `admin-web/src/pages/Courses.tsx` (creación, edición, eliminación, módulos colapsables, URLs de PDF descargable).
 - **feat (Backend/Cursos):** Agregadas rutas y controladores `adminUpdateLesson`, `adminDeleteModule` y `adminDeleteLesson` en `courseController.ts` y `courseRoutes.ts`.
