@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../config/axios';
-import { Users as UsersIcon, Search, RefreshCw, Briefcase, Building2 } from 'lucide-react';
+import { Users as UsersIcon, Search, RefreshCw, Briefcase, Building2, Bell } from 'lucide-react';
 import GiftModal from '../components/users/GiftModal';
 import UsersTable from '../components/users/UsersTable';
 
@@ -99,6 +99,19 @@ export default function Users() {
         }
     };
 
+    const handleBroadcastNews = async () => {
+        if (window.confirm('¿Enviar la última noticia laboral publicada como notificación push a todos los usuarios activos?')) {
+            try {
+                const res = await api.post('/admin/notifications/broadcast-latest');
+                alert(`📢 ${res.data.message || 'Notificación enviada.'}\n\n• Dispositivos con token activo: ${res.data.activeTokensCount || 0}\n• Noticia: "${res.data.newsTitle || 'N/A'}"`);
+            } catch (error: any) {
+                console.error('Error broadcasting news:', error);
+                const msg = error?.response?.data?.error || 'Error al enviar la notificación.';
+                alert(`❌ ${msg}`);
+            }
+        }
+    };
+
     return (
         <div className="flex flex-col h-[calc(100vh-120px)]">
             <div className="mb-6 shrink-0">
@@ -162,10 +175,18 @@ export default function Users() {
                     <button
                         onClick={handleSyncFirebase}
                         className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors flex items-center shadow-sm"
-                        title="Sincronizar Abogados de Firebase"
+                        title="Sincronizar todos los usuarios desde Firebase Auth"
                     >
                         <RefreshCw className={`w-5 h-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
                         <span className="font-medium text-sm hidden sm:inline">Sincronizar Firebase</span>
+                    </button>
+                    <button
+                        onClick={handleBroadcastNews}
+                        className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-100 transition-colors flex items-center shadow-sm"
+                        title="Enviar última noticia como Push Notification a todos los usuarios"
+                    >
+                        <Bell className="w-5 h-5 mr-2" />
+                        <span className="font-medium text-sm hidden sm:inline">Enviar Notificación</span>
                     </button>
                     <button
                         onClick={fetchUsers}
