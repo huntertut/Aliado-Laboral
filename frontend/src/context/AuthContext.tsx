@@ -154,18 +154,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             setUser(freshUser);
                             await AsyncStorage.setItem('userData', JSON.stringify(freshUser));
 
-                            // Sync push token on app launch for authenticated user
+                            // Sync push token on app launch for authenticated user using fresh token
                             try {
+                                const freshAuthToken = await getAccessToken() || token;
                                 const { registerForPushNotificationsAsync } = await import('../services/PushNotificationService');
                                 const pushToken = await registerForPushNotificationsAsync();
+                                console.log('[AuthContext] Push token obtained on loadUser:', pushToken);
                                 if (pushToken && !pushToken.startsWith('__DENIED__') && !pushToken.startsWith('__ERROR__')) {
-                                    await axios.post(`${API_URL}/auth/update-push-token`, { pushToken }, {
-                                        headers: { Authorization: `Bearer ${token}` }
-                                    }).catch(() => {});
+                                    const res = await axios.post(`${API_URL}/auth/update-push-token`, { pushToken }, {
+                                        headers: { Authorization: `Bearer ${freshAuthToken}` }
+                                    });
+                                    console.log('[AuthContext] ✅ Push token auto-sync success:', res.data);
                                     await AsyncStorage.setItem('pushToken', pushToken);
                                 }
-                            } catch (pErr) {
-                                console.warn('[AuthContext] Push token auto-sync on loadUser failed:', pErr);
+                            } catch (pErr: any) {
+                                console.warn('[AuthContext] Push token auto-sync on loadUser failed:', pErr.response?.data || pErr.message);
                             }
                         }
                     } catch (refreshErr: any) {

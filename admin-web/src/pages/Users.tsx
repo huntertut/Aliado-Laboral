@@ -103,7 +103,20 @@ export default function Users() {
         if (window.confirm('¿Enviar la última noticia laboral publicada como notificación push a todos los usuarios activos?')) {
             try {
                 const res = await api.post('/admin/notifications/broadcast-latest');
-                alert(`📢 ${res.data.message || 'Notificación enviada.'}\n\n• Dispositivos con token activo: ${res.data.activeTokensCount || 0}\n• Noticia: "${res.data.newsTitle || 'N/A'}"`);
+                const d = res.data;
+                let details = `📢 ${d.message || 'Notificación procesada.'}\n\n` +
+                              `• Noticia: "${d.newsTitle || 'N/A'}"\n` +
+                              `• Usuarios con token en BD: ${d.activeTokensCount || 0}\n` +
+                              `• Tokens Expo válidos: ${d.validExpoTokensCount || 0}\n` +
+                              `• Entregadas con éxito: ${d.okTicketsCount || 0}`;
+
+                if (d.errorTicketsCount > 0) {
+                    details += `\n• Errores en Expo: ${d.errorTicketsCount}`;
+                    if (d.errorDetails && d.errorDetails.length > 0) {
+                        details += ` (${d.errorDetails[0]?.message || d.errorDetails[0]?.details?.error || 'Token expirado/inválido'})`;
+                    }
+                }
+                alert(details);
             } catch (error: any) {
                 console.error('Error broadcasting news:', error);
                 const msg = error?.response?.data?.error || 'Error al enviar la notificación.';

@@ -248,11 +248,23 @@ export const broadcastLatestNews = async (req: Request, res: Response) => {
             }
         }
 
+        const okTickets = ticketResults.filter(t => t.status === 'ok');
+        const errorTickets = ticketResults.filter(t => t.status === 'error');
+
+        console.log(`📢 [Admin] Push results: ${okTickets.length} OK, ${errorTickets.length} Errors out of ${messages.length} valid Expo tokens.`);
+        if (errorTickets.length > 0) {
+            console.error('[Admin] Push error tickets:', JSON.stringify(errorTickets));
+        }
+
         res.json({
             success: true,
-            message: `Notificación enviada a ${messages.length} dispositivos con token activo.`,
+            message: `Notificación procesada: ${okTickets.length} entregadas a Expo Push, ${errorTickets.length} errores.`,
             activeTokensCount: users.length,
+            validExpoTokensCount: messages.length,
+            okTicketsCount: okTickets.length,
+            errorTicketsCount: errorTickets.length,
             newsTitle: latestNews.titleClickable,
+            errorDetails: errorTickets,
             tickets: ticketResults
         });
 
