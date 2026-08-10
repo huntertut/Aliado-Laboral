@@ -153,6 +153,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             console.log('✅ [AuthContext] User status refreshed:', freshUser.plan);
                             setUser(freshUser);
                             await AsyncStorage.setItem('userData', JSON.stringify(freshUser));
+
+                            // Sync push token on app launch for authenticated user
+                            try {
+                                const { registerForPushNotificationsAsync } = await import('../services/PushNotificationService');
+                                const pushToken = await registerForPushNotificationsAsync();
+                                if (pushToken && !pushToken.startsWith('__DENIED__') && !pushToken.startsWith('__ERROR__')) {
+                                    await axios.post(`${API_URL}/auth/update-push-token`, { pushToken }, {
+                                        headers: { Authorization: `Bearer ${token}` }
+                                    }).catch(() => {});
+                                    await AsyncStorage.setItem('pushToken', pushToken);
+                                }
+                            } catch (pErr) {
+                                console.warn('[AuthContext] Push token auto-sync on loadUser failed:', pErr);
+                            }
                         }
                     } catch (refreshErr: any) {
                         console.warn('[AuthContext] Token verification failed:', refreshErr.response?.status);

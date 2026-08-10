@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers } from '../controllers/adminController';
+import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers, broadcastLatestNews, getVaultCompliance } from '../controllers/adminController';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotionController';
 
 const router = express.Router();
@@ -14,6 +14,7 @@ router.get('/dashboard', getDashboardStats);
 
 // User Management
 router.post('/lawyers/sync-firebase', syncFirebaseLawyers);
+router.post('/notifications/broadcast-latest', broadcastLatestNews);
 router.get('/lawyers', getLawyers);
 router.put('/lawyers/:lawyerId/verify', verifyLawyer);
 router.post('/lawyers/:lawyerId/strike', addStrikeToLawyer);
@@ -27,7 +28,11 @@ router.get('/financials/logs', getPaymentLogs);
 
 // Cases
 router.get('/cases', getAllCases);
+router.get('/cases/pool', getPublicPoolCases); // Bolsa pública: casos sin abogado asignado
 router.post('/cases/:requestId/purge', purgeCaseData);
+
+// Vault Compliance
+router.get('/vault-compliance', getVaultCompliance);
 
 // Security
 router.get('/security/logs', getSecurityLogs);
