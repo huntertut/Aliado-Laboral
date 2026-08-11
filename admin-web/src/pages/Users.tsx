@@ -108,12 +108,13 @@ export default function Users() {
                               `• Noticia: "${d.newsTitle || 'N/A'}"\n` +
                               `• Usuarios con token en BD: ${d.activeTokensCount || 0}\n` +
                               `• Tokens Expo válidos: ${d.validExpoTokensCount || 0}\n` +
-                              `• Entregadas con éxito: ${d.okTicketsCount || 0}`;
+                              `• Entregadas con éxito a Expo: ${d.okTicketsCount || 0}`;
 
-                if (d.errorTicketsCount > 0) {
-                    details += `\n• Errores en Expo: ${d.errorTicketsCount}`;
-                    if (d.errorDetails && d.errorDetails.length > 0) {
-                        details += ` (${d.errorDetails[0]?.message || d.errorDetails[0]?.details?.error || 'Token expirado/inválido'})`;
+                if (d.receiptErrorsCount > 0) {
+                    details += `\n\n⚠️ Error de FCM (Google): ${d.receiptErrorsCount} dispositivo(s) rebotaron.`;
+                    if (d.receiptErrors && d.receiptErrors.length > 0) {
+                        const err = d.receiptErrors[0];
+                        details += `\nCausa: ${err.details?.error || err.message || 'DeviceNotRegistered'}`;
                     }
                 }
                 alert(details);

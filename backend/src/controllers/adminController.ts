@@ -252,19 +252,46 @@ export const broadcastLatestNews = async (req: Request, res: Response) => {
         const errorTickets = ticketResults.filter(t => t.status === 'error');
 
         console.log(`📢 [Admin] Push results: ${okTickets.length} OK, ${errorTickets.length} Errors out of ${messages.length} valid Expo tokens.`);
-        if (errorTickets.length > 0) {
-            console.error('[Admin] Push error tickets:', JSON.stringify(errorTickets));
+        
+        // Fetch delivery receipts from FCM/APNs (Expo Push Receipts)
+        const ticketIds = ticketResults.filter(t => t.status === 'ok' && t.id).map(t => t.id);
+        let receiptErrors: any[] = [];
+        let receiptsResult: any = {};
+
+        if (ticketIds.length > 0) {
+            console.log(`📢 [Admin] Waiting 2.5s for FCM delivery receipts for ${ticketIds.length} tickets...`);
+            await new Promise(r => setTimeout(r, 2500));
+            try {
+                const receiptIdChunks = expo.chunkPushNotificationReceiptIds(ticketIds);
+                for (const chunk of receiptIdChunks) {
+                    const receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+                    console.log('📢 [Admin] Push Receipts:', JSON.stringify(receipts));
+                    receiptsResult = { ...receiptsResult, ...receipts };
+                    
+                    for (const [id, receipt] of Object.entries(receipts as Record<string, any>)) {
+                        if (receipt.status === 'error') {
+                            receiptErrors.push({ id, message: receipt.message, details: receipt.details });
+                        }
+                    }
+                }
+            } catch (rErr) {
+                console.error('[Admin] Error fetching receipts:', rErr);
+            }
         }
 
         res.json({
             success: true,
-            message: `Notificación procesada: ${okTickets.length} entregadas a Expo Push, ${errorTickets.length} errores.`,
+            message: receiptErrors.length > 0 
+                ? `Expo envió la notif pero FCM dio error: ${receiptErrors[0]?.details?.error || receiptErrors[0]?.message}` 
+                : `Notificación procesada: ${okTickets.length} entregadas a Expo Push.`,
             activeTokensCount: users.length,
             validExpoTokensCount: messages.length,
             okTicketsCount: okTickets.length,
             errorTicketsCount: errorTickets.length,
+            receiptErrorsCount: receiptErrors.length,
+            receiptErrors: receiptErrors,
+            receipts: receiptsResult,
             newsTitle: latestNews.titleClickable,
-            errorDetails: errorTickets,
             tickets: ticketResults
         });
 
