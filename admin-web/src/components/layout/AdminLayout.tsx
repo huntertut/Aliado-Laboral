@@ -12,7 +12,8 @@ import {
     Wallet,
     FileText,
     ShieldAlert,
-    Gift
+    Gift,
+    Activity
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -75,6 +76,7 @@ export default function AdminLayout() {
         { name: 'Cursos', path: '/app/courses', icon: BookOpen },
         { name: 'Seguridad', path: '/app/security', icon: ShieldAlert },
         { name: 'Promociones', path: '/app/promotions', icon: Gift },
+        { name: 'Diagnóstico', path: '/app/diagnostics', icon: Activity },
         { name: 'Configuración', path: '/app/settings', icon: Settings },
     ];
 

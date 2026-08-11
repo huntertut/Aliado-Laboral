@@ -12,6 +12,7 @@ import Finance from './pages/Finance';
 import Security from './pages/Security';
 import Promotions from './pages/Promotions';
 import Courses from './pages/Courses';
+import Diagnostics from './pages/Diagnostics';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="security" element={<Security />} />
             <Route path="promotions" element={<Promotions />} />
             <Route path="courses" element={<Courses />} />
+            <Route path="diagnostics" element={<Diagnostics />} />
           </Route>
 
 

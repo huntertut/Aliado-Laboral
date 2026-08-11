@@ -351,3 +351,157 @@ export const getPaymentLogs = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+/**
+ * System Diagnostics Endpoint: Runs full health check across Push Notifications, Firebase Auth, Stripe, and Database
+ */
+export const getSystemDiagnostics = async (req: Request, res: Response) => {
+    try {
+        const { Expo } = await import('expo-server-sdk');
+
+        // 1. Push Notifications Health
+        const usersWithToken = await prisma.user.findMany({
+            where: { pushToken: { not: null } },
+            select: { id: true, email: true, role: true, pushToken: true, createdAt: true }
+        });
+
+        const validExpoTokens = usersWithToken.filter(u => u.pushToken && Expo.isExpoPushToken(u.pushToken));
+        const invalidExpoTokens = usersWithToken.filter(u => u.pushToken && !Expo.isExpoPushToken(u.pushToken));
+
+        const latestNews = await prisma.legalNews.findFirst({
+            where: { isPublished: true },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // 2. Firebase Auth vs SQL Sync Health
+        let firebaseTotalUsers = 0;
+        let firebaseAuthError: string | null = null;
+        try {
+            const listResult = await admin.auth().listUsers(1000);
+            firebaseTotalUsers = listResult.users.length;
+        } catch (fbErr: any) {
+            firebaseAuthError = fbErr.message || String(fbErr);
+        }
+
+        const sqlTotalUsers = await prisma.user.count();
+        const sqlWorkersCount = await prisma.user.count({ where: { role: 'worker' } });
+        const sqlLawyersCount = await prisma.user.count({ where: { role: 'lawyer' } });
+        const sqlPymesCount = await prisma.user.count({ where: { role: 'pyme' } });
+
+        // 3. Stripe & Payments Health
+        const hasStripeSecret = !!process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_live_');
+        const hasStripeWebhookSecret = !!process.env.STRIPE_WEBHOOK_SECRET;
+        const activeSubscriptionsCount = await prisma.workerSubscription.count({ where: { status: 'active' } });
+
+        // 4. Mobile Build Requirements
+        const minVersionConfig = await prisma.systemConfig.findUnique({ where: { key: 'MIN_REQUIRED_VERSION_CODE' } });
+        const minVersionCode = minVersionConfig ? parseInt(minVersionConfig.value, 10) : 96;
+
+        res.json({
+            timestamp: new Date().toISOString(),
+            status: 'ok',
+            pushNotifications: {
+                status: validExpoTokens.length > 0 ? 'healthy' : 'warning',
+                totalUsersWithPushToken: usersWithToken.length,
+                validExpoTokensCount: validExpoTokens.length,
+                invalidTokensCount: invalidExpoTokens.length,
+                latestNewsTitle: latestNews?.titleClickable || 'Sin noticias publicadas',
+                recentTokens: usersWithToken.slice(0, 10).map(u => ({
+                    email: u.email,
+                    role: u.role,
+                    tokenMasked: u.pushToken ? `${u.pushToken.substring(0, 22)}...` : null,
+                    isValidFormat: u.pushToken ? Expo.isExpoPushToken(u.pushToken) : false,
+                    createdAt: u.createdAt
+                }))
+            },
+            firebaseAuth: {
+                status: firebaseAuthError ? 'error' : 'healthy',
+                firebaseTotalUsers,
+                sqlTotalUsers,
+                breakdown: {
+                    workers: sqlWorkersCount,
+                    lawyers: sqlLawyersCount,
+                    pymes: sqlPymesCount
+                },
+                error: firebaseAuthError
+            },
+            stripePayments: {
+                status: hasStripeSecret ? 'healthy' : 'warning',
+                isLiveMode: hasStripeSecret,
+                hasWebhookConfigured: hasStripeWebhookSecret,
+                activeSubscriptionsCount
+            },
+            mobileApp: {
+                minRequiredVersionCode: minVersionCode,
+                status: 'healthy'
+            }
+        });
+    } catch (error: any) {
+        console.error('System diagnostics error:', error);
+        res.status(500).json({ error: 'Error al ejecutar diagnóstico del sistema', details: error.message });
+    }
+};
+
+/**
+ * Test Push Notification to Specific User by Email
+ */
+export const testUserPushNotification = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Debes proporcionar un correo de usuario' });
+        }
+
+        const user = await prisma.user.findFirst({
+            where: { email: { equals: email.toLowerCase() } }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: `Usuario ${email} no encontrado en la base de datos.` });
+        }
+
+        if (!user.pushToken) {
+            return res.status(400).json({ error: `El usuario ${email} no tiene un pushToken registrado. Debe abrir la app móvil e iniciar sesión.` });
+        }
+
+        const { Expo } = await import('expo-server-sdk');
+        const expo = new Expo();
+
+        if (!Expo.isExpoPushToken(user.pushToken)) {
+            return res.status(400).json({ error: `El token del usuario ${email} (${user.pushToken}) no tiene un formato válido de Expo.` });
+        }
+
+        const message = {
+            to: user.pushToken,
+            sound: 'default' as const,
+            title: '🧪 Prueba de Notificación Push',
+            body: `Hola ${user.fullName}, esta es una notificación de prueba enviada desde el Panel Admin.`,
+            data: { type: 'test_notification', timestamp: new Date().toISOString() }
+        };
+
+        const tickets = await expo.sendPushNotificationsAsync([message]);
+        const ticket = tickets[0];
+
+        let receiptInfo: any = null;
+        if (ticket.status === 'ok' && ticket.id) {
+            await new Promise(r => setTimeout(r, 2500));
+            const receipts = await expo.getPushNotificationReceiptsAsync([ticket.id]);
+            receiptInfo = receipts[ticket.id];
+        }
+
+        res.json({
+            success: true,
+            userEmail: user.email,
+            userRole: user.role,
+            pushTokenMasked: `${user.pushToken.substring(0, 22)}...`,
+            ticket,
+            receipt: receiptInfo,
+            message: receiptInfo?.status === 'error'
+                ? `Expo envió la notif pero FCM dio error: ${receiptInfo.details?.error || receiptInfo.message}`
+                : `Notificación enviada con éxito al dispositivo de ${user.email}.`
+        });
+    } catch (error: any) {
+        console.error('Test push error:', error);
+        res.status(500).json({ error: 'Error al enviar notificación de prueba', details: error.message });
+    }
+};
