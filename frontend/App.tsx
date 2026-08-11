@@ -1,4 +1,4 @@
-// Production Build v1.3.2 - versionCode-based update check
+// Production Build v1.3.3 - versionCode-based update check
 import React, { useState, useEffect } from 'react';
 import 'react-native-gesture-handler';
 import { Platform } from 'react-native';
