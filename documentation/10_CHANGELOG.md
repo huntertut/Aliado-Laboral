@@ -8,10 +8,9 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ## [v1.3.3] - 10 Agosto 2026 (Sincronización Total de Usuarios Firebase Auth + Preservación Estricta de Roles + Reemisión de Notificaciones Push)
 
-- **feat (Backend/Admin):** Implementada sincronización total de usuarios desde Firebase Admin SDK (`admin.auth().listUsers()`) en `adminController.ts`. Restaura usuarios de Firebase faltantes en SQLite respetando estrictamente sus Custom Claims (`userRecord.customClaims?.role`) y `UserRole`. Preserva de forma inquebrantable el `role` existente en la base de datos SQL para impedir cualquier intercambio indeseado entre trabajadores, abogados o PyMEs.
-- **feat (Backend/Admin):** Creado el endpoint `POST /admin/notifications/broadcast-latest` para reemitir la última noticia laboral publicada a todos los tokens de notificaciones push activos.
-- **feat (Admin-Web/Usuarios):** Actualizado el botón *"Sincronizar Firebase"* en `admin-web/src/pages/Users.tsx` para sincronizar trabajadores, abogados y PyMEs con reporte de estadísticas detalladas.
-- **feat (Mobile/AuthContext):** Agregada auto-sincronización del `pushToken` dentro del ciclo `loadUser` al iniciar la app con sesión existente.
+- **feat (Admin-Web/Diagnóstico):** Creada la nueva pantalla **Centro de Diagnóstico** (`admin-web/src/pages/Diagnostics.tsx`) con pestañas e indicadores de estado en vivo para Notificaciones Push (tokens válidos vs inválidos), Sincronización Firebase Auth vs SQL, Pasarela Stripe Live y Requerimientos Móviles. Incluye herramienta de prueba de envío Push por correo electrónico de usuario y recibos de entrega FCM en tiempo real.
+- **feat (Backend/Diagnóstico):** Agregados los endpoints `GET /admin/diagnostics/health` y `POST /admin/diagnostics/test-push` en `adminController.ts` y `adminRoutes.ts`.
+- **feat (Mobile/Config):** Copiado `google-services.json` a la raíz de `frontend/` para resolver resolución de archivos en builds EAS.
 
 - **fix (Mobile/Android):** Agregados los permisos `POST_NOTIFICATIONS`, `VIBRATE` y `RECEIVE_BOOT_COMPLETED` en `app.json` y `AndroidManifest.xml`. Sin `POST_NOTIFICATIONS` declarado explícitamente en el manifiesto nativo de Android 13+ (targetSdkVersion 36), el sistema operativo denegaba y bloqueaba automáticamente la ventana de permiso y los banners emergentes de notificaciones push.
 
