@@ -398,6 +398,11 @@ export const updatePushToken = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Push token is required' });
         }
 
+        if (pushToken.startsWith('__ERROR__') || pushToken.startsWith('__DENIED__')) {
+            console.warn(`⚠️ Intento de guardar string de error/denegado como pushToken para usuario ${userId}: ${pushToken}`);
+            return res.status(400).json({ error: 'Invalid push token format' });
+        }
+
         await prisma.user.update({
             where: { id: userId },
             data: { pushToken }

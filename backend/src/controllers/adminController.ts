@@ -406,10 +406,11 @@ export const getSystemDiagnostics = async (req: Request, res: Response) => {
                 validExpoTokensCount: validExpoTokens.length,
                 invalidTokensCount: invalidExpoTokens.length,
                 latestNewsTitle: latestNews?.titleClickable || 'Sin noticias publicadas',
-                recentTokens: usersWithToken.slice(0, 10).map(u => ({
+                recentTokens: usersWithToken.slice(0, 20).map(u => ({
                     email: u.email,
                     role: u.role,
-                    tokenMasked: u.pushToken ? `${u.pushToken.substring(0, 22)}...` : null,
+                    fullToken: u.pushToken,
+                    tokenMasked: u.pushToken ? (u.pushToken.length > 25 ? `${u.pushToken.substring(0, 25)}...` : u.pushToken) : null,
                     isValidFormat: u.pushToken ? Expo.isExpoPushToken(u.pushToken) : false,
                     createdAt: u.createdAt
                 }))
@@ -503,5 +504,38 @@ export const testUserPushNotification = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Test push error:', error);
         res.status(500).json({ error: 'Error al enviar notificación de prueba', details: error.message });
+    }
+};
+
+/**
+ * Purge invalid push tokens (e.g. error strings starting with __ERROR__ or __DENIED__)
+ */
+export const purgeInvalidPushTokens = async (req: Request, res: Response) => {
+    try {
+        const users = await prisma.user.findMany({
+            where: { pushToken: { not: null } },
+            select: { id: true, email: true, pushToken: true }
+        });
+
+        const invalidUsers = users.filter(u => 
+            u.pushToken && (u.pushToken.startsWith('__ERROR__') || u.pushToken.startsWith('__DENIED__'))
+        );
+
+        for (const user of invalidUsers) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { pushToken: null }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: `Se depuraron ${invalidUsers.length} tokens de error corruptos en la base de datos SQL.`,
+            purgedCount: invalidUsers.length,
+            purgedEmails: invalidUsers.map(u => u.email)
+        });
+    } catch (error: any) {
+        console.error('Purge invalid tokens error:', error);
+        res.status(500).json({ error: 'Error al depurar tokens de error' });
     }
 };

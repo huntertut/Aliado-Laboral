@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers, broadcastLatestNews, getVaultCompliance, getSystemDiagnostics, testUserPushNotification } from '../controllers/adminController';
+import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers, broadcastLatestNews, getVaultCompliance, getSystemDiagnostics, testUserPushNotification, purgeInvalidPushTokens } from '../controllers/adminController';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotionController';
 
 const router = express.Router();
@@ -15,6 +15,7 @@ router.get('/dashboard', getDashboardStats);
 // System Diagnostics & Health Check
 router.get('/diagnostics/health', getSystemDiagnostics);
 router.post('/diagnostics/test-push', testUserPushNotification);
+router.post('/diagnostics/purge-invalid-tokens', purgeInvalidPushTokens);
 
 // User Management
 router.post('/lawyers/sync-firebase', syncFirebaseLawyers);

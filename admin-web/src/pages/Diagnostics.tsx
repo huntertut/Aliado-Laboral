@@ -10,18 +10,28 @@ import {
     Users,
     CreditCard,
     Smartphone,
-    Send
+    Send,
+    Trash2,
+    X,
+    Info,
+    Copy,
+    Check
 } from 'lucide-react';
 
 export default function Diagnostics() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
+    const [purging, setPurging] = useState(false);
 
     // Test push state
     const [testEmail, setTestEmail] = useState('');
     const [testLoading, setTestLoading] = useState(false);
     const [testResult, setTestResult] = useState<any>(null);
+
+    // Selected device modal state
+    const [selectedDevice, setSelectedDevice] = useState<any>(null);
+    const [copied, setCopied] = useState(false);
 
     const fetchDiagnostics = async () => {
         setLoading(true);
@@ -54,14 +64,31 @@ export default function Diagnostics() {
         }
     };
 
-    const handleSendTestPush = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!testEmail.trim()) return;
+    const handlePurgeTokens = async () => {
+        if (!window.confirm('¿Depurar tokens corruptos de la base de datos SQL?\nEsto eliminará los valores con error para que los usuarios puedan volver a registrar su token limpio al abrir la app.')) return;
+        try {
+            setPurging(true);
+            const res = await api.post('/admin/diagnostics/purge-invalid-tokens');
+            alert(`🧹 ${res.data.message}`);
+            fetchDiagnostics();
+        } catch (err: any) {
+            console.error('Error purging tokens:', err);
+            alert('Error al depurar tokens.');
+        } finally {
+            setPurging(false);
+        }
+    };
+
+    const handleSendTestPush = async (e?: React.FormEvent, customEmail?: string) => {
+        if (e) e.preventDefault();
+        const target = customEmail || testEmail;
+        if (!target.trim()) return;
+
         setTestLoading(true);
         setTestResult(null);
 
         try {
-            const res = await api.post('/admin/diagnostics/test-push', { email: testEmail.trim() });
+            const res = await api.post('/admin/diagnostics/test-push', { email: target.trim() });
             setTestResult({ success: true, data: res.data });
         } catch (err: any) {
             const msg = err?.response?.data?.error || 'Error al enviar notificación de prueba.';
@@ -69,6 +96,12 @@ export default function Diagnostics() {
         } finally {
             setTestLoading(false);
         }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     const renderStatusBadge = (status: string) => {
@@ -144,9 +177,9 @@ export default function Diagnostics() {
                                 <span className="font-semibold text-emerald-600">{data.pushNotifications.validExpoTokensCount}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Última Noticia:</span>
-                                <span className="font-medium text-slate-700 truncate max-w-[140px]" title={data.pushNotifications.latestNewsTitle}>
-                                    {data.pushNotifications.latestNewsTitle}
+                                <span className="text-slate-500">Tokens Corruptos:</span>
+                                <span className={`font-semibold ${data.pushNotifications.invalidTokensCount > 0 ? 'text-red-600' : 'text-slate-700'}`}>
+                                    {data.pushNotifications.invalidTokensCount}
                                 </span>
                             </div>
                         </div>
@@ -292,12 +325,15 @@ export default function Diagnostics() {
 
                 {/* Quick Actions & Recent Tokens */}
                 <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4">
-                    <h2 className="text-lg font-bold text-slate-800">Acciones de Mantenimiento</h2>
-                    <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-slate-800">Acciones de Mantenimiento</h2>
+                        <span className="text-xs text-slate-400">Haz clic en un dispositivo para ver detalles</span>
+                    </div>
+                    <div className="space-y-2">
                         <button
                             onClick={handleSyncFirebase}
                             disabled={syncing}
-                            className="w-full p-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-between border border-indigo-100"
+                            className="w-full p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-between border border-indigo-100"
                         >
                             <span className="flex items-center">
                                 <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
@@ -307,17 +343,43 @@ export default function Diagnostics() {
                                 Ejecutar
                             </span>
                         </button>
+                        <button
+                            onClick={handlePurgeTokens}
+                            disabled={purging}
+                            className="w-full p-2.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-medium text-sm transition-colors flex items-center justify-between border border-red-100"
+                        >
+                            <span className="flex items-center">
+                                <Trash2 className={`w-4 h-4 mr-2 ${purging ? 'animate-spin' : ''}`} />
+                                Limpiar Tokens de Error Corruptos (`__ERROR__`)
+                            </span>
+                            <span className="text-xs font-semibold bg-red-200 text-red-800 px-2 py-0.5 rounded">
+                                Limpiar
+                            </span>
+                        </button>
                     </div>
 
                     {data?.pushNotifications?.recentTokens && (
-                        <div className="pt-4 border-t border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Dispositivos Recientes Registrados</h3>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        <div className="pt-3 border-t border-slate-100">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    Dispositivos Recientes Registrados (Clic para inspeccionar)
+                                </h3>
+                            </div>
+                            <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                                 {data.pushNotifications.recentTokens.map((t: any, idx: number) => (
-                                    <div key={idx} className="flex items-center justify-between text-xs p-2 bg-slate-50 rounded border border-slate-100">
+                                    <div
+                                        key={idx}
+                                        onClick={() => setSelectedDevice(t)}
+                                        className="flex items-center justify-between text-xs p-2.5 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 rounded-lg cursor-pointer transition-all shadow-2xs group"
+                                    >
                                         <div>
-                                            <p className="font-semibold text-slate-700">{t.email} ({t.role})</p>
-                                            <p className="text-slate-400 font-mono">{t.tokenMasked || 'Token Nulo'}</p>
+                                            <p className="font-semibold text-slate-800 group-hover:text-blue-700 flex items-center">
+                                                {t.email}
+                                                <span className="ml-1.5 font-normal text-[10px] text-slate-400">({t.role})</span>
+                                            </p>
+                                            <p className="text-slate-500 font-mono text-[11px] truncate max-w-[220px]">
+                                                {t.tokenMasked || 'Token Nulo'}
+                                            </p>
                                         </div>
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.isValidFormat ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                                             {t.isValidFormat ? 'VÁLIDO' : 'INVÁLIDO'}
@@ -329,6 +391,80 @@ export default function Diagnostics() {
                     )}
                 </div>
             </div>
+
+            {/* Selected Device Inspection Modal */}
+            {selectedDevice && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 space-y-4 relative">
+                        <button
+                            onClick={() => setSelectedDevice(null)}
+                            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-center space-x-3">
+                            <div className={`p-3 rounded-xl ${selectedDevice.isValidFormat ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                {selectedDevice.isValidFormat ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-800">Detalle de Dispositivo</h3>
+                                <p className="text-xs text-slate-500">{selectedDevice.email} ({selectedDevice.role})</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                                    Token Push / Cadena de Error en BD:
+                                </label>
+                                <div className="p-3 bg-slate-900 text-slate-100 font-mono text-xs rounded-lg break-all relative group">
+                                    {selectedDevice.fullToken || 'null'}
+                                    {selectedDevice.fullToken && (
+                                        <button
+                                            onClick={() => copyToClipboard(selectedDevice.fullToken)}
+                                            className="absolute top-2 right-2 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs flex items-center"
+                                        >
+                                            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Diagnosis Box */}
+                            <div className={`p-3.5 rounded-xl border text-xs leading-relaxed ${selectedDevice.isValidFormat ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
+                                <p className="font-bold flex items-center mb-1">
+                                    <Info className="w-4 h-4 mr-1.5 shrink-0" />
+                                    {selectedDevice.isValidFormat ? 'Token de Expo Activo y Válido' : 'Diagnóstico de Token Inválido:'}
+                                </p>
+                                {selectedDevice.isValidFormat ? (
+                                    <p>Este token tiene un formato `ExponentPushToken[...]` perfecto. Puedes enviarle una notificación de prueba directamente.</p>
+                                ) : (
+                                    <div className="space-y-1 mt-1">
+                                        <p>• La columna `pushToken` en la base de datos contiene una cadena de error obtenida al arrancar la app en el celular.</p>
+                                        <p>• <strong>Causa habitual:</strong> Permisos denegados en el dispositivo o app corrida en emulador/versión antigua.</p>
+                                        <p>• <strong>Solución:</strong> Da clic en "Limpiar Tokens Corruptos" y pide al usuario abrir la app móvil con el Build 96 instalado.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 pt-2">
+                            <button
+                                onClick={() => {
+                                    setTestEmail(selectedDevice.email);
+                                    setSelectedDevice(null);
+                                    handleSendTestPush(undefined, selectedDevice.email);
+                                }}
+                                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition-colors shadow-sm flex items-center justify-center"
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                Probar Envio Push a {selectedDevice.email.split('@')[0]}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
