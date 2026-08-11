@@ -258,7 +258,7 @@ export default function Diagnostics() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-slate-500">Estado de Bloqueo:</span>
-                                <span className="font-medium text-emerald-600">Activo (Builds &lt;96 bloqueadas)</span>
+                                <span className="font-medium text-emerald-600">Activo (Builds &lt;97 bloqueadas)</span>
                             </div>
                         </div>
                     </div>

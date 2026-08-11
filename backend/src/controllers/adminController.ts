@@ -395,7 +395,7 @@ export const getSystemDiagnostics = async (req: Request, res: Response) => {
 
         // 4. Mobile Build Requirements
         const minVersionConfig = await prisma.systemConfig.findUnique({ where: { key: 'MIN_REQUIRED_VERSION_CODE' } });
-        const minVersionCode = minVersionConfig ? parseInt(minVersionConfig.value, 10) : 96;
+        const minVersionCode = minVersionConfig ? parseInt(minVersionConfig.value, 10) : 97;
 
         res.json({
             timestamp: new Date().toISOString(),
