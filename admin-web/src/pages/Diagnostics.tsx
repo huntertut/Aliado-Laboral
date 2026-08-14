@@ -15,7 +15,11 @@ import {
     X,
     Info,
     Copy,
-    Check
+    Check,
+    Shield,
+    Clock,
+    PlayCircle,
+    Zap
 } from 'lucide-react';
 
 export default function Diagnostics() {
@@ -33,6 +37,13 @@ export default function Diagnostics() {
     const [selectedDevice, setSelectedDevice] = useState<any>(null);
     const [copied, setCopied] = useState(false);
 
+    // Level B Monitoring state
+    const [monitorData, setMonitorData] = useState<any>(null);
+    const [monitorLoading, setMonitorLoading] = useState(true);
+    const [monitorRunning, setMonitorRunning] = useState(false);
+    const [monitorReport, setMonitorReport] = useState<any>(null);
+    const [resolvingId, setResolvingId] = useState<string | null>(null);
+
     const fetchDiagnostics = async () => {
         setLoading(true);
         try {
@@ -45,9 +56,48 @@ export default function Diagnostics() {
         }
     };
 
+    const fetchMonitoringReport = async () => {
+        setMonitorLoading(true);
+        try {
+            const res = await api.get('/admin/diagnostics/monitoring-report');
+            setMonitorData(res.data);
+        } catch (err) {
+            console.error('Error fetching monitoring report:', err);
+        } finally {
+            setMonitorLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchDiagnostics();
+        fetchMonitoringReport();
     }, []);
+
+    const handleRunMonitor = async () => {
+        setMonitorRunning(true);
+        setMonitorReport(null);
+        try {
+            const res = await api.post('/admin/diagnostics/run-monitor-now');
+            setMonitorReport(res.data.report);
+            await fetchMonitoringReport();
+        } catch (err: any) {
+            alert('Error al ejecutar monitoreo: ' + (err?.response?.data?.error || err.message));
+        } finally {
+            setMonitorRunning(false);
+        }
+    };
+
+    const handleResolveAlert = async (alertId: string) => {
+        setResolvingId(alertId);
+        try {
+            await api.put(`/admin/security/alerts/${alertId}/resolve`);
+            await fetchMonitoringReport();
+        } catch (err: any) {
+            alert('Error al resolver la alerta.');
+        } finally {
+            setResolvingId(null);
+        }
+    };
 
     const handleSyncFirebase = async () => {
         if (!window.confirm('¿Ejecutar sincronización completa con Firebase Auth?')) return;
@@ -127,6 +177,22 @@ export default function Diagnostics() {
                 Error
             </span>
         );
+    };
+
+    const renderCheckBadge = (status: 'ok' | 'warning' | 'critical') => {
+        if (status === 'ok') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><CheckCircle2 className="w-3 h-3" />OK</span>;
+        if (status === 'warning') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><AlertTriangle className="w-3 h-3" />Atención</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700"><XCircle className="w-3 h-3" />Crítico</span>;
+    };
+
+    const renderAlertSeverityBadge = (severity: string) => {
+        const map: Record<string, string> = {
+            low: 'bg-slate-100 text-slate-600',
+            medium: 'bg-amber-100 text-amber-700',
+            high: 'bg-orange-100 text-orange-700',
+            critical: 'bg-red-100 text-red-700'
+        };
+        return <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${map[severity] || map.medium}`}>{severity}</span>;
     };
 
     return (
@@ -465,6 +531,164 @@ export default function Diagnostics() {
                     </div>
                 </div>
             )}
+
+            {/* ═══════════════════════════════════════════════════════
+                LEVEL B — SISTEMA DE MONITOREO PROACTIVO
+            ═══════════════════════════════════════════════════════ */}
+
+            {/* Semáforo Global de Salud del Sistema */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
+                            <Shield className="w-5 h-5 text-violet-600" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-semibold text-slate-900">Monitoreo Automático Proactivo</h2>
+                            <p className="text-xs text-slate-500">
+                                {monitorData?.lastRun
+                                    ? `Último chequeo: ${new Date(monitorData.lastRun).toLocaleString('es-MX')} · ${monitorData.activeCount} alerta(s) activa(s)`
+                                    : 'Nunca ejecutado — presiona el botón para iniciar'}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleRunMonitor}
+                        disabled={monitorRunning}
+                        className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-violet-300 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+                    >
+                        {monitorRunning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+                        {monitorRunning ? 'Analizando...' : 'Ejecutar Monitoreo'}
+                    </button>
+                </div>
+
+                {/* Last run status strip */}
+                {monitorData?.lastStatus && (
+                    <div className={`px-6 py-2 text-xs font-medium flex items-center gap-2 ${
+                        monitorData.lastStatus === 'ok' ? 'bg-emerald-50 text-emerald-700' :
+                        monitorData.lastStatus === 'warning' ? 'bg-amber-50 text-amber-700' :
+                        'bg-red-50 text-red-700'
+                    }`}>
+                        {monitorData.lastStatus === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5" /> : monitorData.lastStatus === 'warning' ? <AlertTriangle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                        Estado general del último análisis:
+                        <span className="font-bold uppercase">{monitorData.lastStatus === 'ok' ? '✅ Todo en orden' : monitorData.lastStatus === 'warning' ? '⚠️ Hay advertencias' : '🚨 Estado crítico'}</span>
+                        {monitorData.lastAlertsCreated > 0 && <span className="ml-auto">· {monitorData.lastAlertsCreated} alerta(s) creada(s)</span>}
+                    </div>
+                )}
+
+                {/* Live report from last manual run */}
+                {monitorReport && (
+                    <div className="px-6 py-4 border-t border-slate-100">
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Resultado del Análisis — {new Date(monitorReport.runAt).toLocaleTimeString('es-MX')}</p>
+                        <div className="space-y-2">
+                            {monitorReport.checks.map((check: any) => (
+                                <div key={check.id} className={`flex items-start gap-3 p-3 rounded-xl text-sm ${
+                                    check.status === 'ok' ? 'bg-emerald-50 border border-emerald-100' :
+                                    check.status === 'warning' ? 'bg-amber-50 border border-amber-100' :
+                                    'bg-red-50 border border-red-100'
+                                }`}>
+                                    <span className="shrink-0 mt-0.5">{renderCheckBadge(check.status)}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-semibold text-slate-700">[{check.id}] {check.name}</span>
+                                        <p className="text-slate-600 mt-0.5 text-xs leading-relaxed">{check.message}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Alertas Activas */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center">
+                            <Zap className="w-5 h-5 text-rose-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-semibold text-slate-900">Alertas Activas del Sistema</h2>
+                            <p className="text-xs text-slate-500">Incidencias detectadas por el monitoreo automático sin resolver</p>
+                        </div>
+                    </div>
+                    {(monitorData?.activeCount ?? 0) > 0 && (
+                        <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">{monitorData.activeCount} activa(s)</span>
+                    )}
+                </div>
+
+                <div className="px-6 py-4">
+                    {monitorLoading ? (
+                        <div className="flex items-center justify-center py-8 text-slate-400">
+                            <RefreshCw className="w-5 h-5 animate-spin mr-2" />
+                            <span className="text-sm">Cargando alertas...</span>
+                        </div>
+                    ) : !monitorData?.activeAlerts?.length ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                            <CheckCircle2 className="w-10 h-10 text-emerald-400 mb-3" />
+                            <p className="text-sm font-medium text-emerald-600">✅ Sin alertas activas</p>
+                            <p className="text-xs text-slate-400 mt-1">Todos los indicadores del sistema están en orden.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {monitorData.activeAlerts.map((alert: any) => (
+                                <div key={alert.id} className={`p-4 rounded-xl border ${
+                                    alert.severity === 'critical' ? 'bg-red-50 border-red-200' :
+                                    alert.severity === 'high' ? 'bg-orange-50 border-orange-200' :
+                                    'bg-amber-50 border-amber-200'
+                                }`}>
+                                    <div className="flex items-start gap-3">
+                                        <div className="shrink-0 mt-0.5">
+                                            {alert.severity === 'critical' || alert.severity === 'high'
+                                                ? <XCircle className="w-4 h-4 text-red-500" />
+                                                : <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-mono text-slate-500">{alert.type}</span>
+                                                {renderAlertSeverityBadge(alert.severity)}
+                                            </div>
+                                            <p className="text-sm text-slate-700 leading-relaxed">{alert.message}</p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <Clock className="w-3 h-3 text-slate-400" />
+                                                <span className="text-xs text-slate-400">{new Date(alert.createdAt).toLocaleString('es-MX')}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleResolveAlert(alert.id)}
+                                            disabled={resolvingId === alert.id}
+                                            title="Marcar como resuelta"
+                                            className="shrink-0 p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 transition-colors disabled:opacity-50"
+                                        >
+                                            {resolvingId === alert.id
+                                                ? <RefreshCw className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                                                : <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Recently resolved alerts (last 7 days) */}
+                    {(monitorData?.recentResolvedAlerts?.length ?? 0) > 0 && (
+                        <div className="mt-6">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Resueltas recientemente (últimos 7 días)</p>
+                            <div className="space-y-2">
+                                {monitorData.recentResolvedAlerts.map((alert: any) => (
+                                    <div key={alert.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 opacity-70">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-slate-600 truncate">{alert.message}</p>
+                                            <p className="text-xs text-slate-400">Resuelta {new Date(alert.resolvedAt).toLocaleString('es-MX')}</p>
+                                        </div>
+                                        <span className="shrink-0 text-xs font-mono text-slate-400">{alert.type}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

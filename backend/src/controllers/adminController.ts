@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { runDailyHealthCheck } from '../services/monitoringService';
 
 const prisma = new PrismaClient();
+
 
 // Re-export modularized endpoints for backwards compatibility and router integrity
 export { getDashboardStats, getFinancialStats } from './adminStatsController';
@@ -537,5 +539,65 @@ export const purgeInvalidPushTokens = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Purge invalid tokens error:', error);
         res.status(500).json({ error: 'Error al depurar tokens de error' });
+    }
+};
+
+/**
+ * GET /admin/diagnostics/monitoring-report
+ * Returns the last monitoring run info + active unresolved AdminAlerts
+ */
+export const getMonitoringReport = async (req: Request, res: Response) => {
+    try {
+        // Get last run metadata from SystemConfig
+        const [lastRun, lastStatus, lastAlerts] = await Promise.all([
+            prisma.systemConfig.findUnique({ where: { key: 'LAST_MONITOR_RUN' } }),
+            prisma.systemConfig.findUnique({ where: { key: 'LAST_MONITOR_STATUS' } }),
+            prisma.systemConfig.findUnique({ where: { key: 'LAST_MONITOR_ALERTS' } }),
+        ]);
+
+        // Get all active (unresolved) alerts
+        const activeAlerts = await prisma.adminAlert.findMany({
+            where: { isResolved: false },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+        });
+
+        // Get resolved alerts from last 7 days for history
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const recentResolved = await prisma.adminAlert.findMany({
+            where: { isResolved: true, resolvedAt: { gte: sevenDaysAgo } },
+            orderBy: { resolvedAt: 'desc' },
+            take: 20
+        });
+
+        res.json({
+            lastRun: lastRun?.value || null,
+            lastStatus: lastStatus?.value || 'unknown',
+            lastAlertsCreated: parseInt(lastAlerts?.value || '0', 10),
+            activeAlerts,
+            recentResolvedAlerts: recentResolved,
+            activeCount: activeAlerts.length
+        });
+    } catch (error: any) {
+        console.error('Get monitoring report error:', error);
+        res.status(500).json({ error: 'Error al obtener reporte de monitoreo', details: error.message });
+    }
+};
+
+/**
+ * POST /admin/diagnostics/run-monitor-now
+ * Triggers an immediate health check (same as the 8 AM cron, but on-demand)
+ */
+export const runMonitorNow = async (req: Request, res: Response) => {
+    try {
+        console.log('🔍 [Admin] Manual monitoring run triggered from Admin Web...');
+        const report = await runDailyHealthCheck();
+        res.json({
+            success: true,
+            report
+        });
+    } catch (error: any) {
+        console.error('Run monitor now error:', error);
+        res.status(500).json({ error: 'Error al ejecutar monitoreo manual', details: error.message });
     }
 };

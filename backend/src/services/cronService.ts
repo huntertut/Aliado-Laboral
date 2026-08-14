@@ -3,11 +3,27 @@ import { PrismaClient } from '@prisma/client';
 import { startScheduler as startNewsScheduler } from './newsScheduler';
 import { addBusinessDays, getBusinessDaysDiff, getWorkerDaysDiff } from '../utils/businessDays';
 import { sendPushNotification } from './notificationService';
+import { runDailyHealthCheck } from './monitoringService';
 
 const prisma = new PrismaClient();
 
 // Start News Scheduler
 startNewsScheduler();
+
+// ─────────────────────────────────────────────────────────────────────
+// MONITOREO AUTOMÁTICO: Se ejecuta cada día a las 8:00 AM
+// Revisa 8 indicadores de salud del sistema y crea AdminAlerts si hay problemas
+// ─────────────────────────────────────────────────────────────────────
+cron.schedule('0 8 * * *', async () => {
+    console.log('🔍 [CRON 8AM] Iniciando monitoreo automático del sistema...');
+    try {
+        const report = await runDailyHealthCheck();
+        const icon = report.overallStatus === 'ok' ? '✅' : report.overallStatus === 'warning' ? '⚠️' : '🚨';
+        console.log(`${icon} [CRON 8AM] Monitoreo completado. Estado: ${report.overallStatus.toUpperCase()} | Alertas creadas: ${report.alertsCreated}`);
+    } catch (err) {
+        console.error('❌ [CRON 8AM] Error crítico en el monitoreo automático:', err);
+    }
+});
 
 // Se ejecuta todos los días a las 2:00 AM
 cron.schedule('0 2 * * *', async () => {
