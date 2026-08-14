@@ -795,5 +795,33 @@ sqlite3 /root/Aliado-Laboral/backend/prisma/dev.db "SELECT id, email, role, push
 ```
 Si el resultado es 0 usuarios con token, la app móvil debe llamar a `PUT /api/auth/profile` o el endpoint de registro de token para asociar el `ExponentPushToken[...]` al usuario activo tras iniciar sesión.
 
+---
+
+## 22. Mobile / Android: Error `__ERROR__: Default FirebaseApp is not initialized in this process com.aliadolaboral.app` (Dispositivos Huawei Nova 12i / Android)
+
+**Síntoma:**
+Al iniciar sesión o abrir la app móvil en Android, la columna `pushToken` en la base de datos o en el Centro de Diagnóstico registra la cadena `__ERROR__: Default FirebaseApp is not initialized in this process com.aliadolaboral.app. Make sure to call FirebaseApp.initializeApp(Context) first.`, lo que impide que el usuario reciba notificaciones push.
+
+**Causa Raíz:**
+1. **Falta del plugin nativo `google-services` en Gradle:** Al compilar binarios AAB nativos con EAS / React Native bare workflow, la omisión de `classpath('com.google.gms:google-services:4.4.2')` en `frontend/android/build.gradle` o de `apply plugin: 'com.google.gms.google-services'` en `frontend/android/app/build.gradle` provoca que Gradle no inyecte el inicializador nativo `FirebaseApp.initializeApp(context)` al arrancar la app en Android.
+2. **Desincronización de `versionCode` nativo:** `frontend/android/app/build.gradle` tiene `versionCode` e `versionName` estáticos en el bloque `defaultConfig`. Si solo se modifica `app.json`, Gradle sobreescribe la versión leyendo su propio archivo y compila binarios con el versionCode anterior.
+
+**Solución Obligatoria (Verificada en Build 98):**
+1. **`frontend/android/build.gradle`**:
+   ```groovy
+   buildscript {
+       dependencies {
+           classpath('com.google.gms:google-services:4.4.2')
+       }
+   }
+   ```
+2. **`frontend/android/app/build.gradle`**:
+   ```groovy
+   // Al final del archivo:
+   apply plugin: 'com.google.gms.google-services'
+   ```
+3. **Ubicación de `google-services.json`**: Mantener el archivo rastreado en Git tanto en `frontend/google-services.json` como en `frontend/android/app/google-services.json`.
+4. **Sincronización Estricta de Versiones**: Al incrementar el número de build, cambiar **simultáneamente** `versionCode` en `frontend/app.json` y `frontend/android/app/build.gradle`.
+
 
 

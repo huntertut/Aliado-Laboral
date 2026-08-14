@@ -4,7 +4,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 ---
 
-**Último versionCode en Producción: 96 (v1.3.2) — 10 Agosto 2026**
+**Último versionCode en Producción: 98 (v1.3.4) — 14 Agosto 2026**
+
+## [v1.3.4] - 14 Agosto 2026 (Build 98: Plugin Nativo Google Services Gradle & Solución Notificaciones Huawei Nova 12i)
+
+- **Fix Crítico (Mobile/Android):** Resuelto el error `Default FirebaseApp is not initialized in this process com.aliadolaboral.app` en dispositivos Huawei Nova 12i mediante la adición explícita de `classpath('com.google.gms:google-services:4.4.2')` en `frontend/android/build.gradle` y `apply plugin: 'com.google.gms.google-services'` en `frontend/android/app/build.gradle`.
+- **Fix (Mobile/Build):** Sincronizados `versionCode 98` y `versionName "1.3.4"` tanto en `frontend/app.json` como en `frontend/android/app/build.gradle` para prevenir que Gradle sobreescriba la versión compilada por EAS.
+- **feat (Admin-Web/Diagnóstico):** Agregada ventana modal interactiva al hacer clic en cualquier dispositivo de la lista *"Dispositivos Recientes Registrados"* en `Diagnostics.tsx`. Muestra el token/error completo, diagnostica la causa, permite copiar al portapapeles y probar notificaciones de forma individual.
+- **feat (Backend/Admin):** Implementados endpoints `POST /admin/diagnostics/purge-invalid-tokens` (depura tokens de error `__ERROR__` en SQLite) y filtro de seguridad en `authController.ts` que rechaza guardar cadenas de error como tokens push.
 
 ## [v1.3.3] - 10 Agosto 2026 (Sincronización Total de Usuarios Firebase Auth + Preservación Estricta de Roles + Reemisión de Notificaciones Push)
 
