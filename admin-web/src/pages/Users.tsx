@@ -79,6 +79,23 @@ export default function Users() {
         }
     };
 
+    const handleChangeRole = async (userId: string, name: string, newRole: 'lawyer' | 'worker' | 'pyme') => {
+        const roleLabels = { lawyer: 'ABOGADO', worker: 'TRABAJADOR', pyme: 'EMPRESA PyME' };
+        if (!window.confirm(`¿Cambiar el rol de "${name}" a ${roleLabels[newRole]}?\n\nEsto creará su perfil en la base de datos SQL y actualizará permanentemente Firebase Auth para que no se sobreescriba.`)) return;
+
+        try {
+            setLoading(true);
+            const res = await api.put(`/admin/users/${userId}/role`, { newRole });
+            alert(`✅ ${res.data.message}`);
+            fetchUsers();
+        } catch (error: any) {
+            console.error('Error changing role:', error);
+            alert('Error al cambiar el rol: ' + (error?.response?.data?.error || error.message));
+            setLoading(false);
+        }
+    };
+
+
     const handleSyncFirebase = async () => {
         if (window.confirm('¿Sincronizar todos los usuarios desde Firebase Auth? Esto restaurará trabajadores, abogados y PyMEs manteniendo sus roles intactos.')) {
             try {
@@ -219,6 +236,7 @@ export default function Users() {
                 onVerify={toggleLawyerVerification}
                 onGift={(userId, name) => setGiftModal({ isOpen: true, userId, name })}
                 onDelete={handleDeleteUser}
+                onChangeRole={handleChangeRole}
             />
 
             {/* Gift Modal Component */}
