@@ -1,7 +1,7 @@
 import express from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { adminMiddleware } from '../middleware/adminMiddleware';
-import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers, broadcastLatestNews, getVaultCompliance, getSystemDiagnostics, testUserPushNotification, purgeInvalidPushTokens, getMonitoringReport, runMonitorNow } from '../controllers/adminController';
+import { getDashboardStats, getLawyers, verifyLawyer, addStrikeToLawyer, getWorkers, getPymes, getFinancialStats, getPaymentLogs, getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, updateUserSubscription, updateAdminPassword, syncFirebaseLawyers, broadcastLatestNews, getVaultCompliance, getSystemDiagnostics, testUserPushNotification, purgeInvalidPushTokens, getMonitoringReport, runMonitorNow, changeUserRole } from '../controllers/adminController';
 import { getPromotions, createPromotion, updatePromotion, deletePromotion } from '../controllers/promotionController';
 
 const router = express.Router();
@@ -30,6 +30,7 @@ router.post('/lawyers/:lawyerId/strike', addStrikeToLawyer);
 router.get('/workers', getWorkers);
 router.get('/pymes', getPymes);
 router.put('/users/:userId/subscription', updateUserSubscription);
+router.put('/users/:userId/role', changeUserRole);
 
 // Financials
 router.get('/financials/stats', getFinancialStats);

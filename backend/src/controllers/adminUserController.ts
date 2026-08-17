@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { sendPushNotification } from '../services/notificationService';
+import admin from '../config/firebase';
 
 const prisma = new PrismaClient();
+
 
 export const getLawyers = async (req: Request, res: Response) => {
     try {
@@ -326,3 +328,131 @@ export const updateUserSubscription = async (req: Request, res: Response) => {
         });
     }
 };
+
+/**
+ * 🔄 Cambiar o corregir rol de un usuario (Admin)
+ * Permite cambiar de worker a lawyer/pyme o viceversa, creando las tablas hijas necesarias
+ * y sincronizando inmediatamente con Firebase Custom Claims y UserRole.
+ */
+export const changeUserRole = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+        const { newRole } = req.body;
+
+        if (!['worker', 'lawyer', 'pyme', 'admin'].includes(newRole)) {
+            return res.status(400).json({ error: 'Rol inválido. Roles permitidos: worker, lawyer, pyme, admin' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { lawyerProfile: true, pymeProfile: true, workerSubscription: true }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        console.log(`[Admin] Cambiando rol de usuario ${user.email} de ${user.role} a ${newRole}`);
+
+        // 1. Update User.role en SQL
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                role: newRole,
+                plan: newRole === 'lawyer' ? 'basic' : newRole === 'worker' ? 'free' : undefined
+            }
+        });
+
+        // 2. Ensure sub-table exists for the new role
+        if (newRole === 'lawyer') {
+            let lawyer = await prisma.lawyer.findUnique({ where: { userId } });
+            if (!lawyer) {
+                lawyer = await prisma.lawyer.create({
+                    data: {
+                        userId,
+                        licenseNumber: `LIC_${userId.substring(0, 8)}`,
+                        professionalName: user.fullName || 'Abogado',
+                        specialty: 'Derecho Laboral',
+                        isVerified: true,
+                        status: 'ACTIVE',
+                        subscriptionStatus: 'active'
+                    }
+                });
+                await prisma.lawyerProfile.create({
+                    data: { lawyerId: lawyer.id, bio: 'Perfil de abogado verificado' }
+                });
+                await prisma.lawyerSubscription.create({
+                    data: {
+                        lawyerId: lawyer.id,
+                        plan: 'basic',
+                        status: 'active',
+                        startDate: new Date(),
+                        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                    }
+                });
+            } else {
+                await prisma.lawyer.update({
+                    where: { id: lawyer.id },
+                    data: { isVerified: true, status: 'ACTIVE', subscriptionStatus: 'active' }
+                });
+            }
+        } else if (newRole === 'worker') {
+            if (!user.workerSubscription) {
+                await prisma.workerSubscription.create({
+                    data: { userId, status: 'inactive', amount: 29.0, autoRenew: false }
+                });
+            }
+        } else if (newRole === 'pyme') {
+            if (!user.pymeProfile) {
+                await prisma.pymeProfile.create({
+                    data: {
+                        userId,
+                        razonSocial: user.fullName || 'Empresa PyME',
+                        industry: 'General'
+                    }
+                });
+            }
+        }
+
+        // 3. Sync Firebase Custom Claims & UserRole
+        try {
+            const userRole = await prisma.userRole.findFirst({ where: { OR: [{ userId }, { email: user.email }] } });
+            if (userRole) {
+                await prisma.userRole.update({
+                    where: { id: userRole.id },
+                    data: { role: newRole }
+                });
+                await admin.auth().setCustomUserClaims(userRole.firebaseUid, { role: newRole });
+                console.log(`[changeUserRole] Claim ${newRole} asignado a UID ${userRole.firebaseUid}`);
+            } else {
+                const fbUser = await admin.auth().getUserByEmail(user.email).catch(() => null);
+                if (fbUser) {
+                    await admin.auth().setCustomUserClaims(fbUser.uid, { role: newRole });
+                    await prisma.userRole.create({
+                        data: {
+                            firebaseUid: fbUser.uid,
+                            userId: user.id,
+                            email: user.email,
+                            role: newRole,
+                            fullName: user.fullName
+                        }
+                    });
+                    console.log(`[changeUserRole] UserRole creado y claim ${newRole} asignado a Firebase UID ${fbUser.uid}`);
+                }
+            }
+        } catch (fbErr: any) {
+            console.warn('[changeUserRole] Error sincronizando claim en Firebase:', fbErr.message);
+        }
+
+        res.json({
+            success: true,
+            message: `Rol de ${user.email} actualizado exitosamente a ${newRole.toUpperCase()}.`,
+            user: updatedUser
+        });
+
+    } catch (error: any) {
+        console.error('Error changing user role:', error);
+        res.status(500).json({ error: 'Error al cambiar rol del usuario', details: error.message });
+    }
+};
+

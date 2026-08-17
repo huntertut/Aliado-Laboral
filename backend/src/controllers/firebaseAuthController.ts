@@ -37,23 +37,26 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                 where: { email }
             });
 
-            // 2. Infer Role & Plan from email (for Test Users)
-            let derivedRole = 'worker';
-            let derivedPlan = 'free';
+            // 2. Infer Role & Plan from Firebase claims or email fallback
+            let derivedRole = decodedToken.role || 'worker';
+            let derivedPlan = derivedRole === 'lawyer' ? 'basic' : 'free';
 
-            if (email.includes('pyme')) {
-                derivedRole = 'pyme';
-                derivedPlan = email.includes('premium') ? 'premium' : 'free'; // Default to free if basic
-            } else if (email.includes('abogado') || email.includes('lawyer')) {
-                derivedRole = 'lawyer';
-                derivedPlan = 'basic';
-            } else if (email.includes('admin')) {
-                derivedRole = 'admin';
+            if (!decodedToken.role) {
+                // Fallback to email detection only if no role claim is set yet
+                if (email.includes('pyme')) {
+                    derivedRole = 'pyme';
+                    derivedPlan = email.includes('premium') ? 'premium' : 'free';
+                } else if (email.includes('abogado') || email.includes('lawyer')) {
+                    derivedRole = 'lawyer';
+                    derivedPlan = 'basic';
+                } else if (email.includes('admin')) {
+                    derivedRole = 'admin';
+                }
             }
 
-            // 3. Create User if missing
+            // 3. Create User if missing or repair role from existing records
             if (!existingUser) {
-                console.log(`[verifyFirebaseToken] Creating new User for ${email}`);
+                console.log(`[verifyFirebaseToken] Creating new User for ${email} with role: ${derivedRole}`);
                 existingUser = await prisma.user.create({
                     data: {
                         email,
@@ -63,6 +66,23 @@ export const verifyFirebaseToken = async (req: Request, res: Response) => {
                         plan: derivedPlan
                     }
                 });
+            } else {
+                // If user has a Lawyer record in SQL but user.role was mistakenly worker, auto-repair to lawyer
+                const existingLawyer = await prisma.lawyer.findUnique({
+                    where: { userId: existingUser.id }
+                });
+                if (existingLawyer && existingUser.role !== 'lawyer') {
+                    console.log(`[verifyFirebaseToken] Auto-repairing role to lawyer for ${email} because Lawyer profile exists`);
+                    existingUser = await prisma.user.update({
+                        where: { id: existingUser.id },
+                        data: { role: 'lawyer', plan: 'basic' }
+                    });
+                }
+
+                // User exists - proactively update Firebase custom claims to match our SQL database role
+                admin.auth().setCustomUserClaims(firebaseUid, { role: existingUser!.role })
+                    .then(() => console.log(`[verifyFirebaseToken] Synced role ${existingUser!.role} to Firebase claims for ${email}`))
+                    .catch(err => console.error(`[verifyFirebaseToken] Failed to sync claims for ${email}:`, err.message));
             }
 
             // --- ADDED: Auto-Stub Lawyer Sync ---

@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 // Re-export modularized endpoints for backwards compatibility and router integrity
 export { getDashboardStats, getFinancialStats } from './adminStatsController';
-export { getLawyers, verifyLawyer, getWorkers, getPymes, addStrikeToLawyer, updateUserSubscription } from './adminUserController';
+export { getLawyers, verifyLawyer, getWorkers, getPymes, addStrikeToLawyer, updateUserSubscription, changeUserRole } from './adminUserController';
 export { getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, getVaultCompliance } from './adminCasesController';
 
 export const updateAdminPassword = async (req: Request, res: Response) => {
@@ -78,21 +78,39 @@ export const syncFirebaseLawyers = async (req: Request, res: Response) => {
                     continue;
                 }
 
-                // 2. Check Custom Claims & UserRole table for role preference
-                const customClaimRole = fbUser.customClaims?.role;
+                // 2. Check SQL DB first to preserve existing roles (SQL is the Source of Truth)
                 const existingUserRole = await prisma.userRole.findUnique({ where: { firebaseUid: uid } });
-                
-                // Determine target role from Firebase or default to worker
-                let targetRole = customClaimRole || existingUserRole?.role || 'worker';
-
-                // 3. Find if user exists in SQL DB
                 let existingUser = await prisma.user.findFirst({
                     where: { OR: [{ email }, { id: existingUserRole?.userId || '___none___' }] },
                     include: { lawyerProfile: true, workerSubscription: true, pymeProfile: true }
                 });
 
-                if (!existingUser) {
-                    // Create new user in SQL DB with verified role
+                // Determine target role: SQL always takes precedence if user or profile exists
+                let targetRole: string;
+                if (existingUser) {
+                    if (existingUser.role === 'lawyer' || existingUser.lawyerProfile) {
+                        targetRole = 'lawyer';
+                    } else if (existingUser.role === 'pyme' || existingUser.pymeProfile) {
+                        targetRole = 'pyme';
+                    } else if (existingUser.role === 'admin') {
+                        targetRole = 'admin';
+                    } else {
+                        targetRole = existingUser.role || 'worker';
+                    }
+
+                    // If user was marked as worker in user table but actually has a Lawyer record, fix role
+                    if (existingUser.lawyerProfile && existingUser.role !== 'lawyer') {
+                        await prisma.user.update({
+                            where: { id: existingUser.id },
+                            data: { role: 'lawyer', plan: 'basic' }
+                        });
+                        existingUser.role = 'lawyer';
+                    }
+                } else {
+                    // New user from Firebase: Check custom claims or UserRole table
+                    const customClaimRole = fbUser.customClaims?.role;
+                    targetRole = customClaimRole || existingUserRole?.role || 'worker';
+
                     console.log(`[Admin] Creating missing User in SQL for Firebase user: ${email} (Role: ${targetRole})`);
                     existingUser = await prisma.user.create({
                         data: {
@@ -100,7 +118,7 @@ export const syncFirebaseLawyers = async (req: Request, res: Response) => {
                             fullName: fbUser.displayName || email.split('@')[0],
                             role: targetRole,
                             passwordHash: 'firebase_managed',
-                            plan: targetRole === 'worker' ? 'free' : undefined,
+                            plan: targetRole === 'worker' ? 'free' : targetRole === 'lawyer' ? 'basic' : undefined,
                             profileStatus: 'active'
                         },
                         include: { lawyerProfile: true, workerSubscription: true, pymeProfile: true }
@@ -109,9 +127,6 @@ export const syncFirebaseLawyers = async (req: Request, res: Response) => {
                     if (targetRole === 'worker') newWorkersCount++;
                     else if (targetRole === 'lawyer') newLawyersCount++;
                     else if (targetRole === 'pyme') newPymesCount++;
-                } else {
-                    // PRESERVE EXISTING USER ROLE IN SQL — NEVER OVERWRITE EXISTING ROLE!
-                    targetRole = existingUser.role;
                 }
 
                 // 4. Ensure sub-table exists according to preserved User.role

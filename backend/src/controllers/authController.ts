@@ -28,12 +28,14 @@ export const register = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (existingUser) {
             await prisma.securityLog.create({
                 data: {
                     event: 'REGISTER_FAILED',
-                    email,
+                    email: normalizedEmail,
                     ipAddress: req.ip || '',
                     userAgent: req.headers['user-agent'] || '',
                     details: 'User already exists'
@@ -70,7 +72,7 @@ export const register = async (req: Request, res: Response) => {
         const result = await prisma.$transaction(async (tx) => {
             const user = await tx.user.create({
                 data: {
-                    email,
+                    email: normalizedEmail,
                     passwordHash,
                     fullName,
                     role: role || 'worker',
@@ -152,14 +154,14 @@ export const register = async (req: Request, res: Response) => {
 
         // Sync to Firebase and create UserRole mapping
         try {
-            const firebaseUser = await admin.auth().getUserByEmail(email);
+            const firebaseUser = await admin.auth().getUserByEmail(normalizedEmail);
             if (firebaseUser) {
-                console.log(`[register] Syncing role ${result.role} to Firebase claims for ${email}`);
+                console.log(`[register] Syncing role ${result.role} to Firebase claims for ${normalizedEmail}`);
                 await admin.auth().setCustomUserClaims(firebaseUser.uid, { role: result.role || 'worker' });
                 await prisma.userRole.upsert({
                     where: { firebaseUid: firebaseUser.uid },
-                    update: { role: result.role || 'worker', email, userId: result.id, fullName: fullName || '' },
-                    create: { firebaseUid: firebaseUser.uid, role: result.role || 'worker', email, userId: result.id, fullName: fullName || '' }
+                    update: { role: result.role || 'worker', email: normalizedEmail, userId: result.id, fullName: fullName || '' },
+                    create: { firebaseUid: firebaseUser.uid, role: result.role || 'worker', email: normalizedEmail, userId: result.id, fullName: fullName || '' }
                 });
             }
         } catch (fbErr: any) {
