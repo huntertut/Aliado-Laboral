@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 // Re-export modularized endpoints for backwards compatibility and router integrity
 export { getDashboardStats, getFinancialStats } from './adminStatsController';
-export { getLawyers, verifyLawyer, getWorkers, getPymes, addStrikeToLawyer, updateUserSubscription, changeUserRole } from './adminUserController';
+export { getLawyers, verifyLawyer, getWorkers, getPymes, addStrikeToLawyer, updateUserSubscription, changeUserRole, deleteUser } from './adminUserController';
 export { getAllCases, getPublicPoolCases, getSecurityLogs, getAdminAlerts, resolveAlert, purgeCaseData, getVaultCompliance } from './adminCasesController';
 
 export const updateAdminPassword = async (req: Request, res: Response) => {

@@ -138,7 +138,7 @@ export default function UsersTable({ activeTab, users, loading, onVerify, onGift
                                 {user.isVerified ? 'Revocar' : 'Aprobar'}
                             </button>
                             <button
-                                onClick={() => onDelete(user.id, user.fullName || 'Abogado')}
+                                onClick={() => onDelete(user.userId || user.id, user.fullName || 'Abogado')}
                                 className="p-1.5 text-slate-700 bg-slate-100 hover:bg-red-100 hover:text-red-700 rounded-md transition-colors"
                                 title="Eliminar permanentemente a este usuario"
                             >

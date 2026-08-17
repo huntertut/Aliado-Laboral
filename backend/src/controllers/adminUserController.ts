@@ -456,3 +456,92 @@ export const changeUserRole = async (req: Request, res: Response) => {
     }
 };
 
+/**
+ * 🗑️ Eliminar Usuario Completo (Admin)
+ * Elimina limpiamente todas las dependencias en SQL y elimina al usuario de Firebase Auth
+ */
+export const deleteUser = async (req: Request, res: Response) => {
+    try {
+        const { userId } = req.params;
+
+        // Find user by id or lawyer.id
+        let user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            const lawyer = await prisma.lawyer.findUnique({ where: { id: userId } });
+            if (lawyer) {
+                user = await prisma.user.findUnique({ where: { id: lawyer.userId } });
+            }
+        }
+
+        if (!user) {
+            return res.status(404).json({ error: 'Usuario no encontrado en la base de datos' });
+        }
+
+        const targetUserId = user.id;
+        const email = user.email;
+
+        console.log(`[Admin] Iniciando eliminación completa del usuario ${email} (${targetUserId})`);
+
+        // Transactional deletion of all dependent records
+        await prisma.$transaction(async (tx) => {
+            // 1. Lawyer relations
+            const lawyer = await tx.lawyer.findUnique({ where: { userId: targetUserId } });
+            if (lawyer) {
+                await tx.lawyerProfile.deleteMany({ where: { lawyerId: lawyer.id } });
+                await tx.lawyerSubscription.deleteMany({ where: { lawyerId: lawyer.id } });
+                await tx.lawyerReview.deleteMany({ where: { lawyerId: lawyer.id } });
+                await tx.contactRequest.deleteMany({ where: { lawyerProfileId: lawyer.id } });
+                await tx.forumAnswer.deleteMany({ where: { lawyerId: lawyer.id } });
+                await tx.lawyer.delete({ where: { id: lawyer.id } });
+            }
+
+            // 2. Worker relations
+            await tx.workerProfile.deleteMany({ where: { userId: targetUserId } });
+            await tx.workerSubscription.deleteMany({ where: { userId: targetUserId } });
+            await tx.calculationRecord.deleteMany({ where: { userId: targetUserId } });
+            await tx.contactRequest.deleteMany({ where: { workerId: targetUserId } });
+
+            // 3. PyME relations
+            await tx.pymeProfile.deleteMany({ where: { userId: targetUserId } });
+
+            // 4. Other relations
+            await tx.userRole.deleteMany({ where: { OR: [{ userId: targetUserId }, { email }] } });
+            await tx.notification.deleteMany({ where: { userId: targetUserId } });
+            await tx.activityLog.deleteMany({ where: { userId: targetUserId } });
+            await tx.userDocument.deleteMany({ where: { userId: targetUserId } });
+            await tx.payment.deleteMany({ where: { userId: targetUserId } });
+            await tx.legalDocument.deleteMany({ where: { userId: targetUserId } });
+            await tx.coursePurchase.deleteMany({ where: { userId: targetUserId } });
+            await tx.userCourseProgress.deleteMany({ where: { userId: targetUserId } });
+            await tx.forumVote.deleteMany({ where: { userId: targetUserId } });
+            await tx.forumAnswer.deleteMany({ where: { userId: targetUserId } });
+            await tx.forumPost.deleteMany({ where: { userId: targetUserId } });
+            await tx.legalCase.deleteMany({ where: { userId: targetUserId } });
+
+            // 5. Delete main User record
+            await tx.user.delete({ where: { id: targetUserId } });
+        });
+
+        // 6. Delete from Firebase Auth
+        try {
+            const fbUser = await admin.auth().getUserByEmail(email).catch(() => null);
+            if (fbUser) {
+                await admin.auth().deleteUser(fbUser.uid);
+                console.log(`[deleteUser] Usuario eliminado de Firebase Auth: ${fbUser.uid} (${email})`);
+            }
+        } catch (fbErr: any) {
+            console.warn(`[deleteUser] No se pudo eliminar de Firebase Auth: ${fbErr.message}`);
+        }
+
+        res.json({
+            success: true,
+            message: `Usuario ${email} eliminado permanentemente de la base de datos y de Firebase.`
+        });
+
+    } catch (error: any) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Error al eliminar usuario', details: error.message });
+    }
+};
+
+
