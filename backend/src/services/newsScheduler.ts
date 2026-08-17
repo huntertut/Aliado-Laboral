@@ -2,7 +2,8 @@ import Parser from 'rss-parser';
 import cron from 'node-cron';
 import * as newsAIService from './newsAIService';
 import { PrismaClient } from '@prisma/client';
-import { sendPushNotification } from './notificationService';
+
+
 
 const prisma = new PrismaClient();
 const parser = new Parser();
@@ -154,10 +155,17 @@ export const fetchLaborNews = async () => {
                 }
             }
 
-            // Also persist in-app notification center for all users
+            // Persist in-app notification center for all users (NO second push — ya se mandó arriba)
             for (const user of users) {
-                sendPushNotification(user.id, "🗞️ Nueva Noticia Laboral", finalData.titleClickable, { type: 'news', newsId: createdNews.id })
-                    .catch(() => {});
+                prisma.notification.create({
+                    data: {
+                        userId: user.id,
+                        title: "🗞️ Nueva Noticia Laboral",
+                        body: finalData.titleClickable,
+                        type: 'news',
+                        relatedId: createdNews.id
+                    }
+                }).catch(() => {});
             }
 
         } catch (notifyError) {
