@@ -6,6 +6,14 @@ All notable changes to the Aliado Laboral ecosystem (Mobile App, Backend, and Ad
 
 **Último versionCode en Producción: 98 (v1.3.4) — 14 Agosto 2026**
 
+## [v1.3.5 / Backend Update] - 17 Agosto 2026 (Blindaje de Roles en Registro/Sync Firebase + Sistema de Monitoreo Proactivo Level B)
+
+- **fix (Backend/Auth & Sync):** Blindado el sistema de preservación de roles. Cuando un usuario se registra desde la app seleccionando su rol (`worker`, `lawyer`, `pyme`), el backend inyecta inmediatamente el *Custom Claim* en Firebase Auth y en la tabla `UserRole`.
+- **fix (Backend/Sync):** Actualizado `syncFirebaseLawyers` en `adminController.ts` para que la base de datos SQL (`Lawyer`, `PymeProfile`) tenga máxima prioridad sobre cualquier fallback, impidiendo que abogados registrados sean degradados a trabajadores.
+- **feat (Backend/Admin):** Implementado endpoint `PUT /api/admin/users/:userId/role` en `adminUserController.ts` y `adminRoutes.ts` para permitir corregir o cambiar roles de usuarios creando sus registros dependientes y actualizando Firebase en un solo paso.
+- **fix (Backend/Notificaciones):** Eliminado el envío duplicado de notificaciones push en `newsScheduler.ts` al publicar noticias laborales.
+- **feat (Backend & Admin-Web):** Implementado Sistema de Monitoreo Proactivo (Level B) con 8 chequeos automáticos diarios a las 8:00 AM, historial de alertas (`AdminAlert`) y panel en vivo en `Diagnostics.tsx`.
+
 ## [v1.3.4] - 14 Agosto 2026 (Build 98: Plugin Nativo Google Services Gradle & Solución Notificaciones Huawei Nova 12i)
 
 - **Fix Crítico (Mobile/Android):** Resuelto el error `Default FirebaseApp is not initialized in this process com.aliadolaboral.app` en dispositivos Huawei Nova 12i mediante la adición explícita de `classpath('com.google.gms:google-services:4.4.2')` en `frontend/android/build.gradle` y `apply plugin: 'com.google.gms.google-services'` en `frontend/android/app/build.gradle`.
