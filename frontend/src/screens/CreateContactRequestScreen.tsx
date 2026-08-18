@@ -7,6 +7,9 @@ import { Picker } from '@react-native-picker/picker';
 
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/constants';
 import { endpoints } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { PRIVACY_NOTICES } from '../data/legal/privacyNotices';
@@ -95,14 +98,43 @@ const CreateContactRequestScreen = () => {
             }));
 
             setProcessedDocuments(processed);
+
+            const userPlan = user?.plan?.toLowerCase() || '';
+            const isWorkerPremium = user?.role === 'worker' && (userPlan === 'premium' || userPlan === 'worker_premium' || userPlan === 'pro');
+
+            if (isWorkerPremium) {
+                const token = await AsyncStorage.getItem('authToken');
+                await axios.post(
+                    `${API_URL}/contact/create-with-payment`,
+                    {
+                        lawyerProfileId,
+                        caseSummary: caseSummary || 'Solicitud de contacto desde la app',
+                        caseType,
+                        urgency,
+                        documents: processed,
+                        paymentGateway: 'free_pass',
+                    },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                Alert.alert(
+                    '¡Solicitud Enviada! 🚀',
+                    `Tu solicitud ha sido enviada directamente a ${lawyerName} sin costo gracias a tu beneficio Premium.\nEl abogado ha sido notificado para evaluar tu caso.`,
+                    [{ text: 'Entendido', onPress: () => navigation.goBack() }]
+                );
+                return;
+            }
+
             setShowPaymentModal(true);
-        } catch (error) {
-            console.error('Error al procesar documentos:', error);
-            Alert.alert('Error', 'Hubo un problema al procesar tus archivos adjuntos');
+        } catch (error: any) {
+            console.error('Error al procesar solicitud:', error);
+            const errorMsg = error?.response?.data?.error || 'Hubo un problema al procesar tu solicitud o archivos adjuntos';
+            Alert.alert('Error', errorMsg);
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <View style={styles.container}>

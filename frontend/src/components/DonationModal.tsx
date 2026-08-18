@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, TextInput, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { AppTheme } from '../theme/colors';
 import axios from 'axios';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useStripe } from '@stripe/stripe-react-native';
 
 interface DonationModalProps {
     visible: boolean;
@@ -16,6 +17,7 @@ const DonationModal: React.FC<DonationModalProps> = ({ visible, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<'stripe' | 'mercadopago'>('stripe');
     const [amount, setAmount] = useState('50');
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const presetAmounts = ['20', '50', '100', '200'];
 
@@ -30,11 +32,7 @@ const DonationModal: React.FC<DonationModalProps> = ({ visible, onClose }) => {
         setLoading(true);
         try {
             const token = await AsyncStorage.getItem('authToken');
-            const userData = await AsyncStorage.getItem('userData');
-            const user = userData ? JSON.parse(userData) : null;
 
-            // Create a donation payment (simulated for now)
-            // In production, this would call a dedicated donation endpoint
             const response = await axios.post(
                 `${API_URL}/worker-subscription/donate`,
                 {
@@ -44,20 +42,51 @@ const DonationModal: React.FC<DonationModalProps> = ({ visible, onClose }) => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            Alert.alert(
-                '¡Gracias por tu Donación! 💝',
-                `Tu donación de $${donationAmount} MXN ayuda a mantener este proyecto gratuito para todos los trabajadores mexicanos.`,
-                [{ text: 'Cerrar', onPress: onClose }]
-            );
+            if (selectedProvider === 'stripe') {
+                const { clientSecret } = response.data;
+                if (!clientSecret) {
+                    throw new Error('No se recibió la clave de pago de Stripe');
+                }
+
+                const { error: initError } = await initPaymentSheet({
+                    merchantDisplayName: 'Aliado Laboral - Donación',
+                    paymentIntentClientSecret: clientSecret,
+                    returnURL: 'derechoslaboralesmx://stripe-redirect',
+                });
+
+                if (initError) {
+                    Alert.alert('Error de Inicialización', initError.message);
+                    setLoading(false);
+                    return;
+                }
+
+                setLoading(false);
+                const { error: paymentError } = await presentPaymentSheet();
+
+                if (paymentError) {
+                    if (paymentError.code !== 'Canceled') {
+                        Alert.alert('Error de Pago', paymentError.message);
+                    }
+                    return;
+                }
+
+                Alert.alert(
+                    '¡Muchísimas Gracias! 💝',
+                    `Tu donación de $${donationAmount} MXN ha sido procesada con éxito. ¡Gracias por apoyar este proyecto!`,
+                    [{ text: 'Cerrar', onPress: onClose }]
+                );
+            } else {
+                setLoading(false);
+                const { initPoint } = response.data;
+                if (initPoint) {
+                    await Linking.openURL(initPoint);
+                    onClose();
+                }
+            }
         } catch (error: any) {
             console.error('Donation error:', error);
-
-            // Even if backend fails, show appreciation
-            Alert.alert(
-                '¡Gracias! 💝',
-                'Por ahora el sistema de donaciones está en desarrollo. Tu intención de apoyar significa mucho para nosotros.',
-                [{ text: 'Cerrar', onPress: onClose }]
-            );
+            const msg = error?.response?.data?.error || error.message || 'Error al procesar la donación';
+            Alert.alert('Error', msg);
         } finally {
             setLoading(false);
         }

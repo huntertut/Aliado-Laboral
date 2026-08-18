@@ -16,9 +16,10 @@ export type PaymentProvider = 'stripe' | 'mercadopago';
 interface PaymentMetadata {
     userId: string;
     email: string;
-    type: 'subscription' | 'contact';
+    type: 'subscription' | 'contact' | 'donation';
     description?: string;
 }
+
 
 interface PaymentResult {
     success: boolean;

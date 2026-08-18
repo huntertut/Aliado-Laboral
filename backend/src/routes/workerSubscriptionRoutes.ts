@@ -4,6 +4,7 @@ import {
     getMySubscription,
     createSubscription,
     cancelMySubscription,
+    donateToProject,
 } from '../controllers/workerSubscriptionController';
 
 const router = Router();
@@ -20,4 +21,8 @@ router.post('/subscribe', createSubscription);
 // Cancel subscription
 router.post('/cancel', cancelMySubscription);
 
+// Donate to project
+router.post('/donate', donateToProject);
+
 export default router;
+

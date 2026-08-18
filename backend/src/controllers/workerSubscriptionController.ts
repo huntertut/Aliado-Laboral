@@ -234,3 +234,47 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
         res.status(500).json({ error: 'Error al verificar suscripción' });
     }
 };
+
+/**
+ * 💝 Donar al Proyecto Aliado Laboral (Stripe / Mercado Pago)
+ */
+export const donateToProject = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user?.id;
+        const userEmail = (req as any).user?.email;
+        const { amount, paymentProvider = 'stripe' } = req.body;
+
+        const donationAmount = parseFloat(amount);
+        if (!donationAmount || donationAmount < 10) {
+            return res.status(400).json({ error: 'El monto mínimo de donación es de $10 MXN' });
+        }
+
+        const paymentResult = await createPayment(
+            donationAmount,
+            'MXN',
+            {
+                userId: userId || 'anonymous',
+                email: userEmail || 'donador@aliadolaboral.mx',
+                type: 'donation',
+                description: `Donación voluntaria de $${donationAmount} MXN`,
+            },
+            paymentProvider as PaymentProvider
+        );
+
+        if (!paymentResult.success) {
+            return res.status(500).json({ error: paymentResult.error || 'Error al procesar donación' });
+        }
+
+        res.json({
+            success: true,
+            clientSecret: paymentResult.clientSecret,
+            paymentId: paymentResult.paymentId,
+            initPoint: paymentResult.initPoint,
+            message: 'Donación iniciada correctamente'
+        });
+    } catch (error: any) {
+        console.error('Error in donateToProject:', error);
+        res.status(500).json({ error: 'Error al procesar la donación' });
+    }
+};
+

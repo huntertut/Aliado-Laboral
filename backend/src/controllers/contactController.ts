@@ -47,6 +47,25 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
 
         const lawyer = lawyerProfile.lawyer;
 
+        // Get worker and check Premium benefit status
+        const worker = await prisma.user.findUnique({
+            where: { id: workerId },
+            include: { workerSubscription: true }
+        });
+        if (!worker) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const workerPlan = worker.plan?.toLowerCase() || '';
+        const hasActiveSub = worker.workerSubscription?.status === 'active';
+        const isWorkerPremium = workerPlan === 'premium' || workerPlan === 'worker_premium' || workerPlan === 'pro' || hasActiveSub;
+        const isFreePass = isWorkerPremium || paymentGateway === 'free_pass';
+
+        // Validate payment gateway if not free pass
+        if (!isFreePass && (!paymentGateway || !['stripe', 'mercadopago'].includes(paymentGateway))) {
+            return res.status(400).json({ error: 'Método de pago inválido' });
+        }
+
         // 1. CLASSIFY CASE (Normal vs Hot)
         // Rule: Hot if Severance > 150k OR Years > 3 (UPDATED REQUIREMENT)
         const severanceValue = Number(estimatedSeverance) || 0;
@@ -65,12 +84,6 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
         const urgencyScore = (urgency === 'high' ? 80 : 50) + (isHot ? 20 : 0);
         const consentTimestamp = new Date(); // Assumed consent given at creation time via checkbox
 
-        // Get or create worker as customer
-        const worker = await prisma.user.findUnique({ where: { id: workerId } });
-        if (!worker) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-
         // Calculate expiration (3 business days from now)
         const expiresAt = addBusinessDays(new Date(), 3);
 
@@ -83,7 +96,9 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
                 caseType,
                 urgency: urgency || 'normal',
                 status: 'pending',
-                workerPaymentGateway: paymentGateway,
+                workerPaid: isFreePass ? true : false,
+                openingFeePaid: isFreePass ? 0.00 : null,
+                workerPaymentGateway: isFreePass ? (isWorkerPremium ? 'premium_benefit' : 'free_pass') : paymentGateway,
                 expiresAt,
                 // Business Model Fields
                 classification,
@@ -133,6 +148,27 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
             }
         }
 
+        // FREE PASS FLOW (Worker is Premium or benefit granted)
+        if (isFreePass) {
+            console.log(`🎟️ [createContactRequest] Pase Directo $0 aplicado para trabajador ${worker.email} (Plan: ${worker.plan})`);
+            const lawyerUserId = lawyerProfile.lawyer?.user?.id;
+            if (lawyerUserId) {
+                await sendPushNotification(
+                    lawyerUserId,
+                    '📋 Nueva Solicitud de Caso',
+                    `Tienes una nueva solicitud de caso de ${worker.fullName || 'un trabajador'}.`,
+                    { requestId: contactRequest.id, type: 'NEW_REQUEST' }
+                );
+            }
+
+            return res.json({
+                success: true,
+                isFreePass: true,
+                contactRequest,
+                message: '¡Solicitud enviada con éxito gracias a tu beneficio Premium!'
+            });
+        }
+
         // Process payment based on gateway choice
         let paymentResult: any;
 
@@ -143,6 +179,7 @@ export const createContactRequestWithPayment = async (req: Request, res: Respons
                 if (!stripeCustomerId) {
                     const customer = await stripeService.createStripeCustomer({
                         email: worker.email,
+
                         name: worker.fullName || undefined,
                         metadata: { userId: worker.id, role: 'worker' }
                     });
